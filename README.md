@@ -14,7 +14,7 @@ directory, download it from https://pugixml.org/2022/11/02/pugixml-1.13-release.
 
 To clone the **GIDI+** Git repository the following command is recommended:
 ```
-git clone --recurse-submodules ssh://git@czgitlab.llnl.gov:7999/nuclear/gidiplus/gidiplus.git
+git clone --recurse-submodules https://github.com/LLNL/gidiplus.git
 ```
 
 **NOTE:**
