@@ -19,7 +19,7 @@ SMR_PATH = $(abspath ./statusMessageReporting)
 SMR_INCLUDE_PATH = $(SMR_PATH)/include
 SMR_LIB_PATH = $(SMR_PATH)/lib
 
-MAKEFLAGS += SMR_PATH=$(SMR_PATH)
+export SMR_PATH
 
 default: purgeIncludeAndLib $(SOURCE_DIRS)
 	$(MAKE) utilities
