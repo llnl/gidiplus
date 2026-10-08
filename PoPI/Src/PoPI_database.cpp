@@ -16,7 +16,6 @@
 #define PoPI_leptonsChars "leptons"
 #define PoPI_baryonsChars "baryons"
 #define PoPI_unorthodoxesChars "unorthodoxes"
-#define PoPI_chemicalElementsChars "chemicalElements"
 
 #define MsgSize (8 * 1024)
 #ifdef _WIN32
@@ -148,7 +147,7 @@ void Database::addDatabase( HAPI::Node const &a_database, LUPI_maybeUnused bool 
     if( m_name == "" ) m_name = a_database.attribute( PoPI_nameChars ).value( );
     if( m_version == "" ) m_version = a_database.attribute( PoPI_versionChars ).value( );
 
-    for( HAPI::Node child = a_database.first_child( ); !child.empty( ); child = child.next_sibling( ) ) {
+    for( HAPI::Node child = a_database.first_child( ); !child.empty( ); child.to_next_sibling( ) ) {
         std::string s_name( child.name( ) );
 
         if(      s_name == PoPI_gaugeBosonsChars ) {
@@ -192,7 +191,7 @@ void Database::addDatabase( HAPI::Node const &a_database, LUPI_maybeUnused bool 
 
 static void parseAliases( HAPI::Node const &a_node, Database *a_DB ) {
 
-    for( HAPI::Node child = a_node.first_child( ); !child.empty( ); child = child.next_sibling( ) ) {
+    for( HAPI::Node child = a_node.first_child( ); !child.empty( ); child.to_next_sibling( ) ) {
         std::string name = child.name( );
         Alias *alias = nullptr;
 
@@ -538,7 +537,7 @@ int Database::addSymbol( SymbolBase *a_item ) {
  ***********************************************************************************************************/
 
 void Database::calculateNuclideGammaBranchStateInfos( NuclideGammaBranchStateInfos &a_nuclideGammaBranchStateInfos, Database const *a_pops2,
-                std::vector<std::string> a_extraGammaBranchStates ) const {
+                std::vector<std::string> &a_extraGammaBranchStates ) const {
 
 
     calculateNuclideGammaBranchStateInfos2( a_nuclideGammaBranchStateInfos );
@@ -623,11 +622,11 @@ void Database::toXMLList( std::vector<std::string> &a_XMLList, std::string const
     std::string indent3 = indent2 + "  ";
 
     std::string header1 = a_indent1 + "<PoPs name=\"" + m_name + "\" version=\"" + m_version + "\" format=\"" + m_formatVersion.format( ) + "\">";
-    a_XMLList.push_back( header1 );
+    a_XMLList.push_back( std::move( header1 ) );
 
     if( m_aliases.size( ) > 0 ) {
         std::string header2 = indent2 + "<" + PoPI_aliasesChars + ">";
-        a_XMLList.push_back( header2 );
+        a_XMLList.push_back( std::move( header2 ) );
         for( std::vector<Alias *>::const_iterator iter = m_aliases.begin( ); iter != m_aliases.end( ); ++iter )
             (*iter)->toXMLList( a_XMLList, indent3 );
         appendXMLEnd( a_XMLList, PoPI_aliasesChars );

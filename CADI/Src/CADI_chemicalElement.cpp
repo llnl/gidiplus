@@ -55,9 +55,9 @@ ChemicalElement::~ChemicalElement( ) {
 }
 
 /* *********************************************************************************************************//**
- * Returns the **ChemicalElement** with symbol *a_symbol* if it exists; otherwise, **nullptr** is returned.
+ * Returns the **ChemicalElement** with id *a_id* if it exists; otherwise, **nullptr** is returned.
  *
- * @param a_symbol      [in]    The symbol for the chemical element whose isotopic abundance data are being requested.
+ * @param a_id      [in]    The id for the chemical element whose isotopic abundance data are being requested.
  ***********************************************************************************************************/
 
 Isotope const *ChemicalElement::operator[]( std::string const &a_id ) const {

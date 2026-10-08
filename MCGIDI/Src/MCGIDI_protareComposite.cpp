@@ -631,7 +631,10 @@ LUPI_HOST_DEVICE void ProtareComposite::serialize2( LUPI::DataBuffer &a_buffer, 
         a_buffer.incrementPlacement( sizeof( ProtareSingle ) * vectorSize );
     }
 
-    for( std::size_t i1 = 0; i1 < vectorSize; ++i1 ) m_protares[i1]->serialize2( a_buffer, a_mode );
+    for( std::size_t i1 = 0; i1 < vectorSize; ++i1 ) {
+        m_protares[i1]->serializeCommon( a_buffer, a_mode );
+        m_protares[i1]->serialize2( a_buffer, a_mode );
+    }
 }
 
 }

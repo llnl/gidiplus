@@ -370,7 +370,7 @@ LUPI_HOST_DEVICE void MCGIDI::Distributions::AngularTwoBody::sample( double a_X,
     double _x = targetMass( ) * ( a_X - m_twoBodyThreshold ) / ( finalMass * finalMass );
     double Kp;                          // Kp is the total kinetic energy for m3 and m4 in the COM frame.
 
-    a_input.m_sampledType = Sampling::SampledType::firstTwoBody;
+    a_input.setSampledType( Sampling::SampledType::firstTwoBody );
 
     if( m_Upscatter ) {
        if( ( a_input.m_upscatterModel == Sampling::Upscatter::Model::B ) || ( a_input.m_upscatterModel == Sampling::Upscatter::Model::BSnLimits )
@@ -478,7 +478,7 @@ LUPI_HOST_DEVICE bool MCGIDI::Distributions::AngularTwoBody::upscatterModelB( do
     const double C0 = 1.0410423479, C1 = 3.9626339162e-4, C2 =-1.8654539193e-3, C3 = 1.0264818153e-4;
     double neutronMass = projectileMass( );                             // Mass are in incident energy unit / c**2.
     double _targetMass = targetMass( );
-    double temperature = 1e-3 * a_input.m_temperature;                  // Assumes m_temperature is in keV/K.
+    double temperature = a_input.temperature( );
     double kineticLabMax = 1e4 * temperature;
 
     if( a_input.m_upscatterModel == Sampling::Upscatter::Model::BSnLimits ) {
@@ -538,7 +538,6 @@ LUPI_HOST_DEVICE bool MCGIDI::Distributions::AngularTwoBody::upscatterModelB( do
         }
     } while( continueLoop );
 
-
     double m1_12 = neutronMass / ( neutronMass + _targetMass );
     double m2_12 = _targetMass / ( neutronMass + _targetMass );
 
@@ -550,6 +549,10 @@ LUPI_HOST_DEVICE bool MCGIDI::Distributions::AngularTwoBody::upscatterModelB( do
             cosRelative = -1.0;
     }
     double sinRelative = sqrt( 1.0 - cosRelative * cosRelative );       // Sine of angle between projectile velocity and relative velocity.
+
+    a_input.m_muLab = muProjectileTarget;
+    a_input.m_targetBeta = targetBeta;
+    a_input.m_relativeBeta = relativeBeta;
 
     double betaNeutronOut = m2_12 * relativeBeta;
     double kineticEnergyRelative = particleKineticEnergy( neutronMass, betaNeutronOut );
@@ -626,7 +629,7 @@ LUPI_HOST_DEVICE bool MCGIDI::Distributions::AngularTwoBody::upscatterModelB( do
 template <typename RNG>
 LUPI_HOST_DEVICE void MCGIDI::Distributions::Uncorrelated::sample( double a_X, Sampling::Input &a_input, RNG && a_rng ) const {
 
-    a_input.m_sampledType = Sampling::SampledType::uncorrelatedBody;
+    a_input.setSampledType( Sampling::SampledType::uncorrelatedBody );
     a_input.m_mu = m_angular->sample( a_X, a_rng( ), a_rng );
     a_input.m_energyOut1 = m_energy->sample( a_X, a_rng( ), a_rng );
     a_input.m_phi = 2. * M_PI * a_rng( );
@@ -745,7 +748,7 @@ LUPI_HOST_DEVICE void MCGIDI::Distributions::EnergyAngularMC::sample( double a_X
 
     double energyOut_1, energyOut_2;
 
-    a_input.m_sampledType = Sampling::SampledType::uncorrelatedBody;
+    a_input.setSampledType( Sampling::SampledType::uncorrelatedBody );
     a_input.m_energyOut1 = m_energy->sample2dOf3d( a_X, a_rng( ), a_rng, &energyOut_1, &energyOut_2 );
     a_input.m_mu = m_angularGivenEnergy->sample( a_X, energyOut_1, energyOut_2, a_rng( ), a_rng );
     a_input.m_phi = 2. * M_PI * a_rng( );
@@ -830,7 +833,7 @@ LUPI_HOST_DEVICE void MCGIDI::Distributions::AngularEnergyMC::sample( double a_X
 
     double mu_1, mu_2;
 
-    a_input.m_sampledType = Sampling::SampledType::uncorrelatedBody;
+    a_input.setSampledType( Sampling::SampledType::uncorrelatedBody );
     a_input.m_mu = m_angular->sample2dOf3d( a_X, a_rng( ), a_rng, &mu_1, &mu_2 );
     a_input.m_energyOut1 = m_energyGivenAngular->sample( a_X, mu_1, mu_2, a_rng( ), a_rng );
     a_input.m_phi = 2. * M_PI * a_rng( );
@@ -873,7 +876,7 @@ LUPI_HOST_DEVICE double MCGIDI::Distributions::AngularEnergyMC::angleBiasing( LU
 template <typename RNG>
 LUPI_HOST_DEVICE void MCGIDI::Distributions::KalbachMann::sample( double a_X, Sampling::Input &a_input, RNG && a_rng ) const {
 
-    a_input.m_sampledType = Sampling::SampledType::uncorrelatedBody;
+    a_input.setSampledType( Sampling::SampledType::uncorrelatedBody );
     a_input.m_energyOut1 = m_f->sample( a_X, a_rng( ), a_rng );
     double rValue = m_r->evaluate( a_X, a_input.m_energyOut1 );
     double aValue = m_a->evaluate( a_X, a_input.m_energyOut1 );
@@ -1099,7 +1102,7 @@ LUPI_HOST_DEVICE void MCGIDI::Distributions::IncoherentPhotoAtomicScattering::sa
         } while( scatteringFactor < a_rng( ) * scatteringFactorMax );
     }
 
-    a_input.m_sampledType = Sampling::SampledType::uncorrelatedBody;
+    a_input.setSampledType( Sampling::SampledType::uncorrelatedBody );
     a_input.m_energyOut1 = energyOut * PoPI_electronMass_MeV_c2;
     a_input.m_mu = mu;
     a_input.m_phi = 2.0 * M_PI * a_rng( );
@@ -1181,12 +1184,11 @@ LUPI_HOST_DEVICE void MCGIDI::Distributions::IncoherentBoundToFreePhotoAtomicSca
         }
     }
 
-    a_input.m_sampledType = Sampling::SampledType::uncorrelatedBody;
+    a_input.setSampledType( Sampling::SampledType::uncorrelatedBody );
     a_input.m_energyOut1 = energyOut * PoPI_electronMass_MeV_c2;
     a_input.m_mu = mu;
     a_input.m_phi = 2.0 * M_PI * a_rng( );
     a_input.m_frame = productFrame( );
-
 }
 
 /* *********************************************************************************************************//**
@@ -1378,7 +1380,7 @@ LUPI_HOST_DEVICE void MCGIDI::Distributions::PairProductionGamma::sample( LUPI_m
         a_input.m_mu *= -1.0;
         a_input.m_phi += M_PI;
     }
-    a_input.m_sampledType = Sampling::SampledType::uncorrelatedBody;
+    a_input.setSampledType( Sampling::SampledType::uncorrelatedBody );
     a_input.m_energyOut1 = PoPI_electronMass_MeV_c2;
     a_input.m_frame = productFrame( );
 }
@@ -1420,7 +1422,7 @@ LUPI_HOST_DEVICE void MCGIDI::Distributions::CoherentElasticTNSL::sample( double
     if( a_energy <= m_energies[0] ) {
         a_input.m_mu = 1.0; }
     else {
-        double temperature = 1e-3 * a_input.m_temperature;                  // Assumes m_temperature is in keV/K.
+        double temperature = a_input.temperature( );
         if( temperature < m_temperatures[0] ) temperature = m_temperatures[0];
         if( temperature > m_temperatures.back( ) ) temperature = m_temperatures.back( );
         std::size_t temperatureIndex = (std::size_t) MCGIDI::binarySearchVector( temperature, m_temperatures, true );
@@ -1445,7 +1447,7 @@ LUPI_HOST_DEVICE void MCGIDI::Distributions::CoherentElasticTNSL::sample( double
         a_input.m_mu = 1.0 - 2.0 * m_energies[energyIndex] / a_energy;
     }
 
-    a_input.m_sampledType = Sampling::SampledType::uncorrelatedBody;
+    a_input.setSampledType( Sampling::SampledType::uncorrelatedBody );
     a_input.m_energyOut1 = a_energy;
     a_input.m_phi = 2.0 * M_PI * a_rng( );
 }
@@ -1468,7 +1470,6 @@ template <typename RNG>
 LUPI_HOST_DEVICE double MCGIDI::Distributions::CoherentElasticTNSL::angleBiasing( LUPI_maybeUnused Reaction const *a_reaction, LUPI_maybeUnused double a_temperature,
 		double a_energy_in, LUPI_maybeUnused double a_mu_lab, LUPI_maybeUnused RNG && a_rng, double &a_energy_out ) const {
 
-//    double temperature = 1e-3 * a_temperature;                          // Assumes a_temperature is in keV/K.
     double probability = 0.0;
 
     a_energy_out = a_energy_in;
@@ -1488,7 +1489,7 @@ template <typename RNG>
 LUPI_HOST_DEVICE void MCGIDI::Distributions::IncoherentElasticTNSL::sample( double a_energy, Sampling::Input &a_input, 
                 RNG && a_rng ) const {
 
-    double temperature = 1e-3 * a_input.m_temperature / m_temperatureToMeV_K;                  // Assumes m_temperature is in keV/K.
+    double temperature = a_input.temperature( ) / m_temperatureToMeV_K;
     double W_prime = m_DebyeWallerIntegral->evaluate( temperature );
     double twoEW = 2 * a_energy * W_prime;
     double expOfTwice_twoEW = exp( -2 * twoEW );
@@ -1503,7 +1504,7 @@ LUPI_HOST_DEVICE void MCGIDI::Distributions::IncoherentElasticTNSL::sample( doub
         a_input.m_mu = 1.0 + log( expOfTwice_twoEW + sampled_cdf * ( 1.0 - expOfTwice_twoEW ) ) / twoEW;
     }
 
-    a_input.m_sampledType = Sampling::SampledType::uncorrelatedBody;
+    a_input.setSampledType( Sampling::SampledType::uncorrelatedBody );
     a_input.m_energyOut1 = a_energy;
     a_input.m_phi = 2.0 * M_PI * a_rng( );
 }
@@ -1526,7 +1527,7 @@ template <typename RNG>
 LUPI_HOST_DEVICE double MCGIDI::Distributions::IncoherentElasticTNSL::angleBiasing( LUPI_maybeUnused Reaction const *a_reaction, double a_temperature,
 		double a_energy_in, double a_mu_lab, LUPI_maybeUnused RNG && a_rng, double &a_energy_out ) const {
 
-    double temperature = 1e-3 * a_temperature / m_temperatureToMeV_K;                          // Assumes a_temperature is in keV/K.
+    double temperature = a_temperature / m_temperatureToMeV_K;
     double W_prime = m_DebyeWallerIntegral->evaluate( temperature );
     double twoEW = 2 * a_energy_in * W_prime;
     double probability = exp( -twoEW * ( 1.0 - a_mu_lab ) ) * twoEW / ( 1.0 - exp( -2 * twoEW ) );
@@ -1547,7 +1548,7 @@ LUPI_HOST_DEVICE double MCGIDI::Distributions::IncoherentElasticTNSL::angleBiasi
 template <typename RNG>
 LUPI_HOST_DEVICE void MCGIDI::Distributions::Unspecified::sample( LUPI_maybeUnused double a_X, Sampling::Input &a_input, LUPI_maybeUnused RNG && a_rng ) const {
 
-    a_input.m_sampledType = Sampling::SampledType::unspecified;
+    a_input.setSampledType( Sampling::SampledType::unspecified );
     a_input.m_energyOut1 = 0.;
     a_input.m_mu = 0.;
     a_input.m_phi = 0.;
@@ -1980,10 +1981,22 @@ LUPI_HOST_DEVICE double MCGIDI::Probabilities::Recoil2d::sample( LUPI_maybeUnuse
     return( 0.0 );
 }
 
+/* *********************************************************************************************************
+ * Sampling for NBody phase space.
+ *
+ * @param a_x2              [in]    Incident energy of the projectile.
+ * @param a_rngValue        [in]    The GIDI::Protare whose data is to be used to construct *this*.
+ * @param a_rng             [in]    This argument is not used by this method but needed to match ProbabilityBase1d::sample's definition.
+ ***********************************************************************************************************/
+
 template <typename RNG>
 LUPI_HOST_DEVICE double MCGIDI::Probabilities::NBodyPhaseSpace2d::sample( double a_x2, double a_rngValue, RNG && a_rng ) const {
 
-    return( ( m_energy_in_COMFactor * a_x2 + m_Q ) * m_massFactor * m_dist->sample( a_rngValue, a_rng ) );
+    double energyMax = m_energy_in_COMFactor * a_x2 + m_Q;
+
+    if( energyMax < 0.0 ) return( 0.0 );        // Kludge for now until for upscatter model A until sampling below threshold is fixed.
+
+    return( energyMax * m_massFactor * m_dist->sample( a_rngValue, a_rng ) );
 }
 
 inline LUPI_HOST_DEVICE static double MCGIDI_sampleEvaporation( double a_xMax, double a_rngValue ) {
@@ -2147,10 +2160,21 @@ C    determine x1.
 
 // From file: MCGIDI_heatedCrossSections.cpp
 
+/* *********************************************************************************************************//**
+ * Returns the requested reaction's multi-group cross section for target temperature *a_temperature* and projectile multi-group *a_hashIndex*.
+ *
+ * @param a_URR_protareInfos    [in]    URR information.
+ * @param a_URR_index           [in]    If not negative, specifies the index in *a_URR_protareInfos*.
+ * @param a_hashIndex           [in]    Specifies projectile energy hash index.
+ * @param a_temperature         [in]    The temperature of the target.
+ * @param a_energy              [in]    The energy of the projectile.
+ * @param a_crossSection        [in]    The total cross section for the protare at *a_temperature* and *a_energy*.
+ * @param a_rng                 [in]    The random number generator function that returns a double in the range [0, 1.0).
+ ***********************************************************************************************************/
 
 template <typename RNG>
-LUPI_HOST_DEVICE int MCGIDI::HeatedCrossSectionsContinuousEnergy::sampleReaction( URR_protareInfos const &a_URR_protareInfos, int a_URR_index, 
-                int a_hashIndex, double a_temperature, double a_energy, double a_crossSection, RNG && a_rng ) const {
+LUPI_HOST_DEVICE int MCGIDI::HeatedCrossSectionsContinuousEnergy::sampleReaction( URR_protareInfos const &a_URR_protareInfos, 
+                int a_URR_index, int a_hashIndex, double a_temperature, double a_energy, double a_crossSection, RNG && a_rng ) const {
 
     int i1, sampled_reaction_index, temperatureIndex1, temperatureIndex2, number_of_temperatures = static_cast<int>( m_temperatures.size( ) );
     double sampleCrossSection = a_crossSection * a_rng( );
@@ -2223,7 +2247,7 @@ LUPI_HOST_DEVICE int MCGIDI::HeatedCrossSectionsContinuousEnergy::sampleReaction
  * @param a_hashIndex           [in]    The multi-group index.
  * @param a_temperature         [in]    The temperature of the target.
  * @param a_energy              [in]    The energy of the projectile.
- * @param a_crossSection        [in]    The index of the reaction.
+ * @param a_crossSection        [in]    The total cross section for the protare at *a_temperature* and *a_energy*.
  * @param a_rng                 [in]    The random number generator function that returns a double in the range [0, 1.0).
  ***********************************************************************************************************/
 
@@ -2283,7 +2307,8 @@ LUPI_HOST_DEVICE int MCGIDI::HeatedCrossSectionsMultiGroup::sampleReaction( int 
 // From file: MCGIDI_misc.cpp
 
 /* *********************************************************************************************************//**
- * The function returns a normalized Maxwellian speed (i.e., v = |velocity|) in 3d (i.e., v^2 Exp( -v^2 )).
+ * This function returns a normalized Maxwellian speed (i.e., v = |velocity|) in 3d (i.e., x^2 Exp( -x^2 ))
+ * where v = sqrt(2 * T / m) * x.
  * Using formula in https://link.springer.com/content/pdf/10.1007%2Fs10955-011-0364-y.pdf.
  * Author Nader M.A. Mohamed, title "Efficient Algorithm for Generating Maxwell Random Variables".
  *
@@ -2306,74 +2331,7 @@ inline LUPI_HOST_DEVICE double sampleBetaFromMaxwellian( RNG && a_rng ) {
     return( beta );
 }
 
-/* *********************************************************************************************************//**
- * This function is used internally to sample a target's velocity (speed and cosine of angle relative to projectile)
- * for a heated target using zero temperature, multi-grouped cross sections.
- *
- * @param a_protare             [in]    The Protare instance for the projectile and target.
- * @param a_projectileEnergy    [in]    The energy of the projectile in the lab frame of the target.
- * @param a_input               [in]    Contains needed input like the targets temperature. Also will have the target sampled velocity on return if return value is *true*.
- * @param a_rng                 [in]    The random number generator function that returns a double in the range [0, 1.0).
- *
- * @return                              Returns *true* if target velocity is sampled and false otherwise.
- ***********************************************************************************************************/
 namespace MCGIDI {
-template <typename RNG>
-inline LUPI_HOST_DEVICE bool sampleTargetBetaForUpscatterModelA( Protare const *a_protare, double a_projectileEnergy, Sampling::Input &a_input,
-                RNG && a_rng ) {
-
-    double projectileBeta = MCGIDI_particleBeta( a_protare->projectileMass( ), a_projectileEnergy );
-
-    double temperature = a_input.m_temperature * 1e-3;                   // FIXME Assumes m_temperature is in keV/k for now.
-    double targetThermalBeta = MCGIDI_particleBeta( a_protare->targetMass( ), temperature );
-
-    if( targetThermalBeta < 1e-4 * projectileBeta ) return( false );
-
-    double relativeBetaMin = projectileBeta - 2.0 * targetThermalBeta;
-    double relativeBetaMax = projectileBeta + 2.0 * targetThermalBeta;
-
-    Vector<double> const &upscatterModelAGroupVelocities = a_protare->upscatterModelAGroupVelocities( );
-    int maxIndex = (int) upscatterModelAGroupVelocities.size( ) - 2;
-    int relativeBetaMinIndex = binarySearchVector( relativeBetaMin, upscatterModelAGroupVelocities, true );
-    int relativeBetaMaxIndex = binarySearchVector( relativeBetaMax, upscatterModelAGroupVelocities, true );
-    double targetBeta, relativeBeta, mu;
-
-    if( relativeBetaMinIndex >= maxIndex ) relativeBetaMinIndex = maxIndex;
-    if( relativeBetaMaxIndex >= maxIndex ) relativeBetaMaxIndex = maxIndex;
-
-    if( relativeBetaMinIndex == relativeBetaMaxIndex ) {
-        targetBeta = targetThermalBeta * sampleBetaFromMaxwellian( a_rng );
-        mu = 1.0 - 2.0 * a_rng( );
-        relativeBeta = sqrt( targetBeta * targetBeta + projectileBeta * projectileBeta - 2.0 * mu * targetBeta * projectileBeta ); }
-    else {
-
-        Vector<double> const &upscatterModelACrossSection = a_input.m_reaction->upscatterModelACrossSection( );
-        double reactionRate;
-        double reactionRateMax = 0;
-        for( int i1 = relativeBetaMinIndex; i1 <= relativeBetaMaxIndex; ++i1 ) {
-            reactionRate = upscatterModelACrossSection[i1] * upscatterModelAGroupVelocities[i1+1];
-            if( reactionRate > reactionRateMax ) reactionRateMax = reactionRate;
-        }
-
-        do {
-            targetBeta = targetThermalBeta * sampleBetaFromMaxwellian( a_rng );
-            mu = 1.0 - 2.0 * a_rng( );
-            relativeBeta = sqrt( targetBeta * targetBeta + projectileBeta * projectileBeta - 2.0 * mu * targetBeta * projectileBeta );
-
-            int index = binarySearchVector( relativeBeta, upscatterModelAGroupVelocities, true );
-            if( index > maxIndex ) index = maxIndex;
-            reactionRate = upscatterModelACrossSection[index] * relativeBeta;
-        } while( reactionRate <  a_rng( ) * reactionRateMax );
-    }
-
-    a_input.m_projectileBeta = projectileBeta;
-    a_input.m_relativeMu = mu;
-    a_input.m_targetBeta = targetBeta;
-    a_input.m_relativeBeta = relativeBeta;
-    a_input.m_projectileEnergy = particleKineticEnergy( a_protare->projectileMass( ), relativeBeta );
-
-    return( true );
-}
 
 /* *********************************************************************************************************//**
  * This function boost a particle from one frame to another frame. The frames have a relative speed *a_boostSpeed*
@@ -2389,8 +2347,9 @@ inline LUPI_HOST_DEVICE void upScatterModelABoostParticle( Sampling::Input &a_in
 
     double C_rel = 1.0;
     if( a_input.m_relativeBeta != 0.0 ) {
-        C_rel = ( a_input.m_projectileBeta - a_input.m_relativeMu * a_input.m_targetBeta ) / a_input.m_relativeBeta;
-        if( C_rel > 1.0 ) C_rel = 1.0;                  // Handle round-off issue. Probably should check who big the issue is.
+        C_rel = ( a_input.m_projectileBeta - a_input.m_muLab * a_input.m_targetBeta ) / a_input.m_relativeBeta;
+        if( C_rel >  1.0 ) C_rel =  1.0;                // Handle round-off issue. Probably should check how big the issue is.
+        if( C_rel < -1.0 ) C_rel = -1.0;                // Handle round-off issue. Probably should check how big the issue is.
     }
     double S_rel = sqrt( 1.0 - C_rel * C_rel );
 
@@ -2399,8 +2358,8 @@ inline LUPI_HOST_DEVICE void upScatterModelABoostParticle( Sampling::Input &a_in
     a_product.m_px_vx = -S_rel * pz_vz             + C_rel * a_product.m_px_vx;
 
     double targetSpeed = MCGIDI_speedOfLight_cm_sec * a_input.m_targetBeta;
-    a_product.m_pz_vz += a_input.m_relativeMu * targetSpeed;
-    a_product.m_px_vx += sqrt( 1.0 - a_input.m_relativeMu * a_input.m_relativeMu ) * targetSpeed;
+    a_product.m_pz_vz += a_input.m_muLab * targetSpeed;
+    a_product.m_px_vx += sqrt( 1.0 - a_input.m_muLab * a_input.m_muLab ) * targetSpeed;
 
     double phi = 2.0 * M_PI * a_rng( );
     double sine = sin( phi );
@@ -2414,6 +2373,7 @@ inline LUPI_HOST_DEVICE void upScatterModelABoostParticle( Sampling::Input &a_in
 
     a_product.m_kineticEnergy = particleKineticEnergyFromBeta2( a_product.m_productMass, speed2 );
 }
+
 }
 
 
@@ -2700,33 +2660,32 @@ LUPI_HOST_DEVICE void MCGIDI::Product::angleBiasingViaIntid( Reaction const *a_r
 /* *********************************************************************************************************//**
  * Samples a reaction of *this* and returns its index.
  *
- * @param   a_URR_protareInfos  [in]    URR information.
- * @param   a_hashIndex         [in]    The cross section hash index.
- * @param   a_temperature       [in]    The target temperature.
- * @param   a_energy            [in]    The projectile energy.
- * @param   a_crossSection      [in]    The total cross section at *a_temperature* and *a_energy*.
- * @param a_rng                 [in]    The random number generator function that returns a double in the range [0, 1.0).
+ * @param a_input               [in/out]    Sample options requested by user.
+ * @param a_URR_protareInfos    [in]        URR information.
+ * @param a_hashIndex           [in]        Specifies the continuous energy hash index or multi-group index.
+ * @param a_crossSection        [in]        The total cross section for the protare at *a_input.temperature()* and *a_input.energy()*.
+ * @param a_rng                 [in]        The random number generator function that returns a double in the range [0, 1.0).
  *
  * @return                          The index of the sampled reaction.
  ***********************************************************************************************************/
 
 template <typename RNG>
-LUPI_HOST_DEVICE int MCGIDI::Protare::sampleReaction( URR_protareInfos const &a_URR_protareInfos, int a_hashIndex, double a_temperature, 
-                double a_energy, double a_crossSection, RNG && a_rng ) const {
+LUPI_HOST_DEVICE int MCGIDI::Protare::sampleReaction( Sampling::Input &a_input, URR_protareInfos const &a_URR_protareInfos, 
+                int a_hashIndex, double a_crossSection, RNG && a_rng ) const {
 
     int reactionIndex = -1;
 
     switch( protareType( ) ) {
     case ProtareType::single: 
-        reactionIndex = static_cast<ProtareSingle const *>( this )->sampleReaction( a_URR_protareInfos, a_hashIndex, a_temperature, a_energy, 
+        reactionIndex = static_cast<ProtareSingle const *>( this )->sampleReaction( a_input, a_URR_protareInfos, a_hashIndex, 
                 a_crossSection, a_rng );
         break;
     case ProtareType::composite:
-        reactionIndex = static_cast<ProtareComposite const *>( this )->sampleReaction( a_URR_protareInfos, a_hashIndex, a_temperature, a_energy, 
+        reactionIndex = static_cast<ProtareComposite const *>( this )->sampleReaction( a_input, a_URR_protareInfos, a_hashIndex, 
                 a_crossSection, a_rng );
         break;
     case ProtareType::TNSL:
-        reactionIndex = static_cast<ProtareTNSL const *>( this )->sampleReaction( a_URR_protareInfos, a_hashIndex, a_temperature, a_energy, 
+        reactionIndex = static_cast<ProtareTNSL const *>( this )->sampleReaction( a_input, a_URR_protareInfos, a_hashIndex, 
                 a_crossSection, a_rng );
         break;
     }
@@ -2771,7 +2730,7 @@ LUPI_HOST_DEVICE void MCGIDI::ProtareSingle::sampleBranchingGammas( Sampling::In
                     energyLevelSampleWidthLower = a_rng( ) * nuclideGammaBranchStateInfo->nuclearLevelEnergyWidth( );
                 }
                 if( nuclideGammaBranchInfo->photonEmissionProbability( ) > a_rng( ) ) {
-                    a_input.m_sampledType = Sampling::SampledType::photon;
+                    a_input.setSampledType( Sampling::SampledType::photon );
                     a_input.m_dataInTargetFrame = false;
                     a_input.m_frame = GIDI::Frame::lab;
 
@@ -2790,25 +2749,108 @@ LUPI_HOST_DEVICE void MCGIDI::ProtareSingle::sampleBranchingGammas( Sampling::In
 }
 
 /* *********************************************************************************************************//**
- * Returns the index of a sampled reaction for a target with termpature *a_temperature*, a projectile with energy *a_energy* and total cross section 
- * *a_crossSection*. Random numbers are obtained via *a_rng*.
+ * This function is used internally to sample a target's velocity (speed and cosine of angle relative to projectile)
+ * for a heated target using zero temperature, multi-grouped cross sections.
  *
- * @param a_URR_protareInfos    [in]    URR information.
- * @param a_hashIndex           [in]    Specifies the continuous energy or multi-group index.
- * @param a_temperature         [in]    The temperature of the target.
- * @param a_energy              [in]    The energy of the projectile.
- * @param a_crossSection        [in]    The total cross section.
- * @param a_rng                 [in]    The random number generator function that returns a double in the range [0, 1.0).
+ * @param a_input               [in/out]    Contains needed input like the targets temperature. Also will have the target sampled velocity on return if return value is *true*.
+ * @param a_rng                 [in]        The random number generator function that returns a double in the range [0, 1.0).
+ *
+ * @return                                  Returns *true* if target velocity is sampled and false otherwise.
  ***********************************************************************************************************/
 
 template <typename RNG>
-LUPI_HOST_DEVICE int MCGIDI::ProtareSingle::sampleReaction( URR_protareInfos const &a_URR_protareInfos, int a_hashIndex, double a_temperature, double a_energy, 
-                double a_crossSection, RNG && a_rng ) const {
+inline LUPI_HOST_DEVICE bool MCGIDI::ProtareSingle::sampleTargetBetaForUpscatterModelA( Sampling::Input &a_input, RNG && a_rng ) const {
 
-    if( m_continuousEnergy ) return( m_heatedCrossSections.sampleReaction( a_URR_protareInfos, m_URR_index, a_hashIndex, a_temperature, a_energy, 
-            a_crossSection, a_rng ) );
+    double projectileBeta = MCGIDI_particleBeta( m_projectileMass, a_input.energy( ) );
+    double targetThermalBeta = MCGIDI_particleBeta( m_targetMass, a_input.temperature( ) );
 
-    return( m_heatedMultigroupCrossSections.sampleReaction( a_hashIndex, a_temperature, a_energy, a_crossSection, a_rng ) );
+    a_input.m_projectileBeta = projectileBeta;
+    a_input.m_relativeBeta = projectileBeta;
+    a_input.m_muLab = 0.0;
+    a_input.m_targetBeta = 0.0;
+
+    if( targetThermalBeta < 1e-4 * projectileBeta ) return( false );
+
+    a_input.m_modelTemperature = 0.0;
+
+    double relativeBetaMin = projectileBeta - 2.0 * targetThermalBeta;
+    double relativeBetaMax = projectileBeta + 2.0 * targetThermalBeta;
+
+    int maxIndex = (int) m_upscatterModelAGroupVelocities.size( ) - 2;
+    int relativeBetaMinIndex = binarySearchVector( relativeBetaMin, m_upscatterModelAGroupVelocities, true );
+    int relativeBetaMaxIndex = binarySearchVector( relativeBetaMax, m_upscatterModelAGroupVelocities, true );
+    double targetBeta, relativeBeta, mu;
+
+    if( relativeBetaMinIndex >= maxIndex ) relativeBetaMinIndex = maxIndex;
+    if( relativeBetaMaxIndex >= maxIndex ) relativeBetaMaxIndex = maxIndex;
+
+    if( relativeBetaMinIndex == relativeBetaMaxIndex ) {
+        targetBeta = targetThermalBeta * sampleBetaFromMaxwellian( a_rng );
+        mu = 1.0 - 2.0 * a_rng( );
+        relativeBeta = sqrt( targetBeta * targetBeta + projectileBeta * projectileBeta - 2.0 * mu * targetBeta * projectileBeta ); }
+    else {
+
+        double reactionRate;
+        double reactionRateMax = 0;
+        for( int i1 = relativeBetaMinIndex; i1 <= relativeBetaMaxIndex; ++i1 ) {
+            reactionRate = m_upscatterModelACrossSection[i1] * m_upscatterModelAGroupVelocities[i1+1];
+            if( reactionRate > reactionRateMax ) reactionRateMax = reactionRate;
+        }
+
+        do {
+            targetBeta = targetThermalBeta * sampleBetaFromMaxwellian( a_rng );
+            mu = 1.0 - 2.0 * a_rng( );
+            relativeBeta = sqrt( targetBeta * targetBeta + projectileBeta * projectileBeta - 2.0 * mu * targetBeta * projectileBeta );
+
+            int index = binarySearchVector( relativeBeta, m_upscatterModelAGroupVelocities, true );
+            if( index > maxIndex ) index = maxIndex;
+            reactionRate = m_upscatterModelACrossSection[index] * relativeBeta;
+        } while( reactionRate <  a_rng( ) * reactionRateMax );
+    }
+
+    a_input.m_modelEnergy = particleKineticEnergy( m_projectileMass, relativeBeta );
+    a_input.m_relativeBeta = relativeBeta;
+    a_input.m_muLab = mu;
+    a_input.m_targetBeta = targetBeta;
+
+    return( true );
+}
+
+/* *********************************************************************************************************//**
+ * Returns the index of a sampled reaction for target temperature, projectile energy and total cross section 
+ * as specified via argument *a_input*. Random numbers are obtained via *a_rng*.
+ *
+ * @param a_input               [in/out]    Sample options requested by user. The values m_modelTemperature and m_modelEnergy are set by this method.
+ * @param a_URR_protareInfos    [in]        URR information.
+ * @param a_hashIndex           [in]        Specifies the continuous energy hash index or multi-group index.
+ * @param a_crossSection        [in]        The total cross section for the protare at *a_input.temperature()* and *a_input.energy()*.
+ * @param a_rng                 [in]        The random number generator function that returns a double in the range [0, 1.0).
+ ***********************************************************************************************************/
+
+template <typename RNG>
+LUPI_HOST_DEVICE int MCGIDI::ProtareSingle::sampleReaction( Sampling::Input &a_input, URR_protareInfos const &a_URR_protareInfos, 
+                int a_hashIndex, double a_crossSection, RNG && a_rng ) const {
+
+    int hashIndex = a_hashIndex;
+    double crossSection1 = a_crossSection;
+
+    a_input.m_dataInTargetFrame = false;
+    a_input.m_modelTemperature = a_input.m_temperature;
+    a_input.m_modelEnergy = a_input.m_energy;
+
+    if( upscatterModelASupported( ) && ( a_input.m_upscatterModel == Sampling::Upscatter::Model::A ) ) {
+        a_input.m_dataInTargetFrame = sampleTargetBetaForUpscatterModelA( a_input, a_rng );
+        if( a_input.m_dataInTargetFrame ) {
+            hashIndex = m_domainHash.index( a_input.m_modelEnergy );
+            crossSection1 = crossSection( a_URR_protareInfos, hashIndex, a_input.m_modelTemperature, a_input.m_modelEnergy, true );
+        }
+    }
+
+    if( m_continuousEnergy ) return( m_heatedCrossSections.sampleReaction( a_URR_protareInfos, m_URR_index, hashIndex, 
+            a_input.m_modelTemperature, a_input.m_modelEnergy, crossSection1, a_rng ) );
+
+    return( m_heatedMultigroupCrossSections.sampleReaction( hashIndex, a_input.m_modelTemperature, a_input.m_modelEnergy, 
+            crossSection1, a_rng ) );
 }
 
 
@@ -2817,18 +2859,18 @@ LUPI_HOST_DEVICE int MCGIDI::ProtareSingle::sampleReaction( URR_protareInfos con
 /* *********************************************************************************************************//**
  * Samples a reaction of *this* and returns its index.
  *
- * @param   a_URR_protareInfos  [in]    URR information.
- * @param   a_hashIndex         [in]    The cross section hash index.
- * @param   a_temperature       [in]    The target temperature.
- * @param   a_energy            [in]    The projectile energy.
- * @param   a_crossSection      [in]    The total cross section at *a_temperature* and *a_energy*.
+ * @param a_input               [in]    Sample options requested by user.
+ * @param a_URR_protareInfos    [in]    URR information.
+ * @param a_hashIndex           [in]    Specifies the continuous energy hash index or multi-group index.
+ * @param a_crossSection        [in]    The total cross section for the protare at *a_input.temperature()* and *a_input.energy()*.
  * @param a_rng                 [in]    The random number generator function that returns a double in the range [0, 1.0).
  *
- * @return                          The index of the sampled reaction.
+ * @return                              The index of the sampled reaction.
  ***********************************************************************************************************/
 
 template <typename RNG>
-LUPI_HOST_DEVICE int MCGIDI::ProtareComposite::sampleReaction( URR_protareInfos const &a_URR_protareInfos, int a_hashIndex, double a_temperature, double a_energy, double a_crossSection, RNG && a_rng ) const {
+LUPI_HOST_DEVICE int MCGIDI::ProtareComposite::sampleReaction( Sampling::Input &a_input, URR_protareInfos const &a_URR_protareInfos, 
+                int a_hashIndex, double a_crossSection, RNG && a_rng ) const {
 
     std::size_t length = static_cast<std::size_t>( m_protares.size( ) );
     int reaction_index = 0;
@@ -2836,11 +2878,11 @@ LUPI_HOST_DEVICE int MCGIDI::ProtareComposite::sampleReaction( URR_protareInfos 
     double cross_section_rng = a_rng( ) * a_crossSection;
 
     for( std::size_t i1 = 0; i1 < length; ++i1 ) {
-        double cross_section = m_protares[i1]->crossSection( a_URR_protareInfos, a_hashIndex, a_temperature, a_energy, true );
+        double cross_section = m_protares[i1]->crossSection( a_URR_protareInfos, a_hashIndex, a_input.temperature( ), a_input.energy( ), true );
 
         cross_section_sum += cross_section;
         if( cross_section_sum > cross_section_rng ) {
-            int reaction_index2 = m_protares[i1]->sampleReaction( a_URR_protareInfos, a_hashIndex, a_temperature, a_energy, cross_section, a_rng );
+            int reaction_index2 = m_protares[i1]->sampleReaction( a_input, a_URR_protareInfos, a_hashIndex, cross_section, a_rng );
 
             reaction_index += reaction_index2;
             if( reaction_index2  == MCGIDI_nullReaction ) reaction_index = MCGIDI_nullReaction;
@@ -2858,32 +2900,33 @@ LUPI_HOST_DEVICE int MCGIDI::ProtareComposite::sampleReaction( URR_protareInfos 
 /* *********************************************************************************************************//**
  * Returns the total cross section.
  *
+ * @param a_input               [in]    Sample options requested by user.
  * @param a_URR_protareInfos    [in]    URR information.
- * @param a_hashIndex           [in]    The cross section hash index.
- * @param a_temperature         [in]    The target temperature.
- * @param a_energy              [in]    The projectile energy.
- * @param a_crossSection        [in]    The total cross section at *a_temperature* and *a_energy*.
+ * @param a_hashIndex           [in]    Specifies the continuous energy hash index or multi-group index.
+ * @param a_crossSection        [in]    The total cross section for the protare at *a_input.temperature()* and *a_input.energy()*.
  * @param a_rng                 [in]    The random number generator function that returns a double in the range [0, 1.0).
  *
  * @return                              The index of the sampled reaction.
  ***********************************************************************************************************/
 
 template <typename RNG>
-LUPI_HOST_DEVICE int MCGIDI::ProtareTNSL::sampleReaction( URR_protareInfos const &a_URR_protareInfos, int a_hashIndex, double a_temperature, double a_energy, double a_crossSection, RNG && a_rng ) const {
+LUPI_HOST_DEVICE int MCGIDI::ProtareTNSL::sampleReaction( Sampling::Input &a_input, URR_protareInfos const &a_URR_protareInfos, 
+                int a_hashIndex, double a_crossSection, RNG && a_rng ) const {
 
     int reactionIndex = 0;
 
-    if( ( a_energy < m_TNSL_maximumEnergy ) && ( a_temperature <= m_TNSL_maximumTemperature ) ) {
-        double TNSL_crossSection = m_TNSL->crossSection( a_URR_protareInfos, a_hashIndex, a_temperature, a_energy, true );
+    if( ( a_input.energy( ) < m_TNSL_maximumEnergy ) && ( a_input.temperature( ) <= m_TNSL_maximumTemperature ) ) {
+        double TNSL_crossSection = m_TNSL->crossSection( a_URR_protareInfos, a_hashIndex, a_input.temperature( ), a_input.energy( ), true );
 
         if( TNSL_crossSection > a_rng( ) * a_crossSection ) {
-            reactionIndex = m_TNSL->sampleReaction( a_URR_protareInfos, a_hashIndex, a_temperature, a_energy, TNSL_crossSection, a_rng ); }
+            reactionIndex = m_TNSL->sampleReaction( a_input, a_URR_protareInfos, a_hashIndex, TNSL_crossSection, a_rng ); }
         else { 
-            reactionIndex = m_protareWithoutElastic->sampleReaction( a_URR_protareInfos, a_hashIndex, a_temperature, a_energy, a_crossSection - TNSL_crossSection, a_rng );
+            reactionIndex = m_protareWithoutElastic->sampleReaction( a_input, a_URR_protareInfos, a_hashIndex, 
+                    a_crossSection - TNSL_crossSection, a_rng );
             if( reactionIndex != MCGIDI_nullReaction ) reactionIndex += m_numberOfTNSLReactions + 1;
         } }
     else {
-        reactionIndex = m_protareWithElastic->sampleReaction( a_URR_protareInfos, a_hashIndex, a_temperature, a_energy, a_crossSection, a_rng );
+        reactionIndex = m_protareWithElastic->sampleReaction( a_input, a_URR_protareInfos, a_hashIndex, a_crossSection, a_rng );
         if( reactionIndex != MCGIDI_nullReaction ) reactionIndex += m_numberOfTNSLReactions;
     }
 
@@ -2897,7 +2940,6 @@ LUPI_HOST_DEVICE int MCGIDI::ProtareTNSL::sampleReaction( URR_protareInfos const
  * This method adds sampled products to *a_products*.
  *
  * @param a_protare                 [in]    The Protare this Reaction belongs to.
- * @param a_projectileEnergy        [in]    The energy of the projectile.
  * @param a_input                   [in]    Sample options requested by user.
  * @param a_rng                     [in]    The random number generator function that returns a double in the range [0, 1.0).
  * @param a_products                [in]    The object to add all sampled products to.
@@ -2905,22 +2947,16 @@ LUPI_HOST_DEVICE int MCGIDI::ProtareTNSL::sampleReaction( URR_protareInfos const
  ***********************************************************************************************************/
 
 template <typename RNG, typename PUSHBACK>
-LUPI_HOST_DEVICE void MCGIDI::Reaction::sampleProducts( Protare const *a_protare, double a_projectileEnergy, Sampling::Input &a_input, 
+LUPI_HOST_DEVICE void MCGIDI::Reaction::sampleProducts( Protare const *a_protare, Sampling::Input &a_input, 
                 RNG && a_rng, PUSHBACK && a_push_back, Sampling::ProductHandler &a_products, bool a_checkOrphanProducts ) const {
 
-    double projectileEnergy = a_projectileEnergy;
+    double projectileEnergy = a_input.modelEnergy( );
 
     a_input.m_GRIN_intermediateResidual = -1;
     a_input.m_reaction = this;
     a_input.m_projectileMass = m_projectileMass;
     a_input.m_targetMass = m_targetMass;
-
-    a_input.m_dataInTargetFrame = false;
-    if( upscatterModelASupported( ) && ( a_input.m_upscatterModel == Sampling::Upscatter::Model::A ) ) {
-
-        a_input.m_dataInTargetFrame = sampleTargetBetaForUpscatterModelA( m_protareSingle, a_projectileEnergy, a_input, a_rng );
-        if( a_input.m_dataInTargetFrame ) projectileEnergy = a_input.m_projectileEnergy;
-    }
+    a_input.m_relativeBeta = MCGIDI_particleBeta( m_projectileMass, projectileEnergy );
 
     if( m_GRIN_specialSampleProducts ) {
         if( m_GRIN_capture != nullptr ) {
@@ -2960,7 +2996,7 @@ LUPI_HOST_DEVICE void MCGIDI::Reaction::sampleProducts( Protare const *a_protare
     }
 
     if( m_totalDelayedNeutronMultiplicity != nullptr ) {
-        double totalDelayedNeutronMultiplicity = m_totalDelayedNeutronMultiplicity->evaluate( a_projectileEnergy );
+        double totalDelayedNeutronMultiplicity = m_totalDelayedNeutronMultiplicity->evaluate( projectileEnergy );
 
         if( a_rng( ) < totalDelayedNeutronMultiplicity ) {       // Assumes that totalDelayedNeutronMultiplicity < 1.0, which it is.
             double sum = 0.0;
@@ -2970,12 +3006,12 @@ LUPI_HOST_DEVICE void MCGIDI::Reaction::sampleProducts( Protare const *a_protare
                 DelayedNeutron const *delayedNeutron1 = m_delayedNeutrons[i1];
                 Product const &product = delayedNeutron1->product( );
 
-                sum += product.multiplicity( )->evaluate( a_projectileEnergy );
+                sum += product.multiplicity( )->evaluate( projectileEnergy );
                 if( sum >= totalDelayedNeutronMultiplicity ) {
-                    product.distribution( )->sample( a_projectileEnergy, a_input, a_rng );
+                    product.distribution( )->sample( projectileEnergy, a_input, a_rng );
                     a_input.m_delayedNeutronIndex = delayedNeutron1->delayedNeutronIndex( );
                     a_input.m_delayedNeutronDecayRate = delayedNeutron1->rate( );
-                    a_products.add( a_projectileEnergy, product.intid( ), product.index( ), product.userParticleIndex( ), product.mass( ), a_input, a_rng, a_push_back, false );
+                    a_products.add( a_input.energy( ), product.intid( ), product.index( ), product.userParticleIndex( ), product.mass( ), a_input, a_rng, a_push_back, false );
                     break;
                 }
             }
@@ -2983,7 +3019,7 @@ LUPI_HOST_DEVICE void MCGIDI::Reaction::sampleProducts( Protare const *a_protare
     }
 
     if( m_fissionResiduaIntid != -1 ) {             // Special treatment to add 2 ENDL 99120 or 99125 products.
-        a_input.m_sampledType = MCGIDI::Sampling::SampledType::unspecified;
+        a_input.setSampledType( MCGIDI::Sampling::SampledType::unspecified );
         a_input.m_frame = GIDI::Frame::lab;
         a_input.m_energyOut1 = 0.0;
         a_input.m_mu = 0.0;
@@ -3030,7 +3066,7 @@ LUPI_HOST_DEVICE bool MCGIDI::GRIN_capture::sampleProducts( ProtareSingle const 
 
     a_input.m_GRIN_intermediateResidual = nuclideGammaBranchStateInfo->intid( );
 
-    a_input.m_sampledType = Sampling::SampledType::photon;
+    a_input.setSampledType( Sampling::SampledType::photon );
     a_input.m_dataInTargetFrame = false;
     a_input.m_frame = GIDI::Frame::lab;
 
@@ -3097,7 +3133,7 @@ LUPI_HOST_DEVICE bool MCGIDI::GRIN_inelastic::sampleProducts( ProtareSingle cons
     }
     if( Kp < 0 ) Kp = 0.;           // FIXME There needs to be a better test here.
 
-    a_input.m_sampledType = Sampling::SampledType::firstTwoBody;
+    a_input.setSampledType( Sampling::SampledType::firstTwoBody );
     a_input.m_mu = 1.0 - 2.0 * a_rng( );
     a_input.m_phi = 2. * M_PI * a_rng( );
     kinetics_COMKineticEnergy2LabEnergyAndMomentum( betaBoast, Kp, m_neutronMass, residualMass, a_input );
@@ -3189,7 +3225,7 @@ LUPI_HOST_DEVICE void MCGIDI::Reaction::sampleNullProducts( Protare const &a_pro
         RNG && a_rng, PUSHBACK && a_push_back, Sampling::ProductHandler &a_products ) {
 
     a_input.m_GRIN_intermediateResidual = -1;
-    a_input.m_sampledType = Sampling::SampledType::uncorrelatedBody;
+    a_input.setSampledType( Sampling::SampledType::uncorrelatedBody );
     a_input.m_dataInTargetFrame = false;
     a_input.m_frame = GIDI::Frame::lab;
     a_input.m_delayedNeutronIndex = -1;

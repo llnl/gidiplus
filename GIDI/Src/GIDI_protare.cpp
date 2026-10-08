@@ -217,7 +217,9 @@ ProtareSingle::ProtareSingle( Construction::Settings const &a_construction, std:
         throw std::runtime_error( "Only XML/HDF file types supported." );
     }
 
+#ifdef GIDIP_TEST_PARSING
     if( a_construction.parseMode( ) != Construction::ParseMode::noParsing ) {
+#endif
         HAPI::Node protare = m_doc->first_child( );
 
         SetupInfo setupInfo( this );
@@ -225,7 +227,9 @@ ProtareSingle::ProtareSingle( Construction::Settings const &a_construction, std:
         setupInfo.m_particleSubstitution = &particleSubstitution;
 
         initialize( a_construction, protare, setupInfo, a_pops, a_targetRequiredInGlobalPoPs, a_requiredInPoPs );
+#ifdef GIDIP_TEST_PARSING
     }
+#endif
 }
 
 /* *********************************************************************************************************//**
@@ -388,6 +392,7 @@ void ProtareSingle::initialize( Construction::Settings const &a_construction, HA
     m_projectileFrame = parseFrame( a_node, a_setupInfo, GIDI_projectileFrameChars );
 
     m_styles.parse( a_construction, a_node.child( GIDI_stylesChars ), a_setupInfo, a_pops, m_internalPoPs, parseStylesSuite, nullptr );
+    m_styles.updateChainEnds( );
 
     Styles::Evaluated *evaluated = m_styles.get<Styles::Evaluated>( 0 );
 
@@ -927,22 +932,23 @@ GUPI::Ancestry const *ProtareSingle::findInAncestry3( std::string const &a_item 
  * @param a_settings            [in]    Specifies the requested label.
  * @param a_temperatureInfo     [in]    Specifies the temperature and labels use to lookup the requested data.
  * @param a_reactionsToExclude  [in]    A list of reaction indices that are to be ignored when calculating the cross section.
+ * @param a_label               [in]    If not an empty string, this is used as the label for the form to return and the *a_temperatureInfo* labels are ignored.
  *
  * @return                          The requested multi-group cross section as a GIDI::Vector.
  ***********************************************************************************************************/
 
 Vector ProtareSingle::multiGroupCrossSection( LUPI::StatusMessageReporting &a_smr, Transporting::MG const &a_settings, 
-                Styles::TemperatureInfo const &a_temperatureInfo, ExcludeReactionsSet const &a_reactionsToExclude ) const {
+                Styles::TemperatureInfo const &a_temperatureInfo, ExcludeReactionsSet const &a_reactionsToExclude, std::string const &a_label ) const {
 
     Vector vector;
 
     if( useMultiGroupSummedData( a_settings, a_reactionsToExclude ) ) {
-        vector = m_multiGroupSummedReaction->multiGroupCrossSection( a_smr, a_settings, a_temperatureInfo ); }
+        vector = m_multiGroupSummedReaction->multiGroupCrossSection( a_smr, a_settings, a_temperatureInfo, a_label ); }
     else {
         for( std::size_t i1 = 0; i1 < m_reactions.size( ); ++i1 ) {
             Reaction const *reaction1 = reactionToMultiGroup( a_settings, i1, a_reactionsToExclude );
 
-            if( reaction1 != nullptr ) vector += reaction1->multiGroupCrossSection( a_smr, a_settings, a_temperatureInfo );
+            if( reaction1 != nullptr ) vector += reaction1->multiGroupCrossSection( a_smr, a_settings, a_temperatureInfo, a_label );
         }
     }
 
@@ -1468,7 +1474,7 @@ stringAndDoublePairs ProtareSingle::muCutoffForCoulombPlusNuclearElastic( ) cons
             
             stringAndDoublePair labelMu( style2->label( ), style2->muCutoff( ) );
 
-            muCutoffs.push_back( labelMu );
+            muCutoffs.push_back( std::move( labelMu ) );
         }
     }
 
@@ -1577,6 +1583,17 @@ void ProtareSingle::toXMLList( GUPI::WriteInfo &a_writeInfo, std::string const &
     m_fissionComponents.toXMLList( a_writeInfo, indent2 );
 
     a_writeInfo.addNodeEnder( moniker( ) );
+}
+
+/* *********************************************************************************************************//**
+ * This method parses the **targetInfo** node in the **evaluated** style node into the *m_targetInfo* member of *this*.
+ *
+ * @param a_node                [in]    The protare (i.e., reactionSuite) node to be parsed and used to construct a Protare.
+ ***********************************************************************************************************/
+
+void ProtareSingle::parseEvaluatedTargetInfo( HAPI::Node const &a_node ) {
+
+    m_targetInfo.parseEvaluatedTargetInfo( a_node );
 }
 
 }

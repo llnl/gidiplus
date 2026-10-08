@@ -13,7 +13,7 @@ CppSource = $(sort $(wildcard *.cpp))
 include $(GIDI_PLUS_PATH)/Makefile.paths
 include ../Makefile.check
 
-check: crossSections crossSectionSum
+check: floatDiffs crossSections crossSectionSum
 	if [ ! -e Outputs ]; then mkdir Outputs; fi
 	./crossSections > Outputs/crossSections.out
 	../Utilities/diff.com crossSection/crossSections Benchmarks/crossSections.out Outputs/crossSections.out

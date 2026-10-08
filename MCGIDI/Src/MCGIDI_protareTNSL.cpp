@@ -76,6 +76,7 @@ LUPI_HOST ProtareTNSL::ProtareTNSL( LUPI::StatusMessageReporting &a_smr, GIDI::P
 
     reactionsToExclude.insert( 0 );
     m_protareWithoutElastic = static_cast<ProtareSingle *>( protareFromGIDIProtare( a_smr, *a_protare.protare( ), a_pops, a_settings, a_particles, a_domainHash, a_temperatureInfos, reactionsToExclude ) );
+    m_protareWithoutElastic->setUpscatterModelASupported( false );
 
     m_numberOfTNSLReactions = m_TNSL->numberOfReactions( );
     m_TNSL_maximumEnergy = m_TNSL->maximumEnergy( );
@@ -513,8 +514,11 @@ LUPI_HOST_DEVICE void ProtareTNSL::serialize2( LUPI::DataBuffer &a_buffer, LUPI:
             a_buffer.incrementPlacement( sizeof( ProtareSingle ) );
             a_buffer.incrementPlacement( sizeof( ProtareSingle ) );
     }
+    m_protareWithElastic->serializeCommon( a_buffer, a_mode );
     m_protareWithElastic->serialize2( a_buffer, a_mode );
+    m_TNSL->serializeCommon( a_buffer, a_mode );
     m_TNSL->serialize2( a_buffer, a_mode );
+    m_protareWithoutElastic->serializeCommon( a_buffer, a_mode );
     m_protareWithoutElastic->serialize2( a_buffer, a_mode );
 }
 

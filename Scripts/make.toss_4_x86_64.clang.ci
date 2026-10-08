@@ -1,6 +1,6 @@
 export CXX=clang++
 export CC=clang
-export CXXFLAGS="-std=c++11 -g -O3 -mavx -ffp-contract=off -funroll-loops -finline-functions -Wstrict-aliasing -Wno-write-strings"
+export CXXFLAGS="-std=c++11 -g -O3 -mavx -ffp-contract=off -funroll-loops -finline-functions -Wstrict-aliasing -Wno-write-strings -DMCGIDI_USE_DOUBLES"
 export CFLAGS="  -std=gnu11 -g -O3 -mavx -ffp-contract=off -funroll-loops -finline-functions -Wstrict-aliasing "
 make -j $*
 export -n CXX;

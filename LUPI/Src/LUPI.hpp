@@ -31,6 +31,12 @@
 #define LUPI_PATH_MAX ( 4 * 4096 )
 #endif
 
+#if defined (GIDIP_HAVE_COMPILER_FLOATING_POINT_EXCEPTIONS)
+void LUPI_FPE_enable( char const *a_file, int a_line );
+void LUPI_FPE_disable_and_clear( char const *a_file, int a_line );
+void LUPI_FPE_test( char const *a_file, int a_line );
+#endif
+
 namespace LUPI {
 
 #ifdef _WIN32
@@ -42,6 +48,7 @@ namespace LUPI {
 #define GNDS_formatVersion_1_10Chars "1.10"
 #define GNDS_formatVersion_2_0Chars "2.0"
 #define GNDS_formatVersion_2_0_LLNL_4Chars "2.0.LLNL_4"
+#define GNDS_formatVersion_2_1Chars "2.1"
 
 void deprecatedFunction( std::string const &a_functionName, std::string const &a_replacementName, std::string const &a_asOf );
 
@@ -109,7 +116,7 @@ class StatusMessageReporting {
         bool isError( ) { return( smr_isError( &m_smr ) ); }
         void clear( ) { smr_release( &m_smr ); }
         std::string constructMessage( std::string a_prefix, int a_reports = 1, bool a_clear = false );
-        std::string constructFullMessage( std::string a_prefix, int a_reports = 1, bool a_clear = false );
+        std::string constructFullMessage( std::string const &a_prefix, int a_reports = 1, bool a_clear = false );
 };
 
 /*
@@ -424,6 +431,8 @@ namespace Misc {
 std::string stripString( std::string const &a_string, bool a_left = true, bool a_right = true );
 std::vector<std::string> splitString( std::string const &a_string, char a_delimiter, bool a_strip = false );
 std::vector<std::string> splitString( std::string const &a_string, std::string const &a_delimiter, bool a_strip = false );
+std::string joinStrings( std::string const &a_sep, std::vector<std::string> a_strings );
+std::string replaceString( std::string const &a_string, std::string const &a_old, std::string const &a_new, bool a_all );
 std::vector<std::string> splitXLinkString( std::string const &a_string );
 bool stringToInt( std::string const &a_string, int &a_value );
 

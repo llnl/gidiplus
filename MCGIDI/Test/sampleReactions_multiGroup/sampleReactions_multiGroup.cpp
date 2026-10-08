@@ -189,6 +189,8 @@ int main( int argc, char **argv ) {
     }
     std::cout << std::endl;
 
+    MCGIDI::Sampling::Input input( true, MCGIDI::Sampling::Upscatter::Model::none );
+
     for( double energy = energyMin; energy <= energyMax; energy *= 2.0 ) {
         int hashIndex = multiGroupHash.index( energy );
 
@@ -214,9 +216,10 @@ int main( int argc, char **argv ) {
         }
         std::cout << std::endl;
 
+        input.setTemperatureAndEnergy( temperature, energy );
         std::vector<long> counts( numberOfReactions + 2, 0 );               // 2 extra for null reaction and crossSection more than sum over reactions.
         for( long i1 = 0; i1 < numberOfSamples; ++i1 ) {
-            int reactionIndex = MCProtare->sampleReaction( URR_protare_infos, hashIndex, temperature, energy, crossSectionAugmented, 
+            int reactionIndex = MCProtare->sampleReaction( input, URR_protare_infos, hashIndex, crossSectionAugmented,
                     [&]() -> double { return float64RNG64( &rngState ); } );
             if( reactionIndex > (int) numberOfReactions ) reactionIndex = (int) numberOfReactions;              // This should not happend.
             if( reactionIndex == MCGIDI_nullReaction ) reactionIndex = (int) numberOfReactions + 1;             // Null reaction.

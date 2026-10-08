@@ -100,7 +100,8 @@ int main2( int argc, char **argv ) {
             products.clear( );
 
             std::cout << "    energy = " << energy << std::endl;
-            reaction->sampleProducts( MCProtare, energy, input, [&]( ) -> double { return float64RNG64( &rngState ); },
+            input.setTemperatureAndEnergy( 0.0, energy );
+            reaction->sampleProducts( MCProtare, input, [&]( ) -> double { return float64RNG64( &rngState ); },
                     [&]( MCGIDI::Sampling::Product &a_product ) -> void { products.push_back( a_product ); }, products );
 
             for( std::size_t i2 = 0; i2 < products.size( ); ++i2 ) {

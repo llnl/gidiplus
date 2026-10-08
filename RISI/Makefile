@@ -14,8 +14,6 @@ DIRS = Src include lib Test
 default: include lib
 	cd Test; $(MAKE) default
 
-bin:
-
 all: default
 
 include:

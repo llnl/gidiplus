@@ -1042,7 +1042,16 @@ LUPI_HOST_DEVICE HeatedCrossSectionsContinuousEnergy::HeatedCrossSectionsContinu
 
 LUPI_HOST_DEVICE HeatedCrossSectionsContinuousEnergy::~HeatedCrossSectionsContinuousEnergy( ) {
 
+    clear( );
+}
+
+/* *********************************************************************************************************//**
+ ***********************************************************************************************************/
+
+LUPI_HOST_DEVICE void HeatedCrossSectionsContinuousEnergy::clear( ) {
+
     for( Vector<HeatedCrossSectionContinuousEnergy *>::const_iterator iter = m_heatedCrossSections.begin( ); iter != m_heatedCrossSections.end( ); ++iter ) delete *iter;
+    m_heatedCrossSections.clear( );
 }
 
 /* *********************************************************************************************************//**

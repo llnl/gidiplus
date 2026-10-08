@@ -9,7 +9,7 @@ SHELL = /bin/sh
 
 # These must be set by hand when we do a release.
 gidiplus_major = 3
-gidiplus_minor = 33
+gidiplus_minor = 34
 baseTag = GIDI_plus.$(gidiplus_major).$(gidiplus_minor).0
 
 DIRS_GIDI_plus = LUPI Python HAPI GUPI PoPI CADI RISI GIDI MCGIDI include lib Doc
@@ -49,6 +49,8 @@ default2: pugixml
 	@echo "INFO: HDF5_INCLUDE   = $(HDF5_INCLUDE)"
 	@echo "INFO: HDF5_LIB       = $(HDF5_LIB)"
 	cd pugixml; $(MAKE) default CXXFLAGS="$(CXXFLAGS)"
+	echo ""
+	echo "  -- numericalFunctions --"
 	cd numericalFunctions; $(MAKE) default
 	$(MAKE) doDIRS _DIRS="$(DIRS_default2)"
 

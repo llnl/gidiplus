@@ -72,7 +72,7 @@ LUPI_HOST_DEVICE Distribution::~Distribution( ) {
 }
 
 /* *********************************************************************************************************//**
- * This method calls the **setModelDBRC_data2* method if the distribution is AngularTwoBody, otherwise it * executes a thrwo.
+ * This method calls the **setModelDBRC_data2* method if the distribution is AngularTwoBody, otherwise it * executes a throw.
  *
  * @param a_modelDBRC_data      [in]    The instance storing data needed to treat the DRRC upscatter mode.
  ***********************************************************************************************************/
@@ -83,7 +83,6 @@ LUPI_HOST void Distribution::setModelDBRC_data( Sampling::Upscatter::ModelDBRC_d
 
     static_cast<AngularTwoBody *>( this )->setModelDBRC_data2( a_modelDBRC_data );
 }
-
 
 /* *********************************************************************************************************//**
  * This method serializes *this* for broadcasting as needed for MPI and GPUs. The method can count the number of required
@@ -985,7 +984,8 @@ LUPI_HOST_DEVICE IncoherentBoundToFreePhotoAtomicScattering::IncoherentBoundToFr
 LUPI_HOST IncoherentBoundToFreePhotoAtomicScattering::IncoherentBoundToFreePhotoAtomicScattering( 
                 GIDI::Distributions::IncoherentBoundToFreePhotoAtomicScattering const &a_incoherentBoundToFreePhotoAtomicScattering,
                 SetupInfo &a_setupInfo ) :
-        Distribution( Type::incoherentBoundToFreePhotoAtomicScattering, a_incoherentBoundToFreePhotoAtomicScattering, a_setupInfo ) {
+        Distribution( Type::incoherentBoundToFreePhotoAtomicScattering, a_incoherentBoundToFreePhotoAtomicScattering, a_setupInfo ),
+        m_bindingEnergy( 0.0 ) {
 
     GIDI::ProtareSingle const &GIDI_protare = a_setupInfo.m_GIDI_protare;
     auto monikers = GIDI_protare.styles( ).findAllOfMoniker( GIDI_MonteCarlo_cdfStyleChars );
@@ -1169,7 +1169,8 @@ LUPI_HOST_DEVICE void IncoherentPhotoAtomicScatteringElectron::serialize( LUPI::
  * Basic constructor.
  ***********************************************************************************************************/
 
-LUPI_HOST_DEVICE PairProductionGamma::PairProductionGamma( ) {
+LUPI_HOST_DEVICE PairProductionGamma::PairProductionGamma( ) :
+        m_firstSampled( false ) {
 
 }
 
@@ -1329,6 +1330,7 @@ LUPI_HOST_DEVICE void CoherentElasticTNSL::serialize( LUPI::DataBuffer &a_buffer
  ***********************************************************************************************************/
 
 LUPI_HOST_DEVICE IncoherentElasticTNSL::IncoherentElasticTNSL( ) :
+        m_temperatureToMeV_K( 1.0 ),
         m_DebyeWallerIntegral( nullptr ) {
 
 }

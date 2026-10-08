@@ -19,6 +19,7 @@
 #include <typeinfo>
 #include <fstream>
 #include <exception>
+#include <utility>
 
 #include <LUPI.hpp>
 #include <HAPI.hpp>
@@ -34,6 +35,12 @@ namespace PoPI {
 
 #define PoPI_PoPsChars "PoPs"
 
+#define PoPI_idChars "id"
+#define PoPI_symbolChars "symbol"
+#define PoPI_chemicalElementsChars "chemicalElements"
+#define PoPI_chemicalElementChars "chemicalElement"
+#define PoPI_isotopesChars "isotopes"
+#define PoPI_isotopeChars "isotope"
 #define PoPI_gaugeBosonChars "gaugeBoson"
 #define PoPI_leptonChars "lepton"
 #define PoPI_baryonChars "baryon"
@@ -342,7 +349,7 @@ Suite<T, T2>::~Suite( ) {
 template <class T, class T2>
 void Suite<T, T2>::appendFromParentNode( HAPI::Node const &a_node, Database *a_DB, T2 *a_parent ) {
 
-    for( HAPI::Node child = a_node.first_child( ); !child.empty( ); child = child.next_sibling( ) ) {
+    for( HAPI::Node child = a_node.first_child( ); !child.empty( ); child.to_next_sibling( ) ) {
         T *item = new T( child, a_DB, a_parent );
         m_items.push_back( item );
     }
@@ -358,7 +365,7 @@ void Suite<T, T2>::appendFromParentNode( HAPI::Node const &a_node, Database *a_D
 template <class T, class T2>
 void Suite<T, T2>::appendFromParentNode2( HAPI::Node const &a_node, T2 *a_parent ) {
 
-    for( HAPI::Node child = a_node.first_child( ); !child.empty( ); child = child.next_sibling( ) ) {
+    for( HAPI::Node child = a_node.first_child( ); !child.empty( ); child.to_next_sibling( ) ) {
         T *item = new T( child, a_parent );
         m_items.push_back( item );
     }
@@ -380,7 +387,7 @@ void Suite<T, T2>::toXMLList( std::vector<std::string> &a_XMLList, std::string c
     if( _size == 0 ) return;
 
     std::string header = a_indent1 + "<" + m_moniker + ">";
-    a_XMLList.push_back( header );
+    a_XMLList.push_back( std::move( header ) );
     for( std::string::size_type i1 = 0; i1 < _size; ++i1 ) m_items[i1]->toXMLList( a_XMLList, indent2 );
 
     appendXMLEnd( a_XMLList, m_moniker );
@@ -576,7 +583,7 @@ class NuclideGammaBranchStateInfo {
         std::vector<NuclideGammaBranchInfo> m_branches;
 
     public:
-        NuclideGammaBranchStateInfo( std::string a_state, int a_intid, std::string const &a_kind, double a_nuclearLevelEnergy );
+        NuclideGammaBranchStateInfo( std::string const &a_state, int a_intid, std::string const &a_kind, double a_nuclearLevelEnergy );
 
         std::string const &state( ) const { return( m_state ); }                /**< Returns the value of the *m_state* member. */
         int intid( ) const { return( m_intid ); }                               /**< Returns the value of the *m_intid* member. */
@@ -1204,7 +1211,7 @@ class Database {
         int addSymbol( SymbolBase *a_item );
 
         void calculateNuclideGammaBranchStateInfos( NuclideGammaBranchStateInfos &a_nuclideGammaBranchStateInfos, Database const *a_pops2,
-                std::vector<std::string> a_extraGammaBranchStates ) const ;
+                std::vector<std::string> &a_extraGammaBranchStates ) const ;
         void calculateNuclideGammaBranchStateInfos2( NuclideGammaBranchStateInfos &a_nuclideGammaBranchStateInfos ) const ;
 
         double massValue( std::string const &a_id, std::string const &a_unit ) const ;

@@ -142,7 +142,6 @@ void main2( int argc, char **argv ) {
     MC.setSampleNonTransportingParticles( true );
 
     double temperature_MeV_k = argv_options.find( "--temperature" )->asDouble( argv, 2.53e-8 );
-    double temperature_keV_k = 1e3 * temperature_MeV_k;
 
     MCGIDI::Sampling::Upscatter::Model upscatterModel = MCGIDI::Sampling::Upscatter::Model::none;
     int upscatter = argv_options.find( "--upscatter" )->asInt( argv, 0 );
@@ -184,7 +183,7 @@ void main2( int argc, char **argv ) {
         MCGIDI::Reaction const *reaction = MCProtare->reaction( reactionIndex2 );
 
         std::cout << "# " << std::setw( 5 ) << reactionIndex2 << "  " << doubleToString( "%14.6e", reaction->crossSectionThreshold( ) ) 
-                << doubleToString( " %14.6e ", reaction->crossSection( URR_protareInfos, hashIndex, temperature_keV_k, energy_in ) ) 
+                << doubleToString( " %14.6e ", reaction->crossSection( URR_protareInfos, hashIndex, temperature_MeV_k, energy_in ) ) 
                 << "  " << reaction->label( ).c_str( ) << std::endl;
     }
 
@@ -249,13 +248,8 @@ void main2( int argc, char **argv ) {
     }
 
     double totalCrossSection = 0.0;
-    std::vector<MCGIDI::Sampling::Input> inputVector( numberOfThreads, MCGIDI::Sampling::Input( false, upscatterModel ) );
-    for( auto iter = inputVector.begin( ); iter != inputVector.end( ); ++iter ) (*iter).m_temperature = temperature_keV_k;
-
-    std::vector<MCGIDI::Sampling::StdVectorProductHandler> productsVector( numberOfThreads );
-
     if( reactionIndex < 0 ) {
-        totalCrossSection = MCProtare->crossSection( URR_protareInfos, hashIndex, temperature_keV_k, energy_in, true ); }
+        totalCrossSection = MCProtare->crossSection( URR_protareInfos, hashIndex, temperature_MeV_k, energy_in, true ); }
     else {
         MCGIDI::Reaction const *reaction = MCProtare->reaction( reactionIndex );
         if( reaction->crossSectionThreshold( ) > energy_in ) {
@@ -266,21 +260,27 @@ void main2( int argc, char **argv ) {
         }
     }
 
+    std::vector<MCGIDI::Sampling::Input> inputVector( numberOfThreads, MCGIDI::Sampling::Input( false, upscatterModel ) );
+    for( auto iter = inputVector.begin( ); iter != inputVector.end( ); ++iter ) {
+        (*iter).setTemperatureAndEnergy( temperature_MeV_k, energy_in );
+    }
+
     int eBinIndex, muBinIndex, reactionIndex2;
     std::size_t productIndex;
     MCGIDI::Reaction const *reaction;
     double mu, speed;
 
+    std::vector<MCGIDI::Sampling::StdVectorProductHandler> productsVector( numberOfThreads );
 #pragma omp parallel for private( reactionIndex2, reaction, productIndex, eBinIndex, speed, mu, muBinIndex )
     for( long sampleIndex = 0; sampleIndex < numberOfSamples; ++sampleIndex ) {
         int threadId = omp_get_thread_num( );
         reactionIndex2 = reactionIndex;
-        if( reactionIndex2 < 0 ) reactionIndex2 = MCProtare->sampleReaction( URR_protareInfos, hashIndex, temperature_keV_k, energy_in, 
+        if( reactionIndex2 < 0 ) reactionIndex2 = MCProtare->sampleReaction( inputVector[threadId], URR_protareInfos, hashIndex, 
                 totalCrossSection, [&]( ) -> double { return float64RNG64( &(rngStates[1024 * threadId]) ); } );
         reaction = MCProtare->reaction( reactionIndex2 );
 
         productsVector[threadId].clear( );
-        reaction->sampleProducts( MCProtare, energy_in, inputVector[threadId], [&]( ) -> double { return float64RNG64( &(rngStates[1024 * threadId]) ); }, 
+        reaction->sampleProducts( MCProtare, inputVector[threadId], [&]( ) -> double { return float64RNG64( &(rngStates[1024 * threadId]) ); }, 
                 [&]( MCGIDI::Sampling::Product &a_product ) -> void { productsVector[threadId].push_back( a_product ); }, productsVector[threadId] );
         for( productIndex = 0; productIndex < productsVector[threadId].size( ); ++productIndex ) {
             MCGIDI::Sampling::Product const &product = productsVector[threadId][productIndex];

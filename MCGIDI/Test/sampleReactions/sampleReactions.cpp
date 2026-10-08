@@ -141,12 +141,16 @@ void main2( int argc, char **argv ) {
         std::cout << std::endl;
     }
 
+    MCGIDI::Sampling::Input input( true, MCGIDI::Sampling::Upscatter::Model::none );
+
     for( double energy = energyMin; energy <= energyMax; energy *= 1.2 ) {
         int hashIndex = domainHash.index( energy );
 
         double crossSection = MCProtare->crossSection( URR_protare_infos, hashIndex, temperature, energy );
         std::cout << "energy = " << energy << " " << "cross section = " << doubleToString2( "%13.6e", crossSection ) << std::endl;
         if( crossSection == 0.0 ) continue;
+
+        input.setTemperatureAndEnergy( temperature, energy );
 
         std::vector<double> reactionCrossSections( numberOfReactions );
         std::cout << "      ";
@@ -158,7 +162,7 @@ void main2( int argc, char **argv ) {
 
         std::vector<long> counts( numberOfReactions + 1, 0 );
         for( long i1 = 0; i1 < numberOfSamples; ++i1 ) {
-            int reactionIndex = MCProtare->sampleReaction( URR_protare_infos, hashIndex, temperature, energy, crossSection, 
+            int reactionIndex = MCProtare->sampleReaction( input, URR_protare_infos, hashIndex, crossSection,
                     [&]() -> double { return float64RNG64( &rngState ); } );
             if( reactionIndex > numberOfReactions ) reactionIndex = numberOfReactions;
             ++counts[reactionIndex];

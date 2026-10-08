@@ -65,7 +65,7 @@ void DecayData::toXMLList( std::vector<std::string> &a_XMLList, std::string cons
     if( size == 0 ) return;
 
     std::string header = a_indent1 + "<" + PoPI_decayDataChars + ">";
-    a_XMLList.push_back( header );
+    a_XMLList.push_back( std::move( header ) );
 
     if( size > 0 ) {
         std::string indent2 = a_indent1 + "  ";
@@ -133,7 +133,7 @@ void DecayMode::calculateNuclideGammaBranchStateInfo( PoPI::Database const &a_po
 void DecayMode::toXMLList( std::vector<std::string> &a_XMLList, std::string const &a_indent1 ) const {
 
     std::string header = a_indent1 + "<decayMode label=\"" + m_label + "\" mode=\"" + m_mode + "\">";
-    a_XMLList.push_back( header );
+    a_XMLList.push_back( std::move( header ) );
 
     std::string indent2 = a_indent1 + "  ";
     m_probability.toXMLList( a_XMLList, indent2 );
@@ -181,7 +181,7 @@ void Decay::toXMLList( std::vector<std::string> &a_XMLList, std::string const &a
     if( m_mode != "" ) header += " mode=\"" + m_mode + "\"";
     if( m_complete ) header += " mode=\"true\"";
     header += ">";
-    a_XMLList.push_back( header );
+    a_XMLList.push_back( std::move( header ) );
 
     std::string indent2 = a_indent1 + "  ";
     m_products.toXMLList( a_XMLList, indent2 );
@@ -218,7 +218,7 @@ Product::~Product( ) {
 void Product::toXMLList( std::vector<std::string> &a_XMLList, std::string const &a_indent1 ) const {
 
     std::string header = a_indent1 + "<product label=\"" + m_label + "\" pid=\"" + m_pid + "\"/>";
-    a_XMLList.push_back( header );
+    a_XMLList.push_back( std::move( header ) );
 }
 
 /*! \class GammaDecayData

@@ -261,31 +261,27 @@ LUPI_HOST_DEVICE ClientCodeRNGData::ClientCodeRNGData( double (*a_generator)( vo
 */
 LUPI_HOST_DEVICE Input::Input( bool a_wantVelocity, Upscatter::Model a_upscatterModel ) :
         m_wantVelocity( a_wantVelocity ),
-        m_upscatterModel( a_upscatterModel ),
+        m_upscatterModel( a_upscatterModel ) {
 
-        m_sampledType( SampledType::uncorrelatedBody ),
-        m_reaction( nullptr ),
+}
 
-        m_frame( GIDI::Frame::lab ),
-        m_numberOfDBRC_rejections( 0 ),
-        m_mu( 0.0 ),
-        m_phi( 0.0 ),
+/* *********************************************************************************************************//**
+ * This method sets the *m_temperature* and *m_modelTemperature* members to *a_temperature*, the *m_energy* and *m_modelEnergy* members
+ * to *a_energy*, and the *m_dataInTargetFrame* member to **false**. Ergo, this method resets members in the no upscatter mode.
+ *
+ * @param a_temperature         [in]    The temperature of the material.
+ * @param a_energy              [in]    The energy of the projectile.
+ ***********************************************************************************************************/
 
-        m_energyOut1( 0.0 ),
-        m_px_vx1( 0.0 ),
-        m_py_vy1( 0.0 ),
-        m_pz_vz1( 0.0 ),
+LUPI_HOST_DEVICE void Input::setTemperatureAndEnergy( double a_temperature, double a_energy ) {
 
-        m_energyOut2( 0.0 ),
-        m_px_vx2( 0.0 ),
-        m_py_vy2( 0.0 ),
-        m_pz_vz2( 0.0 ),
+    m_dataInTargetFrame = false;
 
-        m_delayedNeutronIndex( -1 ),
-        m_delayedNeutronDecayRate( 0.0 ),
+    m_temperature = a_temperature;
+    m_modelTemperature = a_temperature;
 
-        m_GRIN_intermediateResidual( -1 ) {
-
+    m_energy = a_energy;
+    m_modelEnergy = a_energy;
 }
 
 }           // End of namespace Sampling.

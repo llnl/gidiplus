@@ -16,7 +16,7 @@ namespace GIDI {
  * This class represents a **GNDS** outputChannel.
 */
 
-OutputChannel::OutputChannel( bool a_twoBody, bool a_fissions, std::string a_process ) :
+OutputChannel::OutputChannel( bool a_twoBody, bool a_fissions, std::string const &a_process ) :
         GUPI::Ancestry( GIDI_outputChannelChars ),
         m_twoBody( a_twoBody ),
         m_fissions( a_fissions ),
@@ -119,7 +119,7 @@ bool OutputChannel::areAllProductsTracked( Transporting::Particles const &a_part
  *                                                  for the TNSL data for that boundary.
  ***********************************************************************************************************/
 
-void OutputChannel::modifiedMultiGroupElasticForTNSL( std::map<std::string,std::size_t> a_maximumTNSL_MultiGroupIndex ) {
+void OutputChannel::modifiedMultiGroupElasticForTNSL( std::map<std::string,std::size_t> const &a_maximumTNSL_MultiGroupIndex ) {
 
         // No need to fix m_Q as it is all 0.0's for elastic scattering.
     for( auto iter = m_products.begin( ); iter != m_products.end( ); ++iter ) {

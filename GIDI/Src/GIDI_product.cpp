@@ -134,7 +134,7 @@ int Product::depth( ) const {
  *                                                  for the TNSL data for that boundary.
  ***********************************************************************************************************/
 
-void Product::modifiedMultiGroupElasticForTNSL( std::map<std::string,std::size_t> a_maximumTNSL_MultiGroupIndex ) {
+void Product::modifiedMultiGroupElasticForTNSL( std::map<std::string,std::size_t> const &a_maximumTNSL_MultiGroupIndex ) {
 
     m_multiplicity.modifiedMultiGroupElasticForTNSL( a_maximumTNSL_MultiGroupIndex );
     m_distribution.modifiedMultiGroupElasticForTNSL( a_maximumTNSL_MultiGroupIndex );

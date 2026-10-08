@@ -60,7 +60,7 @@ long binarySearchVector( double a_x, std::vector<double> const &a_Xs ) {
  * @param a_attributes          [in]        String representation of the attributes for the GNDS **values** node.
  ***********************************************************************************************************/
 
-void intsToXMLList( GUPI::WriteInfo &a_writeInfo, std::string const &a_indent, std::vector<int> a_values, std::string const &a_attributes ) {
+void intsToXMLList( GUPI::WriteInfo &a_writeInfo, std::string const &a_indent, std::vector<int> const &a_values, std::string const &a_attributes ) {
 
     a_writeInfo.addNodeStarter( a_indent, GIDI_valuesChars, a_attributes );
 
@@ -177,7 +177,7 @@ void parseValuesOfInts( HAPI::Node const &a_node, SetupInfo &a_setupInfo, nf_Buf
  * @param a_valueType           [in]        The value for the *valueType* attribute.
  ***********************************************************************************************************/
 
-void doublesToXMLList( GUPI::WriteInfo &a_writeInfo, std::string const &a_indent, std::vector<double> a_values, std::size_t a_start, bool a_newLine, std::string const &a_valueType ) {
+void doublesToXMLList( GUPI::WriteInfo &a_writeInfo, std::string const &a_indent, std::vector<double> const &a_values, std::size_t a_start, bool a_newLine, std::string const &a_valueType ) {
 
     int valuesPerLine( a_writeInfo.m_valuesPerLine );
     std::string indent( a_indent );
@@ -458,7 +458,7 @@ void energy2dToXMLList( GUPI::WriteInfo &a_writeInfo, std::string const &a_monik
  * @return                              returns the startIndex attribute of *a_node*.
  ***********************************************************************************************************/
 
-void excludeReactionsSetAdjust( ExcludeReactionsSet a_excludeReactionsSet, Protare const &a_protare ) {
+void excludeReactionsSetAdjust( ExcludeReactionsSet &a_excludeReactionsSet, Protare const &a_protare ) {
 
     ExcludeReactionsSet excludeReactionsSet;
 
@@ -467,7 +467,7 @@ void excludeReactionsSetAdjust( ExcludeReactionsSet a_excludeReactionsSet, Prota
         if( index > -1 ) excludeReactionsSet.insert( index );
     }
 
-    a_excludeReactionsSet = excludeReactionsSet;
+    a_excludeReactionsSet = std::move( excludeReactionsSet );
 }
 
 /* *********************************************************************************************************//**

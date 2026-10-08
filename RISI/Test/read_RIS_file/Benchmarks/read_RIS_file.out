@@ -1,12 +1,764 @@
-n
-  Al26_m1: ENDF/B-8.0
-  Am241: ENDF/B-8.0
-  Am242: ENDF/B-8.0
-  Am242_m1: ENDF/B-8.0
-  Am243: ENDF/B-8.0
-  Pb207: ENDF/B-8.0
-  Pm143: ENDF/B-8.0
-  Pm148_m1: ENDF/B-8.0
-  Pm149: ENDF/B-8.0
-  Re186_m1: ENDF/B-8.0
-  Tm168: ENDF/B-8.0
+#ris : 1.0
+#protare : n : Al26_m1 : ENDF/B-8.0 : eV
+#aliases : 1
+    Al26_m1 : Al26_e1
+#reactions : 125
+    n + Al26_e1                     : 1e-11        :            :           :  : 
+    n + Al26                        : 1e-11        :            :           :  : 
+    n + Al26 + 0photon              : 0.1958653    : Al26_e2    :           :  : 
+    n + Al26 + 0photon              : 0.861628     : Al26_e3    :           :  : 
+    n + Al26 + 0photon              : 1.590143     : Al26_e4    :           :  : 
+    n + Al26 + 0photon              : 1.685284     : Al26_e5    :           :  : 
+    n + Al26 + 0photon              : 1.911995     : Al26_e6    :           :  : 
+    n + Al26 + 0photon              : 1.912629     : Al26_e7    :           :  : 
+    n + Al26 + 0photon              : 1.914883     : Al26_e8    :           :  : 
+    n + Al26 + 0photon              : 2.219785     : Al26_e9    :           :  : 
+    n + Al26 + 0photon              : 2.406997     : Al26_e10   :           :  : 
+    n + Al26 + 0photon              : 2.527036     : Al26_e11   :           :  : 
+    n + Al26 + 0photon              : 2.609216     : Al26_e12   :           :  : 
+    n + Al26 + 0photon              : 2.789315     : Al26_e13   :           :  : 
+    n + Al26 + 0photon              : 2.955765     : Al26_e14   :           :  : 
+    n + Al26 + 0photon              : 3.045371     : Al26_e15   :           :  : 
+    n + Al26 + 0photon              : 3.297555     : Al26_e16   :           :  : 
+    n + Al26 + 0photon              : 3.40661      : Al26_e17   :           :  : 
+    n + Al26 + 0photon              : 3.498763     : Al26_e18   :           :  : 
+    n + Al26 + 0photon              : 3.580393     : Al26_e19   :           :  : 
+    n + Al26 + 0photon              : 3.586377     : Al26_e20   :           :  : 
+    n + Al26 + 0photon              : 3.631181     : Al26_e21   :           :  : 
+    n + Al26 + 0photon              : 3.659322     : Al26_e22   :           :  : 
+    n + Al26 + 0photon              : 3.662158     : Al26_e23   :           :  : 
+    n + Al26 + 0photon              : 3.837022     : Al26_e24   :           :  : 
+    n + Al26 + 0photon              : 3.879478     : Al26_e25   :           :  : 
+    n + Al26 + 0photon              : 3.895143     : Al26_e26   :           :  : 
+    n + Al26 + 0photon              : 4.11746      : Al26_e27   :           :  : 
+    n + Al26 + 0photon              : 4.131941     : Al26_e28   :           :  : 
+    n + Al26 + 0photon              : 4.28099      : Al26_e29   :           :  : 
+    n + Al26 + 0photon              : 4.365529     : Al26_e30   :           :  : 
+    n + Al26 + 0photon              : 4.417221     : Al26_e31   :           :  : 
+    n + Al26 + 0photon              : 4.487278     : Al26_e32   :           :  : 
+    n + Al26 + 0photon              : 4.540517     : Al26_e33   :           :  : 
+    n + Al26 + 0photon              : 4.564628     : Al26_e34   :           :  : 
+    n + Al26 + 0photon              : 4.650839     : Al26_e35   :           :  : 
+    n + Al26 + 0photon              : 4.721458     : Al26_e36   :           :  : 
+    n + Al26 + 0photon              : 4.894202     : Al26_e37   :           :  : 
+    n + Al26 + 0photon              : 4.895397     : Al26_e38   :           :  : 
+    n + Al26 + 0photon              : 4.907354     : Al26_e39   :           :  : 
+    n + Al26 + 0photon              : 4.907354     :            : continuum :  : 
+    2n + Al25 + 0photon             : 11.80613     :            :           :  : 
+    H1 + Mg26                       : 1e-11        :            :           :  : 
+    H1 + Mg26 + 0photon             : 1e-11        : Mg26_e1    :           :  : 
+    H1 + Mg26 + 0photon             : 1e-11        : Mg26_e2    :           :  : 
+    H1 + Mg26 + 0photon             : 1e-11        : Mg26_e3    :           :  : 
+    H1 + Mg26 + 0photon             : 1e-11        : Mg26_e4    :           :  : 
+    H1 + Mg26 + 0photon             : 0.001        : Mg26_e5    :           :  : 
+    H1 + Mg26 + 0photon             : 0.001        : Mg26_e6    :           :  : 
+    H1 + Mg26 + 0photon             : 0.001        : Mg26_e7    :           :  : 
+    H1 + Mg26 + 0photon             : 0.001        : Mg26_e8    :           :  : 
+    H1 + Mg26 + 0photon             : 0.001        : Mg26_e9    :           :  : 
+    H1 + Mg26 + 0photon             : 0.001        : Mg26_e10   :           :  : 
+    H1 + Mg26 + 0photon             : 0.2877879    : Mg26_e11   :           :  : 
+    H1 + Mg26 + 0photon             : 0.4793141    : Mg26_e12   :           :  : 
+    H1 + Mg26 + 0photon             : 0.7026592    : Mg26_e13   :           :  : 
+    H1 + Mg26 + 0photon             : 0.7280998    : Mg26_e14   :           :  : 
+    H1 + Mg26 + 0photon             : 1.153889     : Mg26_e15   :           :  : 
+    H1 + Mg26 + 0photon             : 1.289475     : Mg26_e16   :           :  : 
+    H1 + Mg26 + 0photon             : 1.669681     : Mg26_e17   :           :  : 
+    H1 + Mg26 + 0photon             : 1.682469     : Mg26_e18   :           :  : 
+    H1 + Mg26 + 0photon             : 1.798245     : Mg26_e19   :           :  : 
+    H1 + Mg26 + 0photon             : 1.933976     : Mg26_e20   :           :  : 
+    H1 + Mg26 + 0photon             : 2.039499     : Mg26_e21   :           :  : 
+    H1 + Mg26 + 0photon             : 2.126656     : Mg26_e22   :           :  : 
+    H1 + Mg26 + 0photon             : 2.165881     : Mg26_e23   :           :  : 
+    H1 + Mg26 + 0photon             : 2.270116     : Mg26_e24   :           :  : 
+    H1 + Mg26 + 0photon             : 2.313746     : Mg26_e25   :           :  : 
+    H1 + Mg26 + 0photon             : 2.333889     : Mg26_e26   :           :  : 
+    H1 + Mg26 + 0photon             : 2.356067     : Mg26_e27   :           :  : 
+    H1 + Mg26 + 0photon             : 2.424764     : Mg26_e28   :           :  : 
+    H1 + Mg26 + 0photon             : 2.447961     : Mg26_e29   :           :  : 
+    H1 + Mg26 + 0photon             : 2.472685     : Mg26_e30   :           :  : 
+    H1 + Mg26 + 0photon             : 2.506965     : Mg26_e31   :           :  : 
+    H1 + Mg26 + 0photon             : 2.62511      : Mg26_e32   :           :  : 
+    H1 + Mg26 + 0photon             : 2.76563      : Mg26_e33   :           :  : 
+    H1 + Mg26 + 0photon             : 2.786718     : Mg26_e34   :           :  : 
+    H1 + Mg26 + 0photon             : 2.816262     : Mg26_e35   :           :  : 
+    H1 + Mg26 + 0photon             : 2.865357     : Mg26_e36   :           :  : 
+    H1 + Mg26 + 0photon             : 2.910025     : Mg26_e37   :           :  : 
+    H1 + Mg26 + 0photon             : 2.918336     : Mg26_e38   :           :  : 
+    H1 + Mg26 + 0photon             : 2.934957     : Mg26_e39   :           :  : 
+    H1 + Mg26 + 0photon             : 0.001        :            : continuum :  : 
+    He4 + Na23                      : 1e-11        :            :           :  : 
+    He4 + Na23 + 0photon            : 1e-11        : Na23_e1    :           :  : 
+    He4 + Na23 + 0photon            : 0.001        : Na23_e2    :           :  : 
+    He4 + Na23 + 0photon            : 0.001        : Na23_e3    :           :  : 
+    He4 + Na23 + 0photon            : 0.001        : Na23_e4    :           :  : 
+    He4 + Na23 + 0photon            : 0.001        : Na23_e5    :           :  : 
+    He4 + Na23 + 0photon            : 0.001        : Na23_e6    :           :  : 
+    He4 + Na23 + 0photon            : 0.5025732    : Na23_e7    :           :  : 
+    He4 + Na23 + 0photon            : 0.6796589    : Na23_e8    :           :  : 
+    He4 + Na23 + 0photon            : 0.7483972    : Na23_e9    :           :  : 
+    He4 + Na23 + 0photon            : 1.283803     : Na23_e10   :           :  : 
+    He4 + Na23 + 0photon            : 1.642163     : Na23_e11   :           :  : 
+    He4 + Na23 + 0photon            : 2.269565     : Na23_e12   :           :  : 
+    He4 + Na23 + 0photon            : 2.431028     : Na23_e13   :           :  : 
+    He4 + Na23 + 0photon            : 2.646842     : Na23_e14   :           :  : 
+    He4 + Na23 + 0photon            : 2.672064     : Na23_e15   :           :  : 
+    He4 + Na23 + 0photon            : 2.682421     : Na23_e16   :           :  : 
+    He4 + Na23 + 0photon            : 2.839085     : Na23_e17   :           :  : 
+    He4 + Na23 + 0photon            : 2.878155     : Na23_e18   :           :  : 
+    He4 + Na23 + 0photon            : 2.958943     : Na23_e19   :           :  : 
+    He4 + Na23 + 0photon            : 3.034476     : Na23_e20   :           :  : 
+    He4 + Na23 + 0photon            : 3.117269     : Na23_e21   :           :  : 
+    He4 + Na23 + 0photon            : 3.159653     : Na23_e22   :           :  : 
+    He4 + Na23 + 0photon            : 3.235029     : Na23_e23   :           :  : 
+    He4 + Na23 + 0photon            : 3.283386     : Na23_e24   :           :  : 
+    He4 + Na23 + 0photon            : 3.515332     : Na23_e25   :           :  : 
+    He4 + Na23 + 0photon            : 3.557103     : Na23_e26   :           :  : 
+    He4 + Na23 + 0photon            : 3.679174     : Na23_e27   :           :  : 
+    He4 + Na23 + 0photon            : 3.766538     : Na23_e28   :           :  : 
+    He4 + Na23 + 0photon            : 3.816484     : Na23_e29   :           :  : 
+    He4 + Na23 + 0photon            : 3.871448     : Na23_e30   :           :  : 
+    He4 + Na23 + 0photon            : 3.899288     : Na23_e31   :           :  : 
+    He4 + Na23 + 0photon            : 4.027509     : Na23_e32   :           :  : 
+    He4 + Na23 + 0photon            : 4.039009     : Na23_e33   :           :  : 
+    He4 + Na23 + 0photon            : 4.080666     : Na23_e34   :           :  : 
+    He4 + Na23 + 0photon            : 4.092404     : Na23_e35   :           :  : 
+    He4 + Na23 + 0photon            : 4.109752     : Na23_e36   :           :  : 
+    He4 + Na23 + 0photon            : 4.147149     : Na23_e37   :           :  : 
+    He4 + Na23 + 0photon            : 4.23202      : Na23_e38   :           :  : 
+    He4 + Na23 + 0photon            : 4.241796     : Na23_e39   :           :  : 
+    Al27 + 0photon                  : 1e-11        :            :           :  : 
+    0n + 0H1 + 0H2 + 0H3 + 0He3 + 0He4 + 0photon : 0.001        :            :           :  : 
+#protare : n : Am241 : ENDF/B-8.0 : eV
+#aliases : 1
+    Am242_m1 : Am242_e2
+#reactions : 45
+    n + Am241                       : 1e-11        :            :           :  : 
+    n + Am241 + 0photon             : 0.04134829   : Am241_e1   :           :  : 
+    n + Am241 + 0photon             : 0.09409207   : Am241_e2   :           :  : 
+    n + Am241 + 0photon             : 0.158159     : Am241_e3   :           :  : 
+    n + Am241 + 0photon             : 0.2067455    : Am241_e4   :           :  : 
+    n + Am241 + 0photon             : 0.2346578    : Am241_e5   :           :  : 
+    n + Am241 + 0photon             : 0.2361842    : Am241_e6   :           :  : 
+    n + Am241 + 0photon             : 0.2400001    : Am241_e7   :           :  : 
+    n + Am241 + 0photon             : 0.2741423    : Am241_e8   :           :  : 
+    n + Am241 + 0photon             : 0.2743432    : Am241_e9   :           :  : 
+    n + Am241 + 0photon             : 0.3211382    : Am241_e10  :           :  : 
+    n + Am241 + 0photon             : 0.3211582    : Am241_e11  :           :  : 
+    n + Am241 + 0photon             : 0.3826947    : Am241_e12  :           :  : 
+    n + Am241 + 0photon             : 0.4199298    : Am241_e13  :           :  : 
+    n + Am241 + 0photon             : 0.4549959    : Am241_e14  :           :  : 
+    n + Am241 + 0photon             : 0.4609206    : Am241_e15  :           :  : 
+    n + Am241 + 0photon             : 0.4737862    : Am241_e16  :           :  : 
+    n + Am241 + 0photon             : 0.4970713    : Am241_e17  :           :  : 
+    n + Am241 + 0photon             : 0.5065618    : Am241_e18  :           :  : 
+    n + Am241 + 0photon             : 0.5278696    : Am241_e19  :           :  : 
+    n + Am241 + 0photon             : 0.5331215    : Am241_e20  :           :  : 
+    n + Am241 + 0photon             : 0.5452721    : Am241_e21  :           :  : 
+    n + Am241 + 0photon             : 0.5527031    : Am241_e22  :           :  : 
+    n + Am241 + 0photon             : 0.6257073    : Am241_e23  :           :  : 
+    n + Am241 + 0photon             : 0.6278161    : Am241_e24  :           :  : 
+    n + Am241 + 0photon             : 0.6324353    : Am241_e25  :           :  : 
+    n + Am241 + 0photon             : 0.6395289    : Am241_e26  :           :  : 
+    n + Am241 + 0photon             : 0.6476989    : Am241_e27  :           :  : 
+    n + Am241 + 0photon             : 0.6548206    : Am241_e28  :           :  : 
+    n + Am241 + 0photon             : 0.6559633    : Am241_e29  :           :  : 
+    n + Am241 + 0photon             : 0.6730445    : Am241_e30  :           :  : 
+    n + Am241 + 0photon             : 0.6849541    : Am241_e31  :           :  : 
+    n + Am241 + 0photon             : 0.726929     : Am241_e32  :           :  : 
+    n + Am241 + 0photon             : 0.7350629    : Am241_e33  :           :  : 
+    n + Am241 + 0photon             : 0.7770378    : Am241_e34  :           :  : 
+    n + Am241 + 0photon             : 0.7904939    : Am241_e35  :           :  : 
+    n + Am241 + 0photon             : 0.8254395    : Am241_e36  :           :  : 
+    n + Am241 + 0photon             : 0.8548621    : Am241_e37  :           :  : 
+    n + Am241 + 0photon             : 0.8674144    : Am241_e38  :           :  : 
+    n + Am241 + 0photon             : 0.8684186    :            : continuum :  : 
+    2n + Am240 + 0photon            : 6.67502      :            :           :  : 
+    3n + Am239 + 0photon            : 12.65157     :            :           :  : 
+    4n + Am238 + 0photon            : 19.78382     :            :           :  : 
+    0n + 0photon                    : 1e-11        :            : totalFission :  : 
+    Am242 + 0photon                 : 1e-11        :            :           :  : 
+#protare : n : Am242 : ENDF/B-8.0 : eV
+#reactions : 39
+    n + Am242                       : 1e-11        :            :           :  : 
+    n + Am242                       : 0.0442838    : Am242_e1   :           :  : 
+    n + Am242                       : 0.04880252   : Am242_e2   :           :  : 
+    n + Am242                       : 0.05312044   : Am242_e3   :           :  : 
+    n + Am242                       : 0.07611586   : Am242_e4   :           :  : 
+    n + Am242                       : 0.09941253   : Am242_e5   :           :  : 
+    n + Am242                       : 0.114475     : Am242_e6   :           :  : 
+    n + Am242                       : 0.1486167    : Am242_e7   :           :  : 
+    n + Am242                       : 0.1505246    : Am242_e8   :           :  : 
+    n + Am242                       : 0.1717126    : Am242_e9   :           :  : 
+    n + Am242                       : 0.1907917    : Am242_e10  :           :  : 
+    n + Am242                       : 0.1984234    : Am242_e11  :           :  : 
+    n + Am242                       : 0.2314605    : Am242_e12  :           :  : 
+    n + Am242                       : 0.2451172    : Am242_e13  :           :  : 
+    n + Am242                       : 0.2640959    : Am242_e14  :           :  : 
+    n + Am242                       : 0.2640959    : Am242_e15  :           :  : 
+    n + Am242                       : 0.2712255    : Am242_e16  :           :  : 
+    n + Am242                       : 0.2844805    : Am242_e17  :           :  : 
+    n + Am242                       : 0.2896018    : Am242_e18  :           :  : 
+    n + Am242                       : 0.2930159    : Am242_e19  :           :  : 
+    n + Am242                       : 0.3081789    : Am242_e20  :           :  : 
+    n + Am242                       : 0.3273584    : Am242_e21  :           :  : 
+    n + Am242                       : 0.3428226    : Am242_e22  :           :  : 
+    n + Am242                       : 0.3650147    : Am242_e23  :           :  : 
+    n + Am242                       : 0.3717426    : Am242_e24  :           :  : 
+    n + Am242                       : 0.378571     : Am242_e25  :           :  : 
+    n + Am242                       : 0.4018677    : Am242_e26  :           :  : 
+    n + Am242                       : 0.4117085    : Am242_e27  :           :  : 
+    n + Am242                       : 0.4196414    : Am242_e28  :           :  : 
+    n + Am242                       : 0.4304864    : Am242_e29  :           :  : 
+    n + Am242                       : 0.4656322    : Am242_e30  :           :  : 
+    n + Am242                       : 0.4900335    : Am242_e31  :           :  : 
+    n + Am242                       : 0.5020835    : Am242_e32  :           :  : 
+    n + Am242                       : 0.583421     : Am242_e33  :           :  : 
+    n + Am242                       : 0.1717126    :            : continuum :  : 
+    2n + Am241                      : 5.560477     :            :           :  : 
+    3n + Am240                      : 12.22931     :            :           :  : 
+    0n                              : 1e-11        :            : totalFission :  : 
+    Am243 + photon                  : 1e-11        :            :           :  : 
+#protare : n : Am242_m1 : ENDF/B-8.0 : eV
+#aliases : 1
+    Am242_m1 : Am242_e2
+#reactions : 39
+    n + Am242_e2                    : 1e-11        :            :           :  : 
+    n + Am242                       : 0.02         :            :           :  : 
+    n + Am242                       : 0.02         : Am242_e1   :           :  : 
+    n + Am242                       : 0.02         : Am242_e3   :           :  : 
+    n + Am242                       : 0.02731335   : Am242_e4   :           :  : 
+    n + Am242                       : 0.065        : Am242_e5   :           :  : 
+    n + Am242                       : 0.06567252   : Am242_e6   :           :  : 
+    n + Am242                       : 0.0998142    : Am242_e7   :           :  : 
+    n + Am242                       : 0.1017221    : Am242_e8   :           :  : 
+    n + Am242                       : 0.12291      : Am242_e9   :           :  : 
+    n + Am242                       : 0.1419892    : Am242_e10  :           :  : 
+    n + Am242                       : 0.1496209    : Am242_e11  :           :  : 
+    n + Am242                       : 0.182658     : Am242_e12  :           :  : 
+    n + Am242                       : 0.1963147    : Am242_e13  :           :  : 
+    n + Am242                       : 0.2152934    : Am242_e14  :           :  : 
+    n + Am242                       : 0.2152934    : Am242_e15  :           :  : 
+    n + Am242                       : 0.222423     : Am242_e16  :           :  : 
+    n + Am242                       : 0.235678     : Am242_e17  :           :  : 
+    n + Am242                       : 0.2407993    : Am242_e18  :           :  : 
+    n + Am242                       : 0.2442134    : Am242_e19  :           :  : 
+    n + Am242                       : 0.2593764    : Am242_e20  :           :  : 
+    n + Am242                       : 0.2785559    : Am242_e21  :           :  : 
+    n + Am242                       : 0.2940201    : Am242_e22  :           :  : 
+    n + Am242                       : 0.3162122    : Am242_e23  :           :  : 
+    n + Am242                       : 0.3229401    : Am242_e24  :           :  : 
+    n + Am242                       : 0.3297684    : Am242_e25  :           :  : 
+    n + Am242                       : 0.3530651    : Am242_e26  :           :  : 
+    n + Am242                       : 0.362906     : Am242_e27  :           :  : 
+    n + Am242                       : 0.3708389    : Am242_e28  :           :  : 
+    n + Am242                       : 0.3816839    : Am242_e29  :           :  : 
+    n + Am242                       : 0.4168297    : Am242_e30  :           :  : 
+    n + Am242                       : 0.4412309    : Am242_e31  :           :  : 
+    n + Am242                       : 0.4532809    : Am242_e32  :           :  : 
+    n + Am242                       : 0.5346186    : Am242_e33  :           :  : 
+    n + Am242                       : 0.1228792    :            : continuum :  : 
+    2n + Am241                      : 5.513325     :            :           :  : 
+    3n + Am240                      : 12.17927     :            :           :  : 
+    0n                              : 1e-11        :            : totalFission :  : 
+    Am243 + photon                  : 1e-11        :            :           :  : 
+#protare : n : Am243 : ENDF/B-8.0 : eV
+#aliases : 2
+    Am242_m1 : Am242_e2
+    Am244_m1 : Am244_e1
+#reactions : 20
+    n + Am243                       : 1e-11        :            :           :  : 
+    n + Am243                       : 0.0423751    : Am243_e1   :           :  : 
+    n + Am243                       : 0.08434859   : Am243_e2   :           :  : 
+    n + Am243                       : 0.09680004   : Am243_e3   :           :  : 
+    n + Am243                       : 0.1097536    : Am243_e4   :           :  : 
+    n + Am243                       : 0.1440955    : Am243_e5   :           :  : 
+    n + Am243                       : 0.1633752    : Am243_e6   :           :  : 
+    n + Am243                       : 0.1900856    : Am243_e7   :           :  : 
+    n + Am243                       : 0.2420001    : Am243_e8   :           :  : 
+    n + Am243                       : 0.2450126    : Am243_e9   :           :  : 
+    n + Am243                       : 0.2671039    : Am243_e10  :           :  : 
+    n + Am243                       : 0.301245     : Am243_e11  :           :  : 
+    n + Am243                       : 0.3464317    : Am243_e12  :           :  : 
+    n + Am243                       : 0.3845894    : Am243_e13  :           :  : 
+    n + Am243                       : 0.3845894    :            : continuum :  : 
+    2n + Am242                      : 6.391695     :            :           :  : 
+    3n + Am241                      : 11.95376     :            :           :  : 
+    4n + Am240                      : 18.61959     :            :           :  : 
+    0n + 0photon                    : 1e-11        :            : totalFission :  : 
+    Am244 + 0photon                 : 1e-11        :            :           :  : 
+#protare : n : Pb207 : ENDF/B-8.0 : eV
+#aliases : 53
+    Tl207_m1 : Tl207_e2
+    W183_m1 : W183_e7
+    W185_m1 : W185_e6
+    Re184_m1 : Re184_e5
+    Re186_m1 : Re186_e4
+    Re188_m1 : Re188_e7
+    Re190_m1 : Re190_e3
+    Os189_m1 : Os189_e1
+    Os191_m1 : Os191_e1
+    Ir186_m1 : Ir186_e1
+    Ir190_m1 : Ir190_e2
+    Ir190_m2 : Ir190_e37
+    Ir191_m1 : Ir191_e3
+    Ir192_m1 : Ir192_e3
+    Ir192_m2 : Ir192_e16
+    Ir193_m1 : Ir193_e2
+    Ir194_m1 : Ir194_e7
+    Ir195_m1 : Ir195_e2
+    Ir196_m1 : Ir196_e4
+    Ir197_m1 : Ir197_e2
+    Pt193_m1 : Pt193_e5
+    Pt195_m1 : Pt195_e7
+    Pt197_m1 : Pt197_e9
+    Pt199_m1 : Pt199_e8
+    Au187_m1 : Au187_e2
+    Au189_m1 : Au189_e3
+    Au193_m1 : Au193_e4
+    Au195_m1 : Au195_e4
+    Au196_m1 : Au196_e3
+    Au197_m1 : Au197_e4
+    Au200_m1 : Au200_e11
+    Hg189_m1 : Hg189_e2
+    Hg191_m1 : Hg191_e1
+    Hg193_m1 : Hg193_e3
+    Hg195_m1 : Hg195_e3
+    Hg197_m1 : Hg197_e4
+    Hg199_m1 : Hg199_e7
+    Tl189_m1 : Tl189_e1
+    Tl190_m1 : Tl190_e1
+    Tl191_m1 : Tl191_e1
+    Tl192_m1 : Tl192_e1
+    Tl193_m1 : Tl193_e1
+    Tl195_m1 : Tl195_e2
+    Tl196_m1 : Tl196_e6
+    Tl198_m1 : Tl198_e7
+    Pb191_m1 : Pb191_e1
+    Pb193_m1 : Pb193_e1
+    Pb195_m1 : Pb195_e2
+    Pb197_m1 : Pb197_e2
+    Pb199_m1 : Pb199_e1
+    Pb201_m1 : Pb201_e4
+    Pb202_m1 : Pb202_e13
+    Pb203_m1 : Pb203_e6
+#reactions : 70
+    n + Pb207                       : 1e-11        :            :           :  : 
+    n + Pb207 + 0photon             : 0.572479     : Pb207_e1   :           :  : 
+    n + Pb207 + 0photon             : 0.902175     : Pb207_e2   :           :  : 
+    n + Pb207 + 0photon             : 1.64133      : Pb207_e3   :           :  : 
+    n + Pb207 + 0photon             : 2.35135      : Pb207_e4   :           :  : 
+    n + Pb207 + 0photon             : 2.63629      : Pb207_e5   :           :  : 
+    n + Pb207 + 0photon             : 2.67537      : Pb207_e6   :           :  : 
+    n + Pb207 + 0photon             : 2.71517      : Pb207_e7   :           :  : 
+    n + Pb207 + 0photon             : 2.74029      : Pb207_e8   :           :  : 
+    n + Pb207 + 0photon             : 3.1955       : Pb207_e9   :           :  : 
+    n + Pb207 + 0photon             : 3.2176       : Pb207_e10  :           :  : 
+    n + Pb207 + 0photon             : 3.23971      : Pb207_e11  :           :  : 
+    n + Pb207 + 0photon             : 3.32111      : Pb207_e12  :           :  : 
+    n + Pb207 + 0photon             : 3.40049      : Pb207_e13  :           :  : 
+    n + Pb207 + 0photon             : 3.43064      : Pb207_e14  :           :  : 
+    n + Pb207 + 0photon             : 3.44471      : Pb207_e15  :           :  : 
+    n + Pb207 + 0photon             : 3.46681      : Pb207_e16  :           :  : 
+    n + Pb207 + 0photon             : 3.49394      : Pb207_e17  :           :  : 
+    n + Pb207 + 0photon             : 3.52711      : Pb207_e18  :           :  : 
+    n + Pb207 + 0photon             : 3.60046      : Pb207_e19  :           :  : 
+    n + Pb207 + 0photon             : 3.61754      : Pb207_e20  :           :  : 
+    n + Pb207 + 0photon             : 3.61754      :            : continuum :  : 
+    2n + Pb206 + 0photon            : 6.77063      :            :           :  : 
+    3n + Pb205 + 0photon            : 14.8982      :            :           :  : 
+    n + H1 + Tl206 + 0photon        : 9.0          :            :           :  : 
+    n + H2 + Tl205 + 0photon        : 14.0         :            :           :  : 
+    n + H3 + Tl204 + 0photon        : 15.0         :            :           :  : 
+    H1 + Tl207                      : 1.8          :            :           :  : 
+    H1 + Tl207 + 0photon            : 2.2          : Tl207_e1   :           :  : 
+    H1 + Tl207                      : 3.2          : Tl207_e2   :           :  : 
+    H1 + Tl207 + 0photon            : 3.4          : Tl207_e3   :           :  : 
+    H1 + Tl207 + 0photon            : 4.2          : Tl207_e4   :           :  : 
+    H1 + Tl207 + 0photon            : 4.6          : Tl207_e5   :           :  : 
+    H1 + Tl207 + 0photon            : 4.8          : Tl207_e6   :           :  : 
+    H1 + Tl207 + 0photon            : 4.8          : Tl207_e7   :           :  : 
+    H1 + Tl207 + 0photon            : 5.0          : Tl207_e8   :           :  : 
+    H1 + Tl207 + 0photon            : 5.0          : Tl207_e9   :           :  : 
+    H1 + Tl207 + 0photon            : 5.0          : Tl207_e10  :           :  : 
+    H1 + Tl207 + 0photon            : 5.6          :            : continuum :  : 
+    H2 + Tl206                      : 7.2          :            :           :  : 
+    H2 + Tl206 + 0photon            : 7.4          : Tl206_e1   :           :  : 
+    H2 + Tl206 + 0photon            : 7.4          : Tl206_e2   :           :  : 
+    H2 + Tl206 + 0photon            : 7.8          : Tl206_e3   :           :  : 
+    H2 + Tl206 + 0photon            : 7.8          : Tl206_e4   :           :  : 
+    H2 + Tl206 + 0photon            : 8.0          : Tl206_e5   :           :  : 
+    H2 + Tl206 + 0photon            : 8.0          :            : continuum :  : 
+    H3 + Tl205                      : 7.6          :            :           :  : 
+    H3 + Tl205 + 0photon            : 7.8          : Tl205_e1   :           :  : 
+    H3 + Tl205 + 0photon            : 8.0          : Tl205_e2   :           :  : 
+    H3 + Tl205 + 0photon            : 8.5          : Tl205_e3   :           :  : 
+    H3 + Tl205 + 0photon            : 8.5          : Tl205_e4   :           :  : 
+    H3 + Tl205 + 0photon            : 8.5          : Tl205_e5   :           :  : 
+    H3 + Tl205 + 0photon            : 9.0          :            : continuum :  : 
+    He4 + Hg204                     : 1e-11        :            :           :  : 
+    He4 + Hg204 + 0photon           : 1e-11        : Hg204_e1   :           :  : 
+    He4 + Hg204 + 0photon           : 1e-11        : Hg204_e2   :           :  : 
+    He4 + Hg204 + 0photon           : 1e-11        : Hg204_e3   :           :  : 
+    He4 + Hg204 + 0photon           : 1e-11        : Hg204_e4   :           :  : 
+    He4 + Hg204 + 0photon           : 1e-11        : Hg204_e5   :           :  : 
+    He4 + Hg204 + 0photon           : 1e-11        : Hg204_e6   :           :  : 
+    He4 + Hg204 + 0photon           : 1e-11        : Hg204_e7   :           :  : 
+    He4 + Hg204 + 0photon           : 1e-11        : Hg204_e8   :           :  : 
+    He4 + Hg204 + 0photon           : 1e-11        : Hg204_e9   :           :  : 
+    He4 + Hg204 + 0photon           : 1e-11        : Hg204_e10  :           :  : 
+    He4 + Hg204 + 0photon           : 1e-11        :            : continuum :  : 
+    Pb208 + 0photon                 : 1e-11        :            :           :  : 
+    n + He4 + Hg203 + 0photon       : 1e-11        :            :           :  : 
+    2n + He4 + Hg202 + 0photon      : 11.0         :            :           :  : 
+    2n + H1 + Tl205 + 0photon       : 15.0         :            :           :  : 
+    0n + 0H1 + 0H2 + 0H3 + 0He3 + 0He4 + 0W182 + 0W183 + 0W183_e7 + 0W184 + 0W185 + 0W185_e6 + 0W186 + 0W188 + 0Re183 + 0Re184 + 0Re184_e5 + 0Re185 + 0Re186 + 0Re186_e4 + 0Re187 + 0Re188 + 0Re188_e7 + 0Re189 + 0Re190 + 0Re190_e3 + 0Re191 + 0Os184 + 0Os185 + 0Os186 + 0Os187 + 0Os188 + 0Os189 + 0Os189_e1 + 0Os190 + 0Os191 + 0Os191_e1 + 0Os192 + 0Os193 + 0Os194 + 0Ir185 + 0Ir186 + 0Ir186_e1 + 0Ir187 + 0Ir188 + 0Ir189 + 0Ir190 + 0Ir190_e2 + 0Ir190_e37 + 0Ir191 + 0Ir191_e3 + 0Ir192 + 0Ir192_e3 + 0Ir192_e16 + 0Ir193 + 0Ir193_e2 + 0Ir194 + 0Ir194_e7 + 0Ir195 + 0Ir195_e2 + 0Ir196 + 0Ir196_e4 + 0Ir197 + 0Ir197_e2 + 0Ir198 + 0Ir199 + 0Pt186 + 0Pt187 + 0Pt188 + 0Pt189 + 0Pt190 + 0Pt191 + 0Pt192 + 0Pt193 + 0Pt193_e5 + 0Pt194 + 0Pt195 + 0Pt195_e7 + 0Pt196 + 0Pt197 + 0Pt197_e9 + 0Pt198 + 0Pt199 + 0Pt199_e8 + 0Pt200 + 0Pt201 + 0Pt202 + 0Pt203 + 0Au187 + 0Au187_e2 + 0Au188 + 0Au189 + 0Au189_e3 + 0Au190 + 0Au191 + 0Au192 + 0Au193 + 0Au193_e4 + 0Au194 + 0Au195 + 0Au195_e4 + 0Au196 + 0Au196_e3 + 0Au197 + 0Au197_e4 + 0Au198 + 0Au199 + 0Au200 + 0Au200_e11 + 0Au201 + 0Au202 + 0Au203 + 0Au204 + 0Au205 + 0Hg188 + 0Hg189 + 0Hg189_e2 + 0Hg190 + 0Hg191 + 0Hg191_e1 + 0Hg192 + 0Hg193 + 0Hg193_e3 + 0Hg194 + 0Hg195 + 0Hg195_e3 + 0Hg196 + 0Hg197 + 0Hg197_e4 + 0Hg198 + 0Hg199 + 0Hg199_e7 + 0Hg200 + 0Hg201 + 0Hg202 + 0Hg203 + 0Hg204 + 0Hg205 + 0Hg206 + 0Tl189 + 0Tl189_e1 + 0Tl190 + 0Tl190_e1 + 0Tl191 + 0Tl191_e1 + 0Tl192 + 0Tl192_e1 + 0Tl193 + 0Tl193_e1 + 0Tl194 + 0Tl195 + 0Tl195_e2 + 0Tl196 + 0Tl196_e6 + 0Tl197 + 0Tl198 + 0Tl198_e7 + 0Tl199 + 0Tl200 + 0Tl201 + 0Tl202 + 0Tl203 + 0Tl204 + 0Tl205 + 0Tl206 + 0Tl207 + 0Tl207_e2 + 0Pb190 + 0Pb191 + 0Pb191_e1 + 0Pb192 + 0Pb193 + 0Pb193_e1 + 0Pb194 + 0Pb195 + 0Pb195_e2 + 0Pb196 + 0Pb197 + 0Pb197_e2 + 0Pb198 + 0Pb199 + 0Pb199_e1 + 0Pb200 + 0Pb201 + 0Pb201_e4 + 0Pb202 + 0Pb202_e13 + 0Pb203 + 0Pb203_e6 + 0Pb204 + 0Pb205 + 0Pb206 + 0Pb207 + 0Pb208 + 0photon : 0.475        :            :           :  : 
+#protare : n : Pm143 : ENDF/B-8.0 : eV
+#aliases : 40
+    Pm140_m1 : Pm140_e10
+    Nd141_m1 : Nd141_e2
+    Pr138_m1 : Pr138_e5
+    Pr142_m1 : Pr142_e1
+    Ce139_m1 : Ce139_e2
+    Te115_m1 : Te115_e1
+    I118_m1 : I118_e4
+    Cs118_m1 : Cs118_e1
+    Cs119_m1 : Cs119_e1
+    Cs120_m1 : Cs120_e5
+    Cs121_m1 : Cs121_e1
+    Cs122_m1 : Cs122_e7
+    Cs122_m2 : Cs122_e8
+    Cs123_m1 : Cs123_e5
+    Cs124_m1 : Cs124_e25
+    Ba127_m1 : Ba127_e2
+    La124_m1 : La124_e1
+    La125_m1 : La125_e2
+    La126_m1 : La126_e1
+    La127_m1 : La127_e1
+    La128_m1 : La128_e6
+    La129_m1 : La129_e2
+    La132_m1 : La132_e4
+    Ce127_m1 : Ce127_e1
+    Ce131_m1 : Ce131_e1
+    Ce133_m1 : Ce133_e1
+    Ce135_m1 : Ce135_e4
+    Ce137_m1 : Ce137_e2
+    Pr131_m1 : Pr131_e2
+    Pr133_m1 : Pr133_e3
+    Pr134_m1 : Pr134_e1
+    Nd133_m1 : Nd133_e1
+    Nd137_m1 : Nd137_e4
+    Nd139_m1 : Nd139_e2
+    Pm133_m1 : Pm133_e2
+    Pm134_m1 : Pm134_e1
+    Pm135_m1 : Pm135_e1
+    Pm136_m1 : Pm136_e1
+    Pm138_m1 : Pm138_e1
+    Pm139_m1 : Pm139_e1
+#reactions : 61
+    n + Pm143                       : 1e-11        :            :           :  : 
+    n + Pm143 + 0photon             : 0.27396      : Pm143_e1   :           :  : 
+    n + Pm143 + 0photon             : 0.966504     : Pm143_e2   :           :  : 
+    n + Pm143 + 0photon             : 1.06418      : Pm143_e3   :           :  : 
+    n + Pm143 + 0photon             : 1.18147      : Pm143_e4   :           :  : 
+    n + Pm143 + 0photon             : 1.26869      : Pm143_e5   :           :  : 
+    n + Pm143 + 0photon             : 1.29558      : Pm143_e6   :           :  : 
+    n + Pm143 + 0photon             : 1.41297      : Pm143_e7   :           :  : 
+    n + Pm143 + 0photon             : 1.46665      : Pm143_e8   :           :  : 
+    n + Pm143 + 0photon             : 1.5256       : Pm143_e9   :           :  : 
+    n + Pm143 + 0photon             : 1.5697       : Pm143_e10  :           :  : 
+    n + Pm143 + 0photon             : 1.5769       : Pm143_e11  :           :  : 
+    n + Pm143 + 0photon             : 1.60113      : Pm143_e12  :           :  : 
+    n + Pm143 + 0photon             : 1.62525      : Pm143_e13  :           :  : 
+    n + Pm143 + 0photon             : 1.67522      : Pm143_e14  :           :  : 
+    n + Pm143 + 0photon             : 1.76584      : Pm143_e15  :           :  : 
+    n + Pm143 + 0photon             : 1.82968      : Pm143_e16  :           :  : 
+    n + Pm143 + 0photon             : 1.83744      : Pm143_e17  :           :  : 
+    n + Pm143 + 0photon             : 1.86722      : Pm143_e18  :           :  : 
+    n + Pm143 + 0photon             : 1.91176      : Pm143_e19  :           :  : 
+    n + Pm143 + 0photon             : 1.96456      : Pm143_e20  :           :  : 
+    n + Pm143 + 0photon             : 1.9834       : Pm143_e21  :           :  : 
+    n + Pm143 + 0photon             : 2.02142      : Pm143_e22  :           :  : 
+    n + Pm143 + 0photon             : 2.07485      : Pm143_e23  :           :  : 
+    n + Pm143 + 0photon             : 2.09551      : Pm143_e24  :           :  : 
+    n + Pm143 + 0photon             : 2.12318      : Pm143_e25  :           :  : 
+    n + Pm143 + 0photon             : 2.24826      : Pm143_e26  :           :  : 
+    n + Pm143 + 0photon             : 2.29055      : Pm143_e27  :           :  : 
+    n + Pm143 + 0photon             : 2.29702      : Pm143_e28  :           :  : 
+    n + Pm143 + 0photon             : 2.30357      : Pm143_e29  :           :  : 
+    n + Pm143 + 0photon             : 2.34745      : Pm143_e30  :           :  : 
+    n + Pm143 + 0photon             : 2.34745      :            : continuum :  : 
+    2n + Pm142 + 0photon            : 9.95954      :            :           :  : 
+    3n + Pm141 + 0photon            : 18.7113      :            :           :  : 
+    4n + Pm140 + 0photon            : 29.1703      :            :           :  : 
+    n + H1 + Nd142 + 0photon        : 4.3299       :            :           :  : 
+    n + H2 + Nd141 + 0photon        : 11.9868      :            :           :  : 
+    n + H3 + Nd140 + 0photon        : 13.7529      :            :           :  : 
+    Pm144 + 0photon                 : 1e-11        :            :           :  : 
+    2n + H2 + Nd140 + 0photon       : 20.0543      :            :           :  : 
+    n + He4 + Pr139 + 0photon       : 0.568236     :            :           :  : 
+    2n + He4 + Pr138 + 0photon      : 10.3978      :            :           :  : 
+    3n + He4 + Pr137 + 0photon      : 18.4555      :            :           :  : 
+    n + 2He4 + La135 + 0photon      : 1.17503      :            :           :  : 
+    n + He3 + Pr140 + 0photon       : 13.2937      :            :           :  : 
+    2n + H1 + Nd141 + 0photon       : 14.2271      :            :           :  : 
+    3n + H1 + Nd140 + 0photon       : 22.2946      :            :           :  : 
+    n + 2H1 + Pr141 + 0photon       : 11.6033      :            :           :  : 
+    n + H1 + He4 + Ce138 + 0photon  : 5.14165      :            :           :  : 
+    2He4 + La136 + 0photon          : 1e-11        :            :           :  : 
+    2H1 + Pr142 + 0photon           : 5.71892      :            :           :  : 
+    H1 + He4 + Ce139 + 0photon      : 1e-11        :            :           :  : 
+    H1 + H2 + Pr141 + 0photon       : 9.36304      :            :           :  : 
+    H1 + H3 + Pr140 + 0photon       : 12.5245      :            :           :  : 
+    H2 + He4 + Ce138 + 0photon      : 2.90138      :            :           :  : 
+    H1 + Nd143 + 0photon            : 1e-11        :            :           :  : 
+    H2 + Nd142 + 0photon            : 2.08963      :            :           :  : 
+    H3 + Nd141 + 0photon            : 5.68538      :            :           :  : 
+    He3 + Pr141 + 0photon           : 3.83078      :            :           :  : 
+    He4 + Pr140 + 0photon           : 1e-11        :            :           :  : 
+    0n + 0H1 + 0H2 + 0H3 + 0He3 + 0He4 + 0Te115 + 0Te115_e1 + 0Te116 + 0I116 + 0I117 + 0I118 + 0I118_e4 + 0I119 + 0Xe117 + 0Xe118 + 0Xe119 + 0Xe120 + 0Xe121 + 0Cs118 + 0Cs118_e1 + 0Cs119 + 0Cs119_e1 + 0Cs120 + 0Cs120_e5 + 0Cs121 + 0Cs121_e1 + 0Cs122 + 0Cs122_e7 + 0Cs122_e8 + 0Cs123 + 0Cs123_e5 + 0Cs124 + 0Cs124_e25 + 0Ba119 + 0Ba120 + 0Ba121 + 0Ba122 + 0Ba123 + 0Ba124 + 0Ba125 + 0Ba126 + 0Ba127 + 0Ba127_e2 + 0Ba128 + 0La122 + 0La123 + 0La124 + 0La124_e1 + 0La125 + 0La125_e2 + 0La126 + 0La126_e1 + 0La127 + 0La127_e1 + 0La128 + 0La128_e6 + 0La129 + 0La129_e2 + 0La130 + 0La131 + 0La132 + 0La132_e4 + 0La133 + 0Ce123 + 0Ce124 + 0Ce125 + 0Ce126 + 0Ce127 + 0Ce127_e1 + 0Ce128 + 0Ce129 + 0Ce130 + 0Ce131 + 0Ce131_e1 + 0Ce132 + 0Ce133 + 0Ce133_e1 + 0Ce134 + 0Ce135 + 0Ce135_e4 + 0Ce136 + 0Ce137 + 0Ce137_e2 + 0Ce138 + 0Ce139 + 0Ce139_e2 + 0Pr126 + 0Pr127 + 0Pr128 + 0Pr129 + 0Pr130 + 0Pr131 + 0Pr131_e2 + 0Pr132 + 0Pr133 + 0Pr133_e3 + 0Pr134 + 0Pr134_e1 + 0Pr135 + 0Pr136 + 0Pr137 + 0Pr138 + 0Pr138_e5 + 0Pr139 + 0Pr140 + 0Pr141 + 0Nd129 + 0Nd130 + 0Nd131 + 0Nd132 + 0Nd133 + 0Nd133_e1 + 0Nd134 + 0Nd135 + 0Nd136 + 0Nd137 + 0Nd137_e4 + 0Nd138 + 0Nd139 + 0Nd139_e2 + 0Nd140 + 0Nd141 + 0Nd141_e2 + 0Nd142 + 0Nd143 + 0Pm133 + 0Pm133_e2 + 0Pm134 + 0Pm134_e1 + 0Pm135 + 0Pm135_e1 + 0Pm136 + 0Pm136_e1 + 0Pm137 + 0Pm138 + 0Pm138_e1 + 0Pm139 + 0Pm139_e1 + 0Pm140 + 0Pm140_e10 + 0Pm141 + 0Pm142 + 0Pm143 + 0Pm144 + 0photon : 30.0         :            :           :  : 
+#protare : n : Pm148_m1 : ENDF/B-8.0 : eV
+#aliases : 1
+    Pm148_m1 : Pm148_e2
+#reactions : 13
+    n + Pm148_e2                    : 1e-11        :            :           :  : 
+    n + Pm148                       : 1e-11        :            :           :  : 
+    n + Pm148                       : 1e-11        : Pm148_e1   :           :  : 
+    n + Pm148                       : 0.2          :            : continuum :  : 
+    2n + Pm147                      : 5.7947       :            :           :  : 
+    3n + Pm146                      : 13.512       :            :           :  : 
+    n + H1 + Nd147                  : 12.5         :            :           :  : 
+    Pm149 + photon                  : 1e-11        :            :           :  : 
+    n + He4 + Pr144                 : 2.53e-08     :            :           :  : 
+    H1 + Nd148                      : 2.53e-08     :            :           :  : 
+    H2 + Nd147                      : 11.5         :            :           :  : 
+    H3 + Nd146                      : 11.5         :            :           :  : 
+    He4 + Pr145                     : 2.53e-08     :            :           :  : 
+#protare : n : Pm149 : ENDF/B-8.0 : eV
+#reactions : 27
+    n + Pm149                       : 1e-11        :            :           :  : 
+    n + Pm149                       : 0.115074     : Pm149_e1   :           :  : 
+    n + Pm149                       : 0.189877     : Pm149_e2   :           :  : 
+    n + Pm149                       : 0.212731     : Pm149_e3   :           :  : 
+    n + Pm149                       : 0.241827     : Pm149_e4   :           :  : 
+    n + Pm149                       : 0.27203      : Pm149_e5   :           :  : 
+    n + Pm149                       : 0.290152     : Pm149_e6   :           :  : 
+    n + Pm149                       : 0.362438     : Pm149_e7   :           :  : 
+    n + Pm149                       : 0.390225     : Pm149_e8   :           :  : 
+    n + Pm149                       : 0.399488     : Pm149_e9   :           :  : 
+    n + Pm149                       : 0.428181     : Pm149_e10  :           :  : 
+    n + Pm149                       : 0.465331     : Pm149_e11  :           :  : 
+    n + Pm149                       : 0.519092     : Pm149_e12  :           :  : 
+    n + Pm149                       : 0.541543     : Pm149_e13  :           :  : 
+    n + Pm149                       : 0.659235     : Pm149_e14  :           :  : 
+    n + Pm149                       : 0.704741     :            : continuum :  : 
+    2n + Pm148                      : 7.31835      :            :           :  : 
+    3n + Pm147                      : 13.2645      :            :           :  : 
+    n + H1 + Nd148                  : 7.0          :            :           :  : 
+    n + H2 + Nd147                  : 12.0         :            :           :  : 
+    n + H3 + Nd146                  : 11.053       :            :           :  : 
+    Pm150 + photon                  : 1e-11        :            :           :  : 
+    n + He4 + Pr145                 : 2.0          :            :           :  : 
+    H1 + Nd149                      : 2.0          :            :           :  : 
+    H2 + Nd148                      : 5.0          :            :           :  : 
+    H3 + Nd147                      : 7.0          :            :           :  : 
+    He4 + Pr146                     : 0.1          :            :           :  : 
+#protare : n : Re186_m1 : ENDF/B-8.0 : eV
+#aliases : 1
+    Re186_m1 : Re186_e4
+#reactions : 89
+    n + Re186_e4                    : 1e-11        :            :           :  : 
+    n + Re186                       : 1e-11        :            :           :  : 
+    n + Re186_e1                    : 1e-11        :            :           :  : 
+    n + Re186_e2                    : 1e-11        :            :           :  : 
+    n + Re186_e3                    : 1e-11        :            :           :  : 
+    n + Re186 + 0photon             : 0.02506422   : Re186_e5   :           :  : 
+    n + Re186 + 0photon             : 0.0372007    : Re186_e6   :           :  : 
+    n + Re186 + 0photon             : 0.06203367   : Re186_e7   :           :  : 
+    n + Re186 + 0photon             : 0.1204478    : Re186_e8   :           :  : 
+    n + Re186 + 0photon             : 0.125303     : Re186_e9   :           :  : 
+    n + Re186 + 0photon             : 0.165904     : Re186_e10  :           :  : 
+    n + Re186 + 0photon             : 0.1683714    : Re186_e11  :           :  : 
+    n + Re186 + 0photon             : 0.1697609    : Re186_e12  :           :  : 
+    n + Re186 + 0photon             : 0.1743194    : Re186_e13  :           :  : 
+    n + Re186 + 0photon             : 0.1819818    : Re186_e14  :           :  : 
+    n + Re186 + 0photon             : 0.1940469    : Re186_e15  :           :  : 
+    n + Re186 + 0photon             : 0.2032988    : Re186_e16  :           :  : 
+    n + Re186 + 0photon             : 0.2306363    : Re186_e17  :           :  : 
+    n + Re186 + 0photon             : 0.27025      : Re186_e18  :           :  : 
+    n + Re186 + 0photon             : 0.273032     : Re186_e19  :           :  : 
+    n + Re186 + 0photon             : 0.2783246    : Re186_e20  :           :  : 
+    n + Re186 + 0photon             : 0.315672     : Re186_e21  :           :  : 
+    n + Re186 + 0photon             : 0.322519     : Re186_e22  :           :  : 
+    n + Re186 + 0photon             : 0.323258     : Re186_e23  :           :  : 
+    n + Re186 + 0photon             : 0.3237466    : Re186_e24  :           :  : 
+    n + Re186 + 0photon             : 0.3501822    : Re186_e25  :           :  : 
+    n + Re186 + 0photon             : 0.3536298    : Re186_e26  :           :  : 
+    n + Re186 + 0photon             : 0.3874603    : Re186_e27  :           :  : 
+    n + Re186 + 0photon             : 0.4025015    : Re186_e28  :           :  : 
+    n + Re186 + 0photon             : 0.4132052    : Re186_e29  :           :  : 
+    n + Re186 + 0photon             : 0.4152402    : Re186_e30  :           :  : 
+    n + Re186 + 0photon             : 0.4310485    : Re186_e31  :           :  : 
+    n + Re186 + 0photon             : 0.4420941    : Re186_e32  :           :  : 
+    n + Re186 + 0photon             : 0.4550349    : Re186_e33  :           :  : 
+    n + Re186 + 0photon             : 0.4774659    : Re186_e34  :           :  : 
+    n + Re186 + 0photon             : 0.5000297    : Re186_e35  :           :  : 
+    n + Re186 + 0photon             : 0.5117509    : Re186_e36  :           :  : 
+    n + Re186 + 0photon             : 0.5189879    : Re186_e37  :           :  : 
+    n + Re186 + 0photon             : 0.5339104    : Re186_e38  :           :  : 
+    n + Re186 + 0photon             : 0.5399711    : Re186_e39  :           :  : 
+    n + Re186 + 0photon             : 0.2461918    :            : continuum :  : 
+    2n + Re185 + 0photon            : 6.213521     :            :           :  : 
+    H1 + W186                       : 1e-05        :            :           :  : 
+    H1 + W186 + 0photon             : 1e-05        : W186_e1    :           :  : 
+    H1 + W186 + 0photon             : 1e-05        : W186_e2    :           :  : 
+    H1 + W186 + 0photon             : 1e-05        : W186_e3    :           :  : 
+    H1 + W186 + 0photon             : 1e-05        : W186_e4    :           :  : 
+    H1 + W186 + 0photon             : 1e-05        : W186_e5    :           :  : 
+    H1 + W186 + 0photon             : 1e-05        : W186_e6    :           :  : 
+    H1 + W186 + 0photon             : 1e-05        : W186_e7    :           :  : 
+    H1 + W186 + 0photon             : 1e-05        : W186_e8    :           :  : 
+    H1 + W186 + 0photon             : 1e-05        : W186_e9    :           :  : 
+    H1 + W186 + 0photon             : 1e-05        : W186_e10   :           :  : 
+    H1 + W186 + 0photon             : 1e-05        : W186_e11   :           :  : 
+    H1 + W186 + 0photon             : 1e-05        : W186_e12   :           :  : 
+    H1 + W186 + 0photon             : 1e-05        : W186_e13   :           :  : 
+    H1 + W186 + 0photon             : 1e-05        : W186_e14   :           :  : 
+    H1 + W186 + 0photon             : 1e-05        : W186_e15   :           :  : 
+    H1 + W186 + 0photon             : 1e-05        : W186_e16   :           :  : 
+    H1 + W186 + 0photon             : 1e-05        : W186_e17   :           :  : 
+    H1 + W186 + 0photon             : 1e-05        : W186_e18   :           :  : 
+    H1 + W186 + 0photon             : 1e-05        : W186_e19   :           :  : 
+    H1 + W186 + 0photon             : 1e-05        : W186_e20   :           :  : 
+    H1 + W186 + 0photon             : 1e-05        : W186_e21   :           :  : 
+    H1 + W186 + 0photon             : 1e-05        : W186_e22   :           :  : 
+    H1 + W186 + 0photon             : 1e-05        : W186_e23   :           :  : 
+    H1 + W186 + 0photon             : 1e-05        : W186_e24   :           :  : 
+    H1 + W186 + 0photon             : 1e-05        : W186_e25   :           :  : 
+    H1 + W186 + 0photon             : 0.004826036  : W186_e26   :           :  : 
+    H1 + W186 + 0photon             : 0.008948275  : W186_e27   :           :  : 
+    H1 + W186 + 0photon             : 0.02002805   : W186_e28   :           :  : 
+    H1 + W186 + 0photon             : 1e-05        :            : continuum :  : 
+    He4 + Ta183                     : 1e-11        :            :           :  : 
+    He4 + Ta183 + 0photon           : 1e-11        : Ta183_e1   :           :  : 
+    He4 + Ta183 + 0photon           : 1e-11        : Ta183_e2   :           :  : 
+    He4 + Ta183 + 0photon           : 1e-11        : Ta183_e3   :           :  : 
+    He4 + Ta183 + 0photon           : 1e-11        : Ta183_e4   :           :  : 
+    He4 + Ta183 + 0photon           : 1e-11        : Ta183_e5   :           :  : 
+    He4 + Ta183 + 0photon           : 1e-11        : Ta183_e6   :           :  : 
+    He4 + Ta183 + 0photon           : 1e-11        : Ta183_e7   :           :  : 
+    He4 + Ta183 + 0photon           : 1e-11        : Ta183_e8   :           :  : 
+    He4 + Ta183 + 0photon           : 1e-11        : Ta183_e9   :           :  : 
+    He4 + Ta183 + 0photon           : 1e-11        : Ta183_e10  :           :  : 
+    He4 + Ta183 + 0photon           : 1e-11        : Ta183_e11  :           :  : 
+    He4 + Ta183 + 0photon           : 1e-11        : Ta183_e12  :           :  : 
+    He4 + Ta183 + 0photon           : 1e-11        : Ta183_e13  :           :  : 
+    He4 + Ta183 + 0photon           : 1e-11        : Ta183_e14  :           :  : 
+    Re187 + 0photon                 : 1e-11        :            :           :  : 
+    0n + 0H1 + 0H2 + 0H3 + 0He3 + 0He4 + 0photon : 1e-11        :            :           :  : 
+#protare : n : Tm168 : ENDF/B-8.0 : eV
+#aliases : 4
+    Er167_m1 : Er167_e3
+    Ho164_m1 : Ho164_e3
+    Ho163_m1 : Ho163_e3
+    Ho166_m1 : Ho166_e1
+#reactions : 100
+    n + Tm168                       : 1e-11        :            :           :  : 
+    n + Tm168 + 0photon             : 0.003018019  : Tm168_e1   :           :  : 
+    n + Tm168 + 0photon             : 0.0171021    : Tm168_e2   :           :  : 
+    n + Tm168 + 0photon             : 0.04124626   : Tm168_e3   :           :  : 
+    n + Tm168 + 0photon             : 0.04728229   : Tm168_e4   :           :  : 
+    n + Tm168 + 0photon             : 0.0643844    : Tm168_e5   :           :  : 
+    n + Tm168 + 0photon             : 0.0804805    : Tm168_e6   :           :  : 
+    n + Tm168 + 0photon             : 0.1126727    : Tm168_e7   :           :  : 
+    n + Tm168 + 0photon             : 0.1448649    : Tm168_e8   :           :  : 
+    n + Tm168 + 0photon             : 0.1488889    : Tm168_e9   :           :  : 
+    n + Tm168 + 0photon             : 0.168003     : Tm168_e10  :           :  : 
+    n + Tm168 + 0photon             : 0.179069     : Tm168_e11  :           :  : 
+    n + Tm168 + 0photon             : 0.186111     : Tm168_e12  :           :  : 
+    n + Tm168 + 0photon             : 0.201201     : Tm168_e13  :           :  : 
+    n + Tm168 + 0photon             : 0.205225     : Tm168_e14  :           :  : 
+    n + Tm168 + 0photon             : 0.231381     : Tm168_e15  :           :  : 
+    n + Tm168 + 0photon             : 0.232387     : Tm168_e16  :           :  : 
+    n + Tm168 + 0photon             : 0.236411     : Tm168_e17  :           :  : 
+    n + Tm168 + 0photon             : 0.2444595    : Tm168_e18  :           :  : 
+    n + Tm168 + 0photon             : 0.2464715    : Tm168_e19  :           :  : 
+    n + Tm168 + 0photon             : 0.313874     : Tm168_e20  :           :  : 
+    n + Tm168 + 0photon             : 0.326952     : Tm168_e21  :           :  : 
+    n + Tm168 + 0photon             : 0.32997      : Tm168_e22  :           :  : 
+    n + Tm168 + 0photon             : 0.338018     : Tm168_e23  :           :  : 
+    n + Tm168 + 0photon             : 0.349084     : Tm168_e24  :           :  : 
+    n + Tm168 + 0photon             : 0.354114     : Tm168_e25  :           :  : 
+    n + Tm168 + 0photon             : 0.368198     : Tm168_e26  :           :  : 
+    n + Tm168 + 0photon             : 0.3853       : Tm168_e27  :           :  : 
+    n + Tm168 + 0photon             : 0.392342     : Tm168_e28  :           :  : 
+    n + Tm168 + 0photon             : 0.4416368    : Tm168_e29  :           :  : 
+    n + Tm168 + 0photon             : 0.4496848    : Tm168_e30  :           :  : 
+    n + Tm168 + 0photon             : 0.4506908    : Tm168_e31  :           :  : 
+    n + Tm168 + 0photon             : 0.484895     : Tm168_e32  :           :  : 
+    n + Tm168 + 0photon             : 0.495961     : Tm168_e33  :           :  : 
+    n + Tm168 + 0photon             : 0.501997     : Tm168_e34  :           :  : 
+    n + Tm168 + 0photon             : 0.523123     : Tm168_e35  :           :  : 
+    n + Tm168 + 0photon             : 0.523123     :            : continuum :  : 
+    2n + Tm167 + 0photon            : 6.881486     :            :           :  : 
+    3n + Tm166 + 0photon            : 15.6605      :            :           :  : 
+    4n + Tm165 + 0photon            : 22.7297      :            :           :  : 
+    n + H1 + Er167 + 0photon        : 5.0          :            :           :  : 
+    H1 + Er168                      : 1e-11        :            :           :  : 
+    H1 + Er168 + 0photon            : 1e-11        : Er168_e1   :           :  : 
+    H1 + Er168 + 0photon            : 1e-11        : Er168_e2   :           :  : 
+    H1 + Er168 + 0photon            : 0.1          : Er168_e3   :           :  : 
+    H1 + Er168 + 0photon            : 0.3          : Er168_e4   :           :  : 
+    H1 + Er168 + 0photon            : 0.4          : Er168_e5   :           :  : 
+    H1 + Er168 + 0photon            : 0.4          : Er168_e6   :           :  : 
+    H1 + Er168 + 0photon            : 0.5          : Er168_e7   :           :  : 
+    H1 + Er168 + 0photon            : 0.5          : Er168_e8   :           :  : 
+    H1 + Er168 + 0photon            : 0.5          : Er168_e9   :           :  : 
+    H1 + Er168 + 0photon            : 0.7          : Er168_e10  :           :  : 
+    H1 + Er168 + 0photon            : 0.7          : Er168_e11  :           :  : 
+    H1 + Er168 + 0photon            : 0.85         : Er168_e12  :           :  : 
+    H1 + Er168 + 0photon            : 0.85         : Er168_e13  :           :  : 
+    H1 + Er168 + 0photon            : 0.85         : Er168_e14  :           :  : 
+    H1 + Er168 + 0photon            : 0.85         : Er168_e15  :           :  : 
+    H1 + Er168 + 0photon            : 0.85         : Er168_e16  :           :  : 
+    H1 + Er168 + 0photon            : 0.85         : Er168_e17  :           :  : 
+    H1 + Er168 + 0photon            : 0.85         : Er168_e18  :           :  : 
+    H1 + Er168 + 0photon            : 0.85         : Er168_e19  :           :  : 
+    H1 + Er168 + 0photon            : 0.85         : Er168_e20  :           :  : 
+    H1 + Er168 + 0photon            : 0.85         : Er168_e21  :           :  : 
+    H1 + Er168 + 0photon            : 0.85         : Er168_e22  :           :  : 
+    H1 + Er168 + 0photon            : 1.0          : Er168_e23  :           :  : 
+    H1 + Er168 + 0photon            : 1.0          : Er168_e24  :           :  : 
+    H1 + Er168 + 0photon            : 1.0          : Er168_e25  :           :  : 
+    H1 + Er168 + 0photon            : 1.0          : Er168_e26  :           :  : 
+    H1 + Er168 + 0photon            : 1.0          : Er168_e27  :           :  : 
+    H1 + Er168 + 0photon            : 1.0          : Er168_e28  :           :  : 
+    H1 + Er168 + 0photon            : 1.0          : Er168_e29  :           :  : 
+    H1 + Er168 + 0photon            : 1.0          : Er168_e30  :           :  : 
+    H1 + Er168 + 0photon            : 1.0          : Er168_e31  :           :  : 
+    H1 + Er168 + 0photon            : 1.0          : Er168_e32  :           :  : 
+    H1 + Er168 + 0photon            : 1.0          : Er168_e33  :           :  : 
+    H1 + Er168 + 0photon            : 1.0          : Er168_e34  :           :  : 
+    H1 + Er168 + 0photon            : 1.0          : Er168_e35  :           :  : 
+    H1 + Er168 + 0photon            : 1.0          : Er168_e36  :           :  : 
+    H1 + Er168 + 0photon            : 1.0          : Er168_e37  :           :  : 
+    H1 + Er168 + 0photon            : 1.0          : Er168_e38  :           :  : 
+    H1 + Er168 + 0photon            : 1.0          : Er168_e39  :           :  : 
+    H1 + Er168 + 0photon            : 0.3          :            : continuum :  : 
+    He4 + Ho165                     : 1e-11        :            :           :  : 
+    He4 + Ho165 + 0photon           : 1e-11        : Ho165_e1   :           :  : 
+    He4 + Ho165 + 0photon           : 1e-11        : Ho165_e2   :           :  : 
+    He4 + Ho165 + 0photon           : 1e-11        : Ho165_e3   :           :  : 
+    He4 + Ho165 + 0photon           : 1e-11        : Ho165_e4   :           :  : 
+    He4 + Ho165 + 0photon           : 1e-11        : Ho165_e5   :           :  : 
+    He4 + Ho165 + 0photon           : 1e-11        : Ho165_e6   :           :  : 
+    He4 + Ho165 + 0photon           : 1e-11        : Ho165_e7   :           :  : 
+    He4 + Ho165 + 0photon           : 1e-11        :            : continuum :  : 
+    Tm169 + 0photon                 : 1e-11        :            :           :  : 
+    n + He4 + Ho164 + 0photon       : 6.0          :            :           :  : 
+    n + He3 + Ho165 + 0photon       : 26.0         :            :           :  : 
+    n + 2H1 + Ho166 + 0photon       : 9.5          :            :           :  : 
+    H1 + He4 + Dy164 + 0photon      : 6.0          :            :           :  : 
+    H1 + H2 + Ho166 + 0photon       : 23.0         :            :           :  : 
+    H2 + Er167 + 0photon            : 7.5          :            :           :  : 
+    He3 + Ho166 + 0photon           : 14.0         :            :           :  : 
+    0n + 0H1 + 0H2 + 0H3 + 0He3 + 0He4 + 0photon : 1e-11        :            :           :  : 

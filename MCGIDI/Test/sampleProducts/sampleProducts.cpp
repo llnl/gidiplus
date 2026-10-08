@@ -144,7 +144,6 @@ void main2( int argc, char **argv ) {
     MCProtare->setUserParticleIndex( pops[PoPI::IDs::FissionProductENDL99120], 13 );
 
     MCGIDI::Sampling::Input input( true, MCGIDI::Sampling::Upscatter::Model::none );
-    input.m_temperature = 2.58e-5;                                                     // In keV/k;
 
     std::size_t numberOfReactions = MCProtare->numberOfReactions( );
 
@@ -159,7 +158,8 @@ void main2( int argc, char **argv ) {
             products.clear( );
 
             std::cout << "    energy = " << energy << std::endl;
-            reaction->sampleProducts( MCProtare, energy, input, [&]( ) -> double { return float64RNG64( &rngState ); },
+            input.setTemperatureAndEnergy( 0.0, energy );
+            reaction->sampleProducts( MCProtare, input, [&]( ) -> double { return float64RNG64( &rngState ); },
                     [&]( MCGIDI::Sampling::Product &a_product ) -> void { products.push_back( a_product ); }, products );
             for( std::size_t i2 = 0; i2 < products.size( ); ++i2 ) {
                 MCGIDI::Sampling::Product const &product = products[i2];
@@ -188,9 +188,10 @@ void main2( int argc, char **argv ) {
                 long totalFissionNeutrons = 0, delayedFissionNeutrons = 0;
                 std::vector<long> delayedFissionNeutronIndexCounts( 10, 0 );
 
+                input.setTemperatureAndEnergy( 0.0, energy );
                 for( std::size_t i2 = 0; i2 < numberOfFissionSamples; ++i2 ) {
                     products.clear( );
-                    reaction->sampleProducts( MCProtare, energy, input, [&]( ) -> double { return float64RNG64( &rngState ); },
+                    reaction->sampleProducts( MCProtare, input, [&]( ) -> double { return float64RNG64( &rngState ); },
                             [&]( MCGIDI::Sampling::Product &a_product ) -> void { products.push_back( a_product ); }, products );
                     for( std::size_t i3 = 0; i3 < products.size( ); ++i3 ) {
                         MCGIDI::Sampling::Product const &product = products[i3];

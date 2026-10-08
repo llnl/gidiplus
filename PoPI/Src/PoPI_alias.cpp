@@ -55,7 +55,7 @@ Alias::~Alias( ) {
 void Alias::toXMLList( std::vector<std::string> &a_XMLList, std::string const &a_indent1 ) const {
 
     std::string header = a_indent1 + "<particle id=\"" + ID( ) + "\" pid=\"" + m_pid + "\"/>";
-    a_XMLList.push_back( header );
+    a_XMLList.push_back( std::move( header ) );
 }
 
 /*! \class MetaStable
@@ -101,7 +101,7 @@ void MetaStable::toXMLList( std::vector<std::string> &a_XMLList, std::string con
 
     std::string indexStr = LUPI::Misc::argumentsToString( "%d", m_metaStableIndex );
     std::string header = a_indent1 + "<metaStable id=\"" + ID( ) + "\" pid=\"" + pid( ) + "\" metaStableIndex=\"" + indexStr + "\"/>";
-    a_XMLList.push_back( header );
+    a_XMLList.push_back( std::move( header ) );
 }
 
 }

@@ -18,8 +18,9 @@ namespace GIDI {
  * Parses a <**reaction**> node.
  ***********************************************************************************************************/
 
-Reaction::Reaction( int a_ENDF_MT, std::string a_fissionGenre ) :
+Reaction::Reaction( int a_ENDF_MT, std::string const &a_fissionGenre ) :
         Form( FormType::reaction ),
+        m_reactionIndex( 0 ),
         m_active( true ),
         m_ENDF_MT( a_ENDF_MT ),
         m_fissionGenre( a_fissionGenre ),
@@ -272,7 +273,7 @@ void Reaction::setOutputChannel( OutputChannel *a_outputChannel ) {
  *                                                  for the TNSL data for that boundary.
  ***********************************************************************************************************/
 
-void Reaction::modifiedMultiGroupElasticForTNSL( std::map<std::string,std::size_t> a_maximumTNSL_MultiGroupIndex ) {
+void Reaction::modifiedMultiGroupElasticForTNSL( std::map<std::string,std::size_t> const &a_maximumTNSL_MultiGroupIndex ) {
 
     m_crossSection.modifiedMultiGroupElasticForTNSL( a_maximumTNSL_MultiGroupIndex );
     m_availableEnergy.modifiedMultiGroupElasticForTNSL( a_maximumTNSL_MultiGroupIndex );
@@ -340,16 +341,18 @@ bool Reaction::areAllProductsTracked( Transporting::Particles const &a_particles
  * @param a_smr                 [Out]   If errors are not to be thrown, then the error is reported via this instance.
  * @param a_settings            [in]    Specifies the requested label.
  * @param a_temperatureInfo     [in]    Specifies the temperature and labels use to lookup the requested data.
+ * @param a_label               [in]    If not an empty string, this is used as the label for the form to return and the *a_temperatureInfo* labels are ignored.
  *
  * @return                              The requested multi-group cross section as a GIDI::Vector.
  ***********************************************************************************************************/
 
 Vector Reaction::multiGroupCrossSection( LUPI::StatusMessageReporting &a_smr, Transporting::MG const &a_settings, 
-                Styles::TemperatureInfo const &a_temperatureInfo ) const {
+                Styles::TemperatureInfo const &a_temperatureInfo, std::string const &a_label ) const {
 
     Vector vector( 0 );
 
-    Functions::Gridded1d const *form = dynamic_cast<Functions::Gridded1d const*>( a_settings.form( a_smr, m_crossSection, a_temperatureInfo, "cross section" ) );
+    Functions::Gridded1d const *form = dynamic_cast<Functions::Gridded1d const*>( 
+            a_settings.form( a_smr, m_crossSection, a_temperatureInfo, "cross section", a_label ) );
     if( form != nullptr ) vector = form->data( );
 
     return( vector );

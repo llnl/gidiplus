@@ -216,7 +216,8 @@ void main2( int argc, char **argv ) {
                     muBins.clear( );
                     for( long i1 = 0; i1 < numberOfSamples; ++i1 ) {
                         products.clear( );
-                        reaction->sampleProducts( MCProtare, energy2, input, [&]( ) -> double { return float64RNG64( &rngState ); }, 
+                        input.setTemperatureAndEnergy( 0.0, energy2 );
+                        reaction->sampleProducts( MCProtare, input, [&]( ) -> double { return float64RNG64( &rngState ); }, 
                                 [&]( MCGIDI::Sampling::Product &a_product ) -> void { products.push_back( a_product ); }, products );
                         for( std::size_t i2 = 0; i2 < products.size( ); ++i2 ) {
                             MCGIDI::Sampling::Product const &product = products[i2];
@@ -263,8 +264,9 @@ void main2( int argc, char **argv ) {
     std::cout << std::endl;
 
     std::vector<long> counts( numberOfReactions + 1, 0 );
+    input.setTemperatureAndEnergy( 0.0, energy );
     for( long i1 = 0; i1 < numberOfSamples; ++i1 ) {
-        int reactionIndex = MCProtare->sampleReaction( URR_protare_infos, hashIndex, 0, energy, crossSection, 
+        int reactionIndex = MCProtare->sampleReaction( input, URR_protare_infos, hashIndex, crossSection, 
                 [&]() -> double { return float64RNG64( &rngState ); } );
         if( reactionIndex > numberOfReactions ) reactionIndex = numberOfReactions;
         ++counts[reactionIndex];

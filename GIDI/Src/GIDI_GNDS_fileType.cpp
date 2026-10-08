@@ -70,8 +70,8 @@ GNDS_FileTypeInfo::GNDS_FileTypeInfo( ) :
  * @param       a_interaction           [in]        The protare's interaction.
  ***********************************************************************************************************/
 
-GNDS_FileTypeInfo::GNDS_FileTypeInfo( GNDS_FileType a_GNDS_fileType, std::string a_projectileID, std::string a_targetID, std::string a_evaluation,
-                std::string a_interaction ) :
+GNDS_FileTypeInfo::GNDS_FileTypeInfo( GNDS_FileType a_GNDS_fileType, std::string const &a_projectileID, 
+                std::string const &a_targetID, std::string const &a_evaluation, std::string const &a_interaction ) :
         m_GNDS_fileType( a_GNDS_fileType ),
         m_projectileID( a_projectileID ),
         m_targetID( a_targetID ),

@@ -147,6 +147,54 @@ std::vector<std::string> splitString( std::string const &a_string, std::string c
 }
 
 /* *********************************************************************************************************//**
+ * This function adds together the strings in *a_strings* with *a_sep* between the strings in **a_strings**.
+ *
+ * @param a_delimiter   [in]    The delimiter string.
+ * @param a_strings     [in]    The string to split.
+ *
+ * @return                      A **std::string**.
+ ***********************************************************************************************************/
+
+std::string joinStrings( std::string const &a_sep, std::vector<std::string> a_strings ) {
+
+    std::string string;
+    std::string sep = "";
+    std::string const *sepPointer = &sep;
+
+    for( auto iter = a_strings.begin( ); iter != a_strings.end( ); ++iter ) {
+        string += *sepPointer + *iter;
+        sepPointer = &a_sep;
+    }
+
+    return( string );
+}
+
+/* *********************************************************************************************************//**
+ * This function replace one (or all if *a_all* is true) occurrence(s) of *a_old* in *a_string* with *a_new*.
+ *
+ * @param a_string      [in]    The string to split.
+ * @param a_old         [in]    The current sub-string in *a_string* that is replaced by *a_new*.
+ * @param a_new         [in]    The new sub-string that replace *a_old*..
+ * @param a_all         [in]    If **true** all occurrence of *a_old* are replaced by *a_new*; otherwise, only the first occurrence is replaced.
+ *
+ * @return                      A **std::string**.
+ ***********************************************************************************************************/
+
+std::string replaceString( std::string const &a_string, std::string const &a_old, std::string const &a_new, bool a_all ) {
+
+    std::string string( a_string );
+
+    while( true ) {
+        std::size_t index = string.find( a_old );
+        if( index == std::string::npos ) break;
+        string.replace( index, a_old.size( ), a_new );
+        if( !a_all ) break;
+    }
+
+    return( string );
+}
+
+/* *********************************************************************************************************//**
  * This function splits that string *a_string* into separate strings using the delimiter character "/" as 
  * for a XLink. The delimiter character "/"'s in each quoted region of the string is not split.
  *
@@ -185,7 +233,7 @@ std::vector<std::string> splitXLinkString( std::string const &a_XLink ) {
 
         if( current == '/' ) {
             std::string element = a_XLink.substr( start, end - start );
-            elements.push_back( element );
+            elements.push_back( std::move( element ) );
             while( a_XLink[end] == '/' ) ++end;
             start = end;
             if( end == size ) break;                            // Happens when XLink ends with '/'.
@@ -303,3 +351,91 @@ void printCommand( std::string const &a_indent, int a_argc, char **a_argv ) {
 }               // End of namespace Misc.
 
 }               // End of namespace LUPI.
+
+#if defined (GIDIP_HAVE_COMPILER_FLOATING_POINT_EXCEPTIONS)
+
+#include <fenv.h>
+
+/* *********************************************************************************************************//**
+ * Turn on floating point exception sigfpe behavior.
+ * Possible exceptions are:
+ *  
+ *   FE_INEXACT      The inexact exception.
+ *   FE_DIVBYZERO    The divide by zero exception.
+ *   FE_UNDERFLOW    The underflow exception.
+ *   FE_OVERFLOW     The overflow exception.
+ *   FE_INVALID      The invalid exception.
+ *   FE_ALL_EXCEPT   All of the above
+ *
+ * @param a_file            [in]    Filename this function is called from.
+ * @param a_line            [in]    Line this function is called from.
+ ***********************************************************************************************************/
+
+void LUPI_FPE_enable( char const *a_file, int a_line ) {
+
+    static int num_errors = 0;
+
+// feenableexcept() is gnu specific according to documentation, but appears to work using the intel compilers as well.  
+// We are linking in a gnu library which enables this call.
+    int result = feenableexcept( FE_DIVBYZERO | FE_OVERFLOW | FE_INVALID );
+
+    if( result == -1 && num_errors < 3 ) {
+        num_errors++;
+        std::cerr << "LUPI_FPE_enable:: feenableexcept() returned -1: called from file " << a_file << " at line" << a_line << ".\n";
+    }
+}
+
+/* *********************************************************************************************************//**
+ * Disable floating point exception sigfpe behavior, and clear exception flags.
+ *
+ * @param a_file            [in]    Filename this function is called from.
+ * @param a_line            [in]    Line this function is called from.
+ ***********************************************************************************************************/
+
+void LUPI_FPE_disable_and_clear( char const *a_file, int a_line ) {
+
+    static int num_errors = 0;
+    fenv_t envp;
+
+// The feclearexcept() call is gnu specific and does not appear to work when I use it with the intel compiler.  
+// However, the posix compliant feholdexcept() can be used to clear exceptions, so I am using it.
+    int result = feholdexcept(&envp);
+
+    if( result != 0 && num_errors < 3 ) {
+        num_errors++;
+        std::cerr << "LUPI_FPE_disable_and_clear:: feholdexcept returned error " << result << ": called from file " << a_file << " at line " << a_line << ".\n";
+    }
+}
+
+/* *********************************************************************************************************//**
+ * Test the fpe exception flags, and print out warnings or abort with fatal if they are set.
+ *
+ * @param a_file            [in]    Filename this function is called from.
+ * @param a_line            [in]    Line this function is called from.
+ ***********************************************************************************************************/
+
+void LUPI_FPE_test( char const *a_file, int a_line ) {
+
+    static int num_errors = 0;
+
+    if( fetestexcept(FE_DIVBYZERO) != 0 && num_errors < 10 ) {
+        num_errors++;
+        std::cerr << "LUPI_FPE_test:: division by 0.error: called from file " << a_file << " at line " << a_line << ".\n";
+    }
+
+    if( fetestexcept(FE_UNDERFLOW) != 0 && num_errors < 10 ) {
+        num_errors++;
+        std::cerr << "LUPI_FPE_test:: underflow error: called from file " << a_file << " at line " << a_line << ".\n";
+    }
+
+    if( fetestexcept(FE_OVERFLOW) != 0 && num_errors < 10 ) {
+        num_errors++;
+        std::cerr << "LUPI_FPE_test:: overflow error: called from file " << a_file << " at line " << a_line << ".\n";
+    }
+
+    if( fetestexcept(FE_INVALID) != 0 && num_errors < 10)  {
+        num_errors++;
+        std::cerr << "LUPI_FPE_test:: invalid error: called from file " << a_file << " at line " << a_line << ".\n";
+    }
+}
+#endif

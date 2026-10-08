@@ -1,0 +1,23 @@
+Loading PoPs database from: ../../../GIDI/Test/pops.xml
+Loading RIS file from: ../../../GIDI/Test/Data/MG_MC/all.ris
+
+Projectile H1 has 1 targets
+
+  Target                   ZA        Note
+============================================================
+  Li6                      3006      
+
+Projectile n has 3 targets
+
+  Target                   ZA        Note
+============================================================
+  Fe56                     26056     
+  O16                      8016      
+  Th227                    90227     Fissile
+
+Projectile photon has 1 targets
+
+  Target                   ZA        Note
+============================================================
+  O16                      8016      
+

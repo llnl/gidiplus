@@ -121,7 +121,8 @@ void main2( int argc, char **argv ) {
                     long promptFissionNeutronCount = 0;
 
                     products.clear( );
-                    reaction->sampleProducts( MCProtare, energy, input, [&]( ) -> double { return float64RNG64( &rngState ); },
+                    input.setTemperatureAndEnergy( 0.0, energy );
+                    reaction->sampleProducts( MCProtare, input, [&]( ) -> double { return float64RNG64( &rngState ); },
                             [&]( MCGIDI::Sampling::Product &a_product ) -> void { products.push_back( a_product ); }, products );
                     for( std::size_t i3 = 0; i3 < products.size( ); ++i3 ) {
                         MCGIDI::Sampling::Product const &product = products[i3];

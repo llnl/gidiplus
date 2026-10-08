@@ -17,6 +17,10 @@ namespace HAPI {
     HDFDataManager::HDFDataManager(std::string const &a_filename) :
         m_filename( a_filename ) {
 
+#if defined (GIDIP_HAVE_COMPILER_FLOATING_POINT_EXCEPTIONS)
+        LUPI_FPE_disable_and_clear( __FILE__, __LINE__ );   // disable sigfpe cores
+#endif
+
         m_file_id = H5Fopen( a_filename.c_str(), H5F_ACC_RDONLY, H5P_DEFAULT );
         H5Eset_auto1( nullptr, nullptr );
 
@@ -27,6 +31,12 @@ namespace HAPI {
         m_dataset_doubles = H5Dopen2( m_file_id, "dData", H5P_DEFAULT );
         m_dDataPresent = m_dataset_doubles != H5I_INVALID_HID;
         if( m_dDataPresent ) m_dataspace_doubles = H5Dget_space( m_dataset_doubles );
+
+#if defined (GIDIP_HAVE_COMPILER_FLOATING_POINT_EXCEPTIONS)
+        // Re-enable floating point exception detection
+        LUPI_FPE_test( __FILE__, __LINE__ );                // test sigfpe exception
+        LUPI_FPE_enable( __FILE__, __LINE__ );              // reenable sigfpe cores
+#endif
 
         m_stride[0] = 1;
         m_block[0] = 1;

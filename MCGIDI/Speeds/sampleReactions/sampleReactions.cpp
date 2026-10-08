@@ -74,16 +74,19 @@ void main2( int argc, char **argv ) {
     protares[0] = MCProtare;
     MCGIDI::URR_protareInfos URR_protare_infos( protares );
 
+    MCGIDI::Sampling::Input input( true, MCGIDI::Sampling::Upscatter::Model::none );
+
     for( double temperature2 = 1e-8; temperature2 < 1e-1; temperature2 *= 10.0, ++sampleTemperatures ) {
         clock_t time1_1 = clock( );
         clock_t time2_1 = time1_1;
 
         long energyIndex = 0;
         for( double energy = 1e-12; energy < 100.1; energy *= 10.0, ++energyIndex ) {
+            input.setTemperatureAndEnergy( temperature2, energy );
             int hashIndex = domainHash.index( energy );
             double crossSection = MCProtare->crossSection( URR_protare_infos, hashIndex, temperature2, energy );
 
-            for( long i1 = 0; i1 <= numberOfSamples; ++i1 ) MCProtare->sampleReaction( URR_protare_infos, hashIndex, temperature2, energy, 
+            for( long i1 = 0; i1 <= numberOfSamples; ++i1 ) MCProtare->sampleReaction( input, URR_protare_infos, hashIndex, 
                     crossSection, [&]() -> double { return myRNG( nullptr ); } );
             printTime_energy( "            energies: ", energyIndex, energy, time2_1 );
         }

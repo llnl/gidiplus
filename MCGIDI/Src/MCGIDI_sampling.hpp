@@ -54,6 +54,7 @@ class DomainHash {
 namespace Sampling {
 
 enum class SampledType { firstTwoBody, secondTwoBody, uncorrelatedBody, unspecified, photon };
+class ProductHandler;
 
 LUPI_HOST_DEVICE int evaluationForHashIndex( int a_hashIndex, Vector<int> const &a_hashIndices, double a_energy, 
                 Vector<double> const &a_energies, double *a_energyFraction );
@@ -134,55 +135,79 @@ class ClientCodeRNGData : public ClientRandomNumberGenerator {
 =========================== Input ==========================
 ============================================================
 */
+
 class Input {
 
+    friend ProtareSingle;
+    friend Reaction;
+    friend MCGIDI::Sampling::ProductHandler;
+    friend GRIN_capture;
+    friend GRIN_inelastic;
+
     private:
-        bool m_wantVelocity;                        /**< See member m_isVelocity in class Product for meaning. This is user input. */
+        bool m_wantVelocity = true ;                        /**< See member m_isVelocity in class Product for meaning. This is user input. */
+
+        bool m_dataInTargetFrame = false;                   /**< **True** if the data are in the target's frame and **false** otherwise. */
+        double m_modelTemperature = 0.0;                    /**< The temperature used when sampling product data. For example, in upscatter model A the projectile is boosted into a sampled target's frame and the modelled temperature is 0.0. */
+        double m_modelEnergy = 0.0;                         /**< The projectile energy used when sampling product data (see comment for member **m_modelTemperature**. */
+
+        SampledType m_sampledType = SampledType::uncorrelatedBody;  /**< For internal use only. Set by distributions and used in the method **MCGIDI::Sampling::ProductHandler::add**. */
+
+                                                    // The next 2 members are set by the user via the setTemperatureAndEnergy method.
+        double m_temperature = 0.0;                         /**< The temperature of the material. This member is set by the user. */
+        double m_energy = 0.0;                              /**< The energy of the projectile. This member is set by the user. */
 
     public:
-        double m_temperature;                       /**< Set by user. */
 
-        Upscatter::Model m_upscatterModel;          /**< The upscatter model to use when sampling a target's velocity. */
-                                                // The rest of the members are set by MCGIDI methods.
-                                                // These five are used for upscatter model A.
-        bool m_dataInTargetFrame;                   /**< **true if the data are in the target's frame and **false** otherwise. */
-        double m_projectileBeta;                    /**< The beta = speed / c of the projectile. */
-        double m_relativeMu;                        /**< BRB */
-        double m_targetBeta;                        /**< The beta = speed / c of the target. */
-        double m_relativeBeta;                      /**< The beta = speed / c of the relative speed between the projectile and the target.*/
+        Upscatter::Model m_upscatterModel = Upscatter::Model::none; /**< The upscatter model to use when sampling a target's velocity. */
 
-        double m_projectileEnergy;                  /**< The energy of the projectile. */
 
-        SampledType m_sampledType;                  /**< BRB */
-        Reaction const *m_reaction;                 /**< The current reaction whose products are being sampled. */
+                                                    // The rest of the members are set by MCGIDI methods.
+                                                    // These five are used for upscatter model A and the last 4 also used by model B.
+        double m_projectileBeta = 0.0;                      /**< The beta = speed / c of the projectile. */
+        double m_muLab = 0.0;                               /**< The cosine of the angle between the projectile's and the sampled target's velocities. */
+        double m_targetBeta = 0.0;                          /**< The beta = speed / c of the target. */
+        double m_relativeBeta = 0.0;                        /**< The beta = speed / c of the relative speed between the projectile and the target. */
 
-        double m_projectileMass;                    /**< The mass of the projectile. */
-        double m_targetMass;                        /**< The mass of the target. */
+        Reaction const *m_reaction = nullptr;               /**< The current reaction whose products are being sampled. */
 
-        GIDI::Frame m_frame;                        /**< The frame the product data are returned in. */
-        int m_numberOfDBRC_rejections;              /**< For the DBRC upscattering model, this is the number of rejections + 1 per product sample. */
+        double m_projectileMass = 0.0;                      /**< The mass of the projectile. */
+        double m_targetMass = 0.0;                          /**< The mass of the target. */
 
-        double m_mu;                                /**< The sampled mu = cos( theta ) for the product. */
-        double m_phi;                               /**< The sampled phi for the product. */
+        GIDI::Frame m_frame = GIDI::Frame::lab;             /**< The frame the product data are returned in. */
+        int m_numberOfDBRC_rejections = 0;                  /**< For the DBRC upscattering model, this is the number of rejections + 1 per product sample. */
 
-        double m_energyOut1;                        /**< The sampled energy of the product. */
-        double m_px_vx1;                            /**< Variable used for two-body sampling. */
-        double m_py_vy1;                            /**< Variable used for two-body sampling. */
-        double m_pz_vz1;                            /**< Variable used for two-body sampling. */
+        double m_mu = 0.0;                                  /**< The sampled mu = cos( theta ) for the product. */
+        double m_phi = 0.0;                                 /**< The sampled phi for the product. */
 
-        double m_energyOut2;                        /**< The sampled energy of the second product for a two-body interaction. */
-        double m_px_vx2;                            /**< Variable used for two-body sampling. */
-        double m_py_vy2;                            /**< Variable used for two-body sampling. */
-        double m_pz_vz2;                            /**< Variable used for two-body sampling. */
+        double m_energyOut1 = 0.0;                          /**< The sampled energy of the product. */
+        double m_px_vx1 = 0.0;                              /**< Variable used for two-body sampling. */
+        double m_py_vy1 = 0.0;                              /**< Variable used for two-body sampling. */
+        double m_pz_vz1 = 0.0;                              /**< Variable used for two-body sampling. */
 
-        int m_delayedNeutronIndex;                  /**< If the product is a delayed neutron, this is its index. */
-        double m_delayedNeutronDecayRate;           /**< If the product is a delayed neutron, this is its decay rate. */
+        double m_energyOut2 = 0.0;                          /**< The sampled energy of the second product for a two-body interaction. */
+        double m_px_vx2 = 0.0;                              /**< Variable used for two-body sampling. */
+        double m_py_vy2 = 0.0;                              /**< Variable used for two-body sampling. */
+        double m_pz_vz2 = 0.0;                              /**< Variable used for two-body sampling. */
 
-        int m_GRIN_intermediateResidual;            /**< For special GRIN product sampling, this is the GNDS intid of the intermediate residual. */
+        int m_delayedNeutronIndex = -1;                     /**< If the product is a delayed neutron, this is its index. */
+        double m_delayedNeutronDecayRate = 0.0;             /**< If the product is a delayed neutron, this is its decay rate. */
+
+        int m_GRIN_intermediateResidual = -1;               /**< For special GRIN product sampling, this is the GNDS intid of the intermediate residual. */
 
         LUPI_HOST_DEVICE Input( bool a_wantVelocity, Upscatter::Model a_upscatterModel );
 
-        LUPI_HOST_DEVICE bool wantVelocity( ) const { return( m_wantVelocity ); }                            /**< BRB */
+        LUPI_HOST_DEVICE bool wantVelocity( ) const { return( m_wantVelocity ); }                       /**< Returns the value of the *m_wantVelocity* member. */
+        LUPI_HOST_DEVICE double temperature( ) const { return( m_temperature ); }                       /**< Returns the value of the *m_temperature* member. */
+        LUPI_HOST_DEVICE double energy( ) const { return( m_energy ); }                                 /**< Returns the value of the *m_energy* member. */
+        LUPI_HOST_DEVICE void setTemperatureAndEnergy( double a_temperature, double a_energy );
+
+        LUPI_HOST_DEVICE bool dataInTargetFrame( ) const { return( m_dataInTargetFrame ); }             /**< Returns the value of the *m_dataInTargetFrame*. */
+        LUPI_HOST_DEVICE double modelTemperature( ) const { return( m_modelTemperature ); }             /**< Returns the value of the *m_dataInTargetFrame* member. */
+        LUPI_HOST_DEVICE double modelEnergy( ) const { return( m_modelEnergy ); }                       /**< Returns the value of the *m_modelEnergy* member. */
+
+        SampledType sampledType( ) const { return( m_sampledType ); }                                   /**< Returns the value of the *m_sampledType* member. */
+        LUPI_HOST_DEVICE void setSampledType( SampledType a_sampledType ) { m_sampledType = a_sampledType; }             /**< Sets the member *m_sampledType* to *a_sampledType*. */
 };
 
 /*

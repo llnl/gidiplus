@@ -53,7 +53,7 @@ static std::vector<int> parseArrayShape( HAPI::Node const &a_node ) {
  * @param a_shape               [in]    The shape of the full array.
  ***********************************************************************************************************/
 
-FullArray::FullArray( std::vector<int> a_shape ) :
+FullArray::FullArray( std::vector<int> const &a_shape ) :
         m_shape( a_shape ) {
 
     std::size_t size = 1;
@@ -68,7 +68,7 @@ FullArray::FullArray( std::vector<int> a_shape ) :
  * @param a_flattenedValues     [in]    The values of the array. Its size must be the same has that specified by *a_shape*.
  ***********************************************************************************************************/
 
-FullArray::FullArray( std::vector<int> a_shape, std::vector<double> a_flattenedValues ) :
+FullArray::FullArray( std::vector<int> const &a_shape, std::vector<double> const &a_flattenedValues ) :
         m_shape( a_shape ) {
 
     std::size_t size = 1;

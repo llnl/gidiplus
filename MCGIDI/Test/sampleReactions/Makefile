@@ -13,10 +13,11 @@ CppSource = $(sort $(wildcard *.cpp))
 include $(GIDI_PLUS_PATH)/Makefile.paths
 include ../Makefile.check
 
-check: sampleReactions
+check: floatDiffs sampleReactions
 	if [ ! -e Outputs ]; then mkdir Outputs; fi
 	./sampleReactions > Outputs/sampleReactions.out
 	../Utilities/diff.com sampleReactions/sampleReactions Benchmarks/sampleReactions.out Outputs/sampleReactions.out
+
 	./sampleReactions --pid photon --tid O16 --map ../../../GIDI/Test/Data/MG_MC/all.map > Outputs/sampleReactions.photon+O16.out
 	../Utilities/diff.com sampleReactions/sampleReactions-1 Benchmarks/sampleReactions.photon+O16.out Outputs/sampleReactions.photon+O16.out
 	./sampleReactions --pid photon --tid O16 --map ../../../GIDI/Test/Data/MG_MC/all.map -pn > Outputs/sampleReactions.photon+O16.out

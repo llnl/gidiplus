@@ -371,7 +371,7 @@ Form *Suite::findInstanceOfTypeInLineage( Styles::Suite const &a_styles, std::st
  *                                                  for the TNSL data for that boundary.
  ***********************************************************************************************************/
 
-void Suite::modifiedMultiGroupElasticForTNSL( std::map<std::string,std::size_t> a_maximumTNSL_MultiGroupIndex ) {
+void Suite::modifiedMultiGroupElasticForTNSL( std::map<std::string,std::size_t> const &a_maximumTNSL_MultiGroupIndex ) {
 
     for( auto iter = a_maximumTNSL_MultiGroupIndex.begin( ); iter != a_maximumTNSL_MultiGroupIndex.end( ); ++iter ) {
         auto formIter = find( iter->first, true );

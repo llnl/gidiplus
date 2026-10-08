@@ -99,8 +99,9 @@ class GNDS_FileTypeInfo {
 
     public:
         GNDS_FileTypeInfo( );
-        GNDS_FileTypeInfo( GNDS_FileType a_GNDS_fileType, std::string a_projectileID = "", std::string a_targetID = "", std::string a_evaluation = "",
-                        std::string a_interaction = "" );
+        GNDS_FileTypeInfo( GNDS_FileType a_GNDS_fileType, std::string const &a_projectileID = "", 
+                std::string const &a_targetID = "", std::string const &a_evaluation = "", 
+                std::string const &a_interaction = "" );
         GNDS_FileTypeInfo( GNDS_FileTypeInfo const &a_GNDS_fileTypeInfo );
         GNDS_FileTypeInfo &operator=( GNDS_FileTypeInfo const &a_rhs );
 
@@ -464,6 +465,11 @@ enum class FileType { XML, HDF };
 #define GIDI_conserveNumberChars "number"
 #define GIDI_conserveEnergyOutChars "energyOut"
 
+// TargetInfo.
+#define GIDI_targetInfoChars "targetInfo"
+#define GIDI_atomFractionChars "atomFraction"
+#define GIDI_isotopicAbundancesChars "isotopicAbundances"
+
 // GRIN.
 #define GIDI_GRIN_continuumGammasChars "GRIN_continuumGammas"
 #define GIDI_captureNeutronSeparationEnergyChars "captureNeutronSeparationEnergy"
@@ -711,7 +717,7 @@ class PhysicalQuantity : public Form {
 
     public:
         PhysicalQuantity( HAPI::Node const &a_node, SetupInfo &a_setupInfo );
-        PhysicalQuantity( double a_value, std::string a_unit );
+        PhysicalQuantity( double a_value, std::string const &a_unit );
         PhysicalQuantity( PhysicalQuantity const &a_physicalQuantity ) : 
                 Form( FormType::physicalQuantity ),
                 m_value( a_physicalQuantity.value( ) ),
@@ -799,7 +805,7 @@ class Axis : public Form {
 
     public:
         Axis( HAPI::Node const &a_node, SetupInfo &a_setupInfo, FormType a_type = FormType::axis );
-        Axis( int a_index, std::string a_label, std::string a_unit, FormType a_type = FormType::axis );
+        Axis( int a_index, std::string const &a_label, std::string const &a_unit, FormType a_type = FormType::axis );
         Axis( Axis const &a_axis );
         virtual ~Axis( );
 
@@ -884,8 +890,8 @@ namespace Array {
 class FullArray {
 
     public:
-        FullArray( std::vector<int> a_shape );
-        FullArray( std::vector<int> a_shape, std::vector<double> a_flattenedValues );
+        FullArray( std::vector<int> const &a_shape );
+        FullArray( std::vector<int> const &a_shape, std::vector<double> const &a_flattenedValues );
         ~FullArray( ) {}
 
         std::vector<int> m_shape;                           /**< The shape of the array. */
@@ -2598,6 +2604,7 @@ class Suite : public GUPI::Ancestry {
         template<typename T> T       *get( std::string const &a_label );
         template<typename T> T const *get( std::string const &a_label ) const ;
         template<typename T> T *getViaLineage( std::string const &a_label );
+        template<typename T> T *getViaLineage( std::string const &a_label ) const;
         template<typename T> T       *pop( std::size_t a_Index );
         template<typename T> T       *pop( std::string const &a_label );
 
@@ -2615,7 +2622,7 @@ class Suite : public GUPI::Ancestry {
         iterator checkLazyParsingHelperFormIterator( iterator a_iter ) ;
         const_iterator checkLazyParsingHelperFormIterator( const_iterator a_iter ) const ;
 
-        void modifiedMultiGroupElasticForTNSL( std::map<std::string,std::size_t> a_maximumTNSL_MultiGroupIndex );
+        void modifiedMultiGroupElasticForTNSL( std::map<std::string,std::size_t> const &a_maximumTNSL_MultiGroupIndex );
         GUPI::Ancestry *findInAncestry3( std::string const &a_item );
         GUPI::Ancestry const *findInAncestry3( std::string const &a_item ) const ;
         std::vector<iterator> findAllOfMoniker( std::string const &a_moniker ) ;
@@ -2912,6 +2919,111 @@ class Transportable : public Form {
         void toXMLList( GUPI::WriteInfo &a_writeInfo, std::string const &a_indent ) const ;
 };
 
+namespace TargetInfo {
+
+/*
+============================================================
+=========================  nuclide =========================
+============================================================
+*/
+
+class Nuclide : public GUPI::Entry {
+
+    private:
+        double m_atomFraction;                              /**< The atom fraction for *this* isotope. */
+
+    public:
+        Nuclide( HAPI::Node const &a_node );
+        Nuclide( Nuclide const &a_nuclide );
+        ~Nuclide( );
+
+        std::string const &pid( ) const { return( keyValue( ) ); }      /**< Returns a const reference to the results of the call to the *keyValue()* method. */
+        double atomFraction( ) const { return( m_atomFraction ); }      /**< Returns the value of the *m_atomFraction* member. */
+
+        GUPI::Ancestry *findInAncestry3( LUPI_maybeUnused std::string const &a_item ) { return( nullptr ); }
+        GUPI::Ancestry const *findInAncestry3( LUPI_maybeUnused std::string const &a_item ) const { return( nullptr ); }
+
+        void toXMLList( GUPI::WriteInfo &a_writeInfo, std::string const &a_indent = "" ) const ;
+};
+
+/*
+============================================================
+===================== ChemicalElement =====================
+============================================================
+*/
+
+class ChemicalElement : public GUPI::Entry {
+
+    private:
+        GUPI::Suite m_nuclides;                                     /**< The list of nuclies for the chemical element. */
+
+    public:
+        ChemicalElement( HAPI::Node const &a_node );
+        ~ChemicalElement( );
+
+        GUPI::Suite &nuclides( ) { return( m_nuclides ); }
+        GUPI::Suite const &nuclides( ) const { return( m_nuclides ); }
+
+        std::string const &symbol( ) const { return( keyValue( ) ); }      /**< Returns a const reference to the results of the call to the *keyValue()* method. */
+        Nuclide const *operator[]( std::string const &a_pid ) const ;
+        GUPI::Ancestry *findInAncestry3( LUPI_maybeUnused std::string const &a_item ) { return( nullptr ); }
+        GUPI::Ancestry const *findInAncestry3( LUPI_maybeUnused std::string const &a_item ) const { return( nullptr ); }
+
+        void toXMLList( GUPI::WriteInfo &a_writeInfo, std::string const &a_indent = "" ) const ;
+};
+
+/*
+============================================================
+==================== IsotopicAbundances ====================
+============================================================
+*/
+
+class IsotopicAbundances : public GUPI::Ancestry {
+
+    private:
+        GUPI::Suite m_chemicalElements;
+
+    public:
+        IsotopicAbundances( );
+        ~IsotopicAbundances( );
+        void initialize( HAPI::Node const &a_node );
+
+        GUPI::Suite &chemicalElements( ) { return( m_chemicalElements ); }                      /**< Returns a reference to the *m_chemicalElements* member. */
+        GUPI::Suite const &chemicalElements( ) const { return( m_chemicalElements ); }          /**< Returns a const reference to the *m_chemicalElements* member. */
+        ChemicalElement const *operator[]( std::string const &a_symbol ) const ;
+
+        GUPI::Ancestry *findInAncestry3( LUPI_maybeUnused std::string const &a_item ) { return( nullptr ); }
+        GUPI::Ancestry const *findInAncestry3( LUPI_maybeUnused std::string const &a_item ) const { return( nullptr ); }
+
+        void toXMLList( GUPI::WriteInfo &a_writeInfo, std::string const &a_indent = "" ) const ;
+};
+
+/*
+============================================================
+========================  TargetInfo =======================
+============================================================
+*/
+
+class TargetInfo : public GUPI::Ancestry {
+
+    private:
+        IsotopicAbundances m_isotopicAbundances;            /**< The list of isotopic abundances for a TNSL protare. */
+
+    public:
+        TargetInfo( );
+        ~TargetInfo( );
+        void parseEvaluatedTargetInfo( HAPI::Node const &a_node );
+
+        IsotopicAbundances const &isotopicAbundances( ) const { return( m_isotopicAbundances ); }    /**< Returns a const reference to the *m_isotopicAbundances* member. */
+
+        GUPI::Ancestry *findInAncestry3( LUPI_maybeUnused std::string const &a_item ) { return( nullptr ); }
+        GUPI::Ancestry const *findInAncestry3( LUPI_maybeUnused std::string const &a_item ) const { return( nullptr ); }
+
+        void toXMLList( GUPI::WriteInfo &a_writeInfo, std::string const &a_indent = "" ) const ;
+};
+
+}                       // End of namespace targetInfo.
+
 /*
 ============================================================
 ======================= ExternalFile =======================
@@ -2987,7 +3099,7 @@ namespace ExternalFiles {
 class Suite : public GIDI::Suite {
 
     public:
-        void registerBinaryFiles(std::string a_parentDir, SetupInfo &a_setupInfo);
+        void registerBinaryFiles( std::string const &a_parentDir, SetupInfo &a_setupInfo );
 
 };
 
@@ -3026,6 +3138,9 @@ class Base : public Form {
         virtual PhysicalQuantity const &temperature( ) const = 0;
         Base const *getDerivedStyle( ) const ;
         Base const *getDerivedStyle( std::string const &a_moniker ) const ;
+
+        std::vector<Base const *> chain( ) const ;
+        bool isStyleInDerivedForm( Base const *a_style ) const ;
 
         std::string baseXMLAttributes( GUPI::WriteInfo &a_writeInfo ) const ;
 };
@@ -3280,10 +3395,19 @@ class URR_probabilityTables : public Base {
 */
 class Suite : public GIDI::Suite {
 
+    private:
+        std::vector<Base const *> m_chainEnds;                  /**< The list of all the ends of the style chains. */
+        std::vector<Base const *> m_preProcessingChainEnds;     /**< The list of all the ends of the pre-processed style chains. */
+
     public:
         Suite( );
 
         std::string const *findLabelInLineage( GIDI::Suite const &a_suite, std::string const &a_label ) const ;
+        std::vector< std::vector<Base const *> > chains( bool a_ends ) const ;
+        void updateChainEnds( );
+        std::vector<Base const *> const &chainEnds( ) const { return( m_chainEnds ); }  /**< Returns a const reference to the **m_chainEnds** member. */
+        std::vector<Base const *> const &preProcessingChainEnds( ) const { return( m_preProcessingChainEnds ); }
+                                                                                        /**< Returns a const reference to the **m_preProcessingChainEnds** member. */
 };
 
 /*
@@ -3325,6 +3449,16 @@ typedef std::vector<Styles::TemperatureInfo> TemperatureInfos;
 =========================================================
 */
 template<typename T> T *Suite::getViaLineage( std::string const &a_label ) {
+
+    std::string const *label = m_styles->findLabelInLineage( (Styles::Suite &) *this, a_label );
+
+    return( get<T>( *label ) );
+}
+
+/*
+=========================================================
+*/
+template<typename T> T *Suite::getViaLineage( std::string const &a_label ) const {
 
     std::string const *label = m_styles->findLabelInLineage( (Styles::Suite &) *this, a_label );
 
@@ -3635,7 +3769,7 @@ class MG : public Settings {
                                                                 /**< Sets the *m_useMultiGroupSummedData* member to *a_useMultiGroupSummedData*. */
 
         Form const *form( LUPI::StatusMessageReporting &a_smr, GIDI::Suite const &a_suite, Styles::TemperatureInfo const &a_temperatureInfo,
-                std::string a_dataType ) const ;
+                std::string a_dataType, std::string const &a_label = "" ) const ;
 };
 
 }           // End of namespace Transporting.
@@ -3774,7 +3908,7 @@ class Product : public Form {
         Component const &averageMomentum( ) const { return( m_averageMomentum ); }          /**< Returns a const reference to the *m_averageMomentum* member. */
         OutputChannel *outputChannel( ) const { return( m_outputChannel ); }                /**< Returns a reference to the *m_outputChannel* member. */
 
-        void modifiedMultiGroupElasticForTNSL( std::map<std::string,std::size_t> a_maximumTNSL_MultiGroupIndex );
+        void modifiedMultiGroupElasticForTNSL( std::map<std::string,std::size_t> const &a_maximumTNSL_MultiGroupIndex );
 
         bool hasFission( ) const ;
         bool isDelayedFissionNeutronComplete( bool a_isDelayedNeutron ) const ;
@@ -3880,7 +4014,7 @@ class DelayedNeutronProduct {
         Product const *m_product;
 
     public:
-        DelayedNeutronProduct( int a_delayedNeutronIndex, PhysicalQuantity a_rate, Product const *a_product ) : 
+        DelayedNeutronProduct( int a_delayedNeutronIndex, PhysicalQuantity const &a_rate, Product const *a_product ) : 
                 m_delayedNeutronIndex( a_delayedNeutronIndex ),
                 m_rate( a_rate ),
                 m_product( a_product ) {
@@ -3972,7 +4106,7 @@ class OutputChannel : public GUPI::Ancestry {
         Construction::FissionResiduals m_fissionResiduals;  /**< This member specifies what fission redisual products will be added to the list of products produced in a fission reaction. */
 
     public:
-        OutputChannel( bool a_twoBody, bool a_fissions, std::string a_process );
+        OutputChannel( bool a_twoBody, bool a_fissions, std::string const &a_process );
         OutputChannel( Construction::Settings const &a_construction, HAPI::Node const &a_node, SetupInfo &a_setupInfo, PoPI::Database const &a_pops,
                 PoPI::Database const &a_internalPoPs, Styles::Suite const *a_styles, bool a_isFission, bool a_addFissionResiduals );
         ~OutputChannel( );
@@ -3990,7 +4124,7 @@ class OutputChannel : public GUPI::Ancestry {
 
         Construction::FissionResiduals fissionResiduals( ) const { return( m_fissionResiduals ); }  /**< Returns the value of the *m_fissionResiduals* member. */
 
-        void modifiedMultiGroupElasticForTNSL( std::map<std::string,std::size_t> a_maximumTNSL_MultiGroupIndex );
+        void modifiedMultiGroupElasticForTNSL( std::map<std::string,std::size_t> const &a_maximumTNSL_MultiGroupIndex );
         bool areAllProductsTracked( Transporting::Particles const &a_particles ) const ;
 
         GUPI::Ancestry *findInAncestry3( std::string const &a_item );
@@ -4141,7 +4275,7 @@ class Reaction : public Form {
                 { m_reactionIndex = a_reactionIndex ; } /**< Sets *m_reactionIndex* to *a_reactionIndex*. */
 
     public:
-        Reaction( int a_ENDF_MT, std::string a_fissionGenre );
+        Reaction( int a_ENDF_MT, std::string const &a_fissionGenre );
         Reaction( Construction::Settings const &a_construction, HAPI::Node const &a_node, SetupInfo &a_setupInfo, PoPI::Database const &a_pops, PoPI::Database const &a_internalPoPs, Protare const &a_protare,
                         Styles::Suite const *a_styles );
         ~Reaction( );
@@ -4176,7 +4310,7 @@ class Reaction : public Form {
         OutputChannel *outputChannel( ) const { return( m_outputChannel ); }            /**< Returns a reference to the *m_outputChannel* member. */
         void setOutputChannel( OutputChannel *a_outputChannel );
 
-        void modifiedMultiGroupElasticForTNSL( std::map<std::string,std::size_t> a_maximumTNSL_MultiGroupIndex );
+        void modifiedMultiGroupElasticForTNSL( std::map<std::string,std::size_t> const &a_maximumTNSL_MultiGroupIndex );
 
         GUPI::Ancestry *findInAncestry3( std::string const &a_item );
         GUPI::Ancestry const *findInAncestry3( std::string const &a_item ) const ;
@@ -4195,8 +4329,8 @@ class Reaction : public Form {
 
         bool areAllProductsTracked( Transporting::Particles const &a_particles ) const ;
 
-        Vector multiGroupCrossSection( LUPI::StatusMessageReporting &a_smr, Transporting::MG const &a_settings, Styles::TemperatureInfo const &a_temperatureInfo ) 
-                        const ;
+        Vector multiGroupCrossSection( LUPI::StatusMessageReporting &a_smr, Transporting::MG const &a_settings, 
+                        Styles::TemperatureInfo const &a_temperatureInfo, std::string const &a_label = "" ) const ;
         Vector multiGroupQ( LUPI::StatusMessageReporting &a_smr, Transporting::MG const &a_settings, Styles::TemperatureInfo const &a_temperatureInfo, 
                         bool a_final ) const ;
         Vector multiGroupMultiplicity( LUPI::StatusMessageReporting &a_smr, Transporting::MG const &a_settings, Styles::TemperatureInfo const &a_temperatureInfo, 
@@ -4434,7 +4568,7 @@ class Protare : public GUPI::Ancestry {
 
         virtual Documentation_1_10::Suite &documentations( ) = 0;
 
-        virtual Styles::Base &style( std::string const a_label ) = 0;
+        virtual Styles::Base &style( std::string const &a_label ) = 0;
         virtual Styles::Suite &styles( ) = 0;
         virtual Styles::Suite const &styles( ) const = 0;
 
@@ -4467,7 +4601,8 @@ class Protare : public GUPI::Ancestry {
                         Styles::TemperatureInfo const &a_temperatureInfo ) const = 0;
 
         virtual Vector multiGroupCrossSection( LUPI::StatusMessageReporting &a_smr, Transporting::MG const &a_settings, 
-                        Styles::TemperatureInfo const &a_temperatureInfo, ExcludeReactionsSet const &a_reactionsToExclude = ExcludeReactionsSet {} ) const = 0;
+                        Styles::TemperatureInfo const &a_temperatureInfo, ExcludeReactionsSet const &a_reactionsToExclude = ExcludeReactionsSet {},
+                        std::string const &a_label = "" ) const = 0;
         virtual Vector multiGroupQ( LUPI::StatusMessageReporting &a_smr, Transporting::MG const &a_settings, 
                         Styles::TemperatureInfo const &a_temperatureInfo, bool a_final, bool a_effectivePhotoAtomic = true,
                         ExcludeReactionsSet const &a_reactionsToExclude = ExcludeReactionsSet {} ) const = 0;
@@ -4534,9 +4669,10 @@ class ProtareSingle : public Protare {
     private:
         HAPI::File *m_doc;                      /**< If data read from file, this member is a pointer to the opened **HAPI::File** instance. */
         HAPI::DataManager *m_dataManager;       /**< If data read from hybrid file, this member is a pointer to the **HAPI::DataManager** instance. */
-        int m_numberOfLazyParsingHelperForms;  /**< This counts the number of LazyParsingHelperForms instantiated. */
+        int m_numberOfLazyParsingHelperForms;   /**< This counts the number of LazyParsingHelperForms instantiated. */
         int m_numberOfLazyParsingHelperFormsReplaced;   /**< This counts the number of LazyParsingHelperForms replaced with the appropriate form. */
         LUPI::FormatVersion m_formatVersion;    /**< Store the GNDS format version. */
+        TargetInfo::TargetInfo m_targetInfo;    /**< Information about the target. Currently, the isotopic data for TNSL GNDS 2.1 files as stored in the evaluaed style. */
         PoPI::Database m_internalPoPs;          /**< The *PoPs* specified under the protare (e.g., reactionSuite) node. */
 
         std::vector<std::string> m_libraries;   /**< The list of libraries *this* was found in. */
@@ -4606,6 +4742,7 @@ class ProtareSingle : public Protare {
         void incrementNumberOfLazyParsingHelperFormsReplaced( ) { ++m_numberOfLazyParsingHelperFormsReplaced; }
                                                 /**> Increments the *m_numberOfLazyParsingHelperFormsReplaced* member of this by 1. */
 
+        TargetInfo::TargetInfo const &targetInfo( ) const { return( m_targetInfo ); }                /**< Returns a const reference to the *m_targetInfo* member. */
         double projectileEnergyMin( ) const { return( m_projectileEnergyMin ); }
         double projectileEnergyMax( ) const { return( m_projectileEnergyMax ); }
         bool isTNSL_ProtareSingle( ) const { return( m_isTNSL_ProtareSingle ); }    /**< Returns *true* if the instance is a ProtareSingle instance with only TNSL data and *false* otherwise. */
@@ -4663,8 +4800,8 @@ class ProtareSingle : public Protare {
         ExternalFile const &externalFile( std::string const a_label ) const { return( *m_externalFiles.get<ExternalFile>( a_label ) ); }      /**< Returns the external file with label *a_label*. */
         ExternalFiles::Suite const &externalFiles( ) const { return( m_externalFiles ); }                   /**< Returns the value of the *m_externalFiles* member. */
 
-        Styles::Base &style( std::string const a_label ) { return( *m_styles.get<Styles::Base>( a_label ) ); }              /**< Returns the style with label *a_label*. */
-        Styles::Base const &style( std::string const a_label ) const { return( *m_styles.get<Styles::Base const>( a_label ) ); }  /**< Returns the const style with label *a_label*. */
+        Styles::Base &style( std::string const &a_label ) { return( *m_styles.get<Styles::Base>( a_label ) ); }              /**< Returns the style with label *a_label*. */
+        Styles::Base const &style( std::string const &a_label ) const { return( *m_styles.get<Styles::Base const>( a_label ) ); }  /**< Returns the const style with label *a_label*. */
         Styles::Suite &styles( ) { return( m_styles ); }                                                    /**< Returns the value of the *m_styles* member. */
         Styles::Suite const &styles( ) const { return( m_styles ); }                                        /**< Returns a *const* reference to the *m_styles* member. */
 
@@ -4706,7 +4843,8 @@ class ProtareSingle : public Protare {
                         Styles::TemperatureInfo const &a_temperatureInfo ) const ;
 
         Vector multiGroupCrossSection( LUPI::StatusMessageReporting &a_smr, Transporting::MG const &a_settings, 
-                        Styles::TemperatureInfo const &a_temperatureInfo, ExcludeReactionsSet const &a_reactionsToExclude = ExcludeReactionsSet {} ) const ;
+                        Styles::TemperatureInfo const &a_temperatureInfo, ExcludeReactionsSet const &a_reactionsToExclude = ExcludeReactionsSet {},
+                        std::string const &a_label = "" ) const ;
         Vector multiGroupQ( LUPI::StatusMessageReporting &a_smr, Transporting::MG const &a_settings, 
                         Styles::TemperatureInfo const &a_temperatureInfo, bool a_final, bool a_effectivePhotoAtomic = true,
                         ExcludeReactionsSet const &a_reactionsToExclude = ExcludeReactionsSet {} ) const ;
@@ -4758,6 +4896,8 @@ class ProtareSingle : public Protare {
 
         void saveAs( std::string const &a_fileName ) const ;
         void toXMLList( GUPI::WriteInfo &a_writeInfo, std::string const &a_indent = "" ) const ;
+
+        void parseEvaluatedTargetInfo( HAPI::Node const &a_node );
 };
 
 /*
@@ -4797,7 +4937,7 @@ class ProtareComposite : public Protare {
 
         Documentation_1_10::Suite &documentations( );
 
-        Styles::Base &style( std::string const a_label );
+        Styles::Base &style( std::string const &a_label );
         Styles::Suite &styles( );
         Styles::Suite const &styles( ) const ;
 
@@ -4831,7 +4971,8 @@ class ProtareComposite : public Protare {
 
         Vector multiGroupCrossSection( LUPI::StatusMessageReporting &a_smr, Transporting::MG const &a_settings, 
                         Styles::TemperatureInfo const &a_temperatureInfo, 
-                        ExcludeReactionsSet const &a_reactionsToExclude = ExcludeReactionsSet {} ) const ;
+                        ExcludeReactionsSet const &a_reactionsToExclude = ExcludeReactionsSet {},
+                        std::string const &a_label = "" ) const ;
         Vector multiGroupQ( LUPI::StatusMessageReporting &a_smr, Transporting::MG const &a_settings, 
                         Styles::TemperatureInfo const &a_temperatureInfo, bool a_final, bool a_effectivePhotoAtomic = true,
                         ExcludeReactionsSet const &a_reactionsToExclude = ExcludeReactionsSet {} ) const ;
@@ -4928,7 +5069,7 @@ class ProtareTNSL : public Protare {
 
         Documentation_1_10::Suite &documentations( );
 
-        Styles::Base &style( std::string const a_label );
+        Styles::Base &style( std::string const &a_label );
         Styles::Suite &styles( );
         Styles::Suite const &styles( ) const ;
 
@@ -4961,7 +5102,8 @@ class ProtareTNSL : public Protare {
                         Styles::TemperatureInfo const &a_temperatureInfo ) const ;
 
         Vector multiGroupCrossSection( LUPI::StatusMessageReporting &a_smr, Transporting::MG const &a_settings, 
-                        Styles::TemperatureInfo const &a_temperatureInfo, ExcludeReactionsSet const &a_reactionsToExclude = ExcludeReactionsSet {} ) const ;
+                        Styles::TemperatureInfo const &a_temperatureInfo, ExcludeReactionsSet const &a_reactionsToExclude = ExcludeReactionsSet {},
+                        std::string const &a_label = "" ) const ;
         Vector multiGroupQ( LUPI::StatusMessageReporting &a_smr, Transporting::MG const &a_settings, 
                         Styles::TemperatureInfo const &a_temperatureInfo, bool a_final, bool a_effectivePhotoAtomic = true,
                         ExcludeReactionsSet const &a_reactionsToExclude = ExcludeReactionsSet {} ) const ;
@@ -5453,19 +5595,19 @@ GNDS_FileType GNDS_fileType( std::string const &a_fileName, GNDS_FileTypeInfo &a
 *   The following are in the file GIDI_misc.cpp.
 */
 long binarySearchVector( double a_x, std::vector<double> const &a_Xs );
-void intsToXMLList( GUPI::WriteInfo &a_writeInfo, std::string const &a_indent, std::vector<int> a_values, std::string const &a_attributes );
+void intsToXMLList( GUPI::WriteInfo &a_writeInfo, std::string const &a_indent, std::vector<int> const &a_values, std::string const &a_attributes );
 void parseValuesOfDoubles( Construction::Settings const &a_construction, HAPI::Node const &a_node, SetupInfo &a_setupInfo, nf_Buffer<double> &a_vector );
 void parseValuesOfDoubles( HAPI::Node const &a_node, SetupInfo &a_setupInfo, nf_Buffer<double> &a_vector, int a_useSystem_strtod );
 void parseValuesOfInts( Construction::Settings const &a_construction, HAPI::Node const &a_node, SetupInfo &a_setupInfo, std::vector<int> &a_vector );
 void parseValuesOfInts( HAPI::Node const &a_node, SetupInfo &a_setupInfo, nf_Buffer<int> &a_vector );
-void doublesToXMLList( GUPI::WriteInfo &a_writeInfo, std::string const &a_indent, std::vector<double> a_values, std::size_t a_start = 0, bool a_newLine = true,
+void doublesToXMLList( GUPI::WriteInfo &a_writeInfo, std::string const &a_indent, std::vector<double> const &a_values, std::size_t a_start = 0, bool a_newLine = true,
         std::string const &a_valueType = "" );
 Frame parseFrame( HAPI::Node const &a_node, SetupInfo &a_setupInfo, std::string const &a_name );
 std::string frameToString( Frame a_frame );
 std::string intToString( int a_value );
 std::string size_t_ToString( std::size_t a_value );
 std::string nodeWithValuesToDoubles( GUPI::WriteInfo &a_writeInfo, std::string const &a_nodeName, std::vector<double> const &a_values );
-void excludeReactionsSetAdjust( ExcludeReactionsSet a_excludeReactionsSet, Protare const &a_protare );
+void excludeReactionsSetAdjust( ExcludeReactionsSet &a_excludeReactionsSet, Protare const &a_protare );
 
 Functions::Ys1d gridded1d2GIDI_Ys1d( Functions::Function1dForm const &a_function1d );
 Functions::Ys1d vector2GIDI_Ys1d( Axes const &a_axes, Vector const &a_vector );

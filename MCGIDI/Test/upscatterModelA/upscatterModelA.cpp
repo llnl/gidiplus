@@ -11,9 +11,10 @@
 #include <stdlib.h>
 #include <math.h>
 
-#include "bins.hpp"
-
-#include "MCGIDI.hpp"
+#include <MCGIDI.hpp>
+#include <bins.hpp>
+#include <MCGIDI_testUtilities.hpp>
+#include <GIDI_testUtilities.hpp>
 
 class ParticleInfo {
 
@@ -57,7 +58,7 @@ static FileInfo *fileInfo[5];
 #define nBins 501
 static double neutronMass;
 static double temperature_MeV = 1.0e-3;
-static const int nParticles = 1000 * 1000;
+static const int nParticles = 100000;
 static double temp[nParticles];
 
 static MCGIDI::URR_protareInfos URR_protare_infos;
@@ -88,36 +89,80 @@ int main( int argc, char **argv ) {
 */
 void main2( int argc, char **argv ) {
 
+    // Default values
     std::string mapFilename( "../upscatterModelB/Data/upscatterModelB.map" );
-    PoPI::Database pops( "../../../TestData/PoPs/pops.xml" );
-    GIDI::Map::Map map( mapFilename, pops );
+    mapFilename = "/usr/gapps/data/nuclear/development/GNDS_2.0/ENDL2009/ENDL2009.5-direct-rc5.1/all.map";
     std::string neutronID( PoPI::IDs::neutron );
-    std::string targetID = "O16";
-    int neutronIndex( pops[neutronID] );
+    std::string targetID = "Li6";
     int nTimeSteps = 5001;
-    GIDI::Transporting::Particles particles;
     double initialEnergy = 1e-1;
     long bins[nBins+1];
     double time = 0.0;
     std::set<int> reactionsToExclude;
     LUPI::StatusMessageReporting smr1;
+    unsigned long long rngState = 1;
+
+    // Command line argument parsing
+    argvOptions argv_options( __FILE__, "Upscatter model A test program" );
+    ParseTestOptions parseTestOptions( argv_options, argc, argv );
+    parseTestOptions.m_askOid = true;
+
+    parseTestOptions.m_askGNDS_File = true;
+
+    argv_options.add( argvOption( "--map", true, "Map file path" ) );
+    argv_options.add( argvOption( "--target", true, "Target ID (default: Li6)" ) );
+    argv_options.add( argvOption( "--pops", true, "PoPs XML file path" ) );
+    argv_options.add( argvOption( "--timeSteps", true, "Number of time steps (default: 5001)" ) );
+    argv_options.add( argvOption( "--initialEnergy", true, "Initial energy in MeV (default: 0.1)" ) );
+    argv_options.add( argvOption( "--multiGroup", false, "If present, use multi-group cross section lookup mode instead of continuous energy." ) );
+    argv_options.add( argvOption( "--userGrid", false, "If present, use log-spaced group boundaries for model A upscatter (616 groups)." ) );
+
+    parseTestOptions.parse( );
+
+    // Apply parsed options
+    targetID = argv_options.find( "--target" )->zeroOrOneOption( argv, "Li6" );
+    std::string mapFile = argv_options.find( "--map" )->zeroOrOneOption( argv, mapFilename );
+    std::string popsFile = argv_options.find( "--pops" )->zeroOrOneOption( argv, "../../../TestData/PoPs/pops.xml" );
+    nTimeSteps = argv_options.find( "--timeSteps" )->asInt( argv, 5001 );
+    initialEnergy = argv_options.find( "--initialEnergy" )->asDouble( argv, 1e-1 );
+    bool multiGroup = argv_options.find( "--multiGroup" )->present();
+
+    PoPI::Database pops( popsFile );
+    GIDI::Map::Map map( mapFile, pops );
+    int neutronIndex( pops[neutronID] );
+    GIDI::Transporting::Particles particles;
 
     std::cerr << "    " << __FILE__;
     for( int i1 = 1; i1 < argc; i1++ ) std::cerr << " " << argv[i1];
     std::cerr << std::endl;
-
-    if( argc > 1 ) targetID = argv[1];
 
     GIDI::Construction::Settings construction( GIDI::Construction::ParseMode::all, GIDI::Construction::PhotoMode::nuclearAndAtomic );
     GIDI::Protare *protare = map.protare( construction, pops, neutronID, targetID );
     GIDI::Styles::TemperatureInfos temperatures = protare->temperatures( );
 
     std::string label( temperatures[0].griddedCrossSection( ) );
+    if( multiGroup ) {
+        label = temperatures[0].heatedMultiGroup( );
+    }
     MCGIDI::Transporting::MC MC( pops, neutronID, &protare->styles( ), label, GIDI::Transporting::DelayedNeutrons::on, 20.0 );
+    MC.setUpscatterModelA( );
+    if( argv_options.find( "--userGrid" )->present() ) {
+        std::vector<double> energy_grid;
+        const int num_energies = 616;
+        const double start_energy = 1e-11;
+        const double end_energy = 20.0;
+        energy_grid.reserve(num_energies);
+        double log_energy = log10(start_energy);
+        double log_energy_step = (log10(end_energy) - log_energy) / (num_energies - 1);
+        for (int i = 0; i < num_energies; ++i) {
+            energy_grid.push_back(std::pow(10,log_energy + i * log_energy_step));
+        }
+        MC.setUpscatterModelAGroupBoundaries( energy_grid );
+    }
 
-    std::string upScatteringLabel = temperatures[0].heatedMultiGroup( );
-    std::cout << "upScatteringLabel = " << upScatteringLabel << std::endl;
-    MC.setUpscatterModelA( upScatteringLabel );
+    if( multiGroup ) {
+        MC.crossSectionLookupMode( MCGIDI::Transporting::LookupMode::Data1d::multiGroup );
+    }
 
     GIDI::Transporting::Groups_from_bdfls groups_from_bdfls( "../../../GIDI/Test/bdfls" );
     GIDI::Transporting::Fluxes_from_bdfls fluxes_from_bdfls( "../../../GIDI/Test/bdfls", 0 );
@@ -125,12 +170,16 @@ void main2( int argc, char **argv ) {
     GIDI::Transporting::Particle neutron( PoPI::IDs::neutron, groups_from_bdfls.getViaGID( 4 ) );
     neutron.appendFlux( fluxes_from_bdfls.getViaFID( 1 ) );
     particles.add( neutron );
+    if( multiGroup ) {
+        particles.process( *protare, label );
+    }
 
     MCGIDI::DomainHash domainHash( 4000, 1e-8, 10 );
     MCGIDI::Protare *MCProtare = MCGIDI::protareFromGIDIProtare( smr1, *protare, pops, MC, particles, domainHash, temperatures, reactionsToExclude );
+    MCGIDI::ProtareSingle *MCProtareSingle = MCProtare->protare( 0 );
 
     MCGIDI::Vector<MCGIDI::Protare *> protares( 1 );
-    protares[0] = MCProtare;
+    protares[0] = MCProtareSingle;
     URR_protare_infos.setup( protares );
 
     PoPI::Base const &target = pops.get<PoPI::Base>( targetID );
@@ -145,23 +194,22 @@ void main2( int argc, char **argv ) {
     fileInfo[3] = new FileInfo( fileNamePrefix, "vy" );
     fileInfo[4] = new FileInfo( fileNamePrefix, "vz" );
 
-    neutronMass = MCProtare->projectileMass( );
-    double targetMass = MCProtare->targetMass( );
+    neutronMass = MCProtareSingle->projectileMass( );
+    double targetMass = MCProtareSingle->targetMass( );
     double velocityMax = MCGIDI_speedOfLight_cm_sec * MCGIDI_particleBeta( neutronMass, 100 * temperature_MeV );
 
     ParticleInfo *particleInfos = new ParticleInfo[nParticles];
     for( long i1 = 0; i1 < nParticles; ++i1 ) {
         particleInfos[i1].timeToCollision = 0;
-        updateParticle( MCProtare, initialEnergy, domainHash, &(particleInfos[i1]), nullptr );
+        updateParticle( MCProtareSingle, initialEnergy, domainHash, &(particleInfos[i1]), nullptr );
     }
     printBins( fOut, time, particleInfos, bins, velocityMax );
 
     MCGIDI::Sampling::StdVectorProductHandler products;
 
     MCGIDI::Sampling::Input input( true, MCGIDI::Sampling::Upscatter::Model::A );
-    input.m_temperature = temperature_MeV * 1e3;
 
-    MCGIDI::Reaction const *reaction = MCProtare->reaction( 0 );
+    MCGIDI::Reaction const *reaction = MCProtareSingle->reaction( 0 );
 
     long badNeutronIndex = 0;
     long badProductNumber = 0;
@@ -177,7 +225,10 @@ void main2( int argc, char **argv ) {
 
             particle->timeToCollision -= dTime;
             while( particle->timeToCollision <= 0. ) {
-                reaction->sampleProducts( MCProtare, particle->energy, input, (double (*)( void * )) drand48, nullptr, products );
+                input.setTemperatureAndEnergy( temperature_MeV, particle->energy );
+                MCProtareSingle->sampleTargetBetaForUpscatterModelA( input, [&]( ) -> double { return float64RNG64( &rngState ); } );
+                reaction->sampleProducts( MCProtareSingle, input, [&]( ) -> double { return float64RNG64( &rngState ); }, 
+                        [&]( MCGIDI::Sampling::Product &a_product ) -> void { products.push_back( a_product ); }, products );
                 if( products.size( ) < 1 ) {
                     ++badProductNumber; }
                 else {
@@ -185,7 +236,7 @@ void main2( int argc, char **argv ) {
                     if( product.m_productIndex != neutronIndex ) {
                         ++badNeutronIndex; }
                     else {
-                        updateParticle( MCProtare, product.m_kineticEnergy, domainHash, particle, &product );
+                        updateParticle( MCProtareSingle, product.m_kineticEnergy, domainHash, particle, &product );
                     }
                 }
                 products.clear( );

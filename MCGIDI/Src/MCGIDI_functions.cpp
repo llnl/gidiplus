@@ -813,7 +813,8 @@ LUPI_HOST_DEVICE void Branching1d::serialize( LUPI::DataBuffer &a_buffer, LUPI::
 */
 
 LUPI_HOST_DEVICE TerrellFissionNeutronMultiplicityModel::TerrellFissionNeutronMultiplicityModel( ) :
-    m_multiplicity( nullptr ) {
+        m_width( 1.079 ),
+        m_multiplicity( nullptr ) {
 
     m_type = Function1dType::TerrellFissionNeutronMultiplicityModel;
 }
@@ -1071,7 +1072,16 @@ LUPI_HOST_DEVICE void XYs2d::serialize( LUPI::DataBuffer &a_buffer, LUPI::DataBu
 */
 LUPI_HOST Function1d *parseMultiplicityFunction1d( SetupInfo &a_setupInfo, LUPI_maybeUnused Transporting::MC const &a_settings, GIDI::Suite const &a_suite ) {
 
-    GIDI::Functions::Function1dForm const *form1d( a_suite.get<GIDI::Functions::Function1dForm>( 0 ) );
+    auto preProcessingChainEnds = a_setupInfo.m_GIDI_protare.styles( ).preProcessingChainEnds( );
+    if( preProcessingChainEnds.size( ) != 1 ) throw std::runtime_error( "Functions::parseMultiplicityFunction1d: preProcessingChainEnds != 1." );
+
+    std::string const &label = preProcessingChainEnds[0]->label( );
+    GIDI::Functions::Function1dForm const *form1d = nullptr;
+    if( a_suite.has( "muCutoff" ) ) {   // Special case to handle legacy no-Rutherford processing which set the label to "muCutoff".
+        form1d = a_suite.get<GIDI::Functions::Function1dForm const>( 0 ); }
+    else {
+        form1d = a_suite.getViaLineage<GIDI::Functions::Function1dForm const>( label );
+    }
 
     if( form1d->type( ) == GIDI::FormType::branching1d ) return( new Branching1d( a_setupInfo, *static_cast<GIDI::Functions::Branching1d const *>( form1d ) ) );
     if( form1d->type( ) == GIDI::FormType::unspecified1d ) return( nullptr );
@@ -1758,7 +1768,8 @@ LUPI_HOST_DEVICE Isotropic2d::~Isotropic2d( ) {
 ====================== DiscreteGamma2d =====================
 ============================================================
 */
-LUPI_HOST_DEVICE DiscreteGamma2d::DiscreteGamma2d( ) {
+LUPI_HOST_DEVICE DiscreteGamma2d::DiscreteGamma2d( ) :
+        m_value( 0.0 ) {
 
     m_type = ProbabilityBase2dType::discreteGamma;
 }
@@ -2182,6 +2193,7 @@ LUPI_HOST_DEVICE void SimpleMaxwellianFission2d::serialize( LUPI::DataBuffer &a_
 ============================================================
 */
 LUPI_HOST_DEVICE Watt2d::Watt2d( ) :
+        m_U( 0.0 ),
         m_a( nullptr ),
         m_b( nullptr ) {
 

@@ -9,9 +9,6 @@
 
 #include "PoPI.hpp"
 
-#define PoPI_idChars "id"
-#define PoPI_symbolChars "symbol"
-
 namespace PoPI {
 
 /*! \class Base

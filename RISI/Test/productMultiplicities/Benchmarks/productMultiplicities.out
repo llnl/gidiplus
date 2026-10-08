@@ -1,0 +1,108 @@
+Reading RIS file: ../../../GIDI/Test/Data/MG_MC/all.ris
+Projectile: n
+Target: Th227
+
+Found 21 reactions for n + Th227:
+
+:  (threshold: 1.000e-11 MeV)
+    n * 1
+    Th227 * 1
+
+:  (threshold: 9.331e-03 MeV)
+    n * 1
+    Th227 * 1
+    photon * -1
+
+:  (threshold: 2.449e-02 MeV)
+    n * 1
+    Th227 * 1
+    photon * -1
+
+:  (threshold: 3.803e-02 MeV)
+    n * 1
+    Th227 * 1
+    photon * -1
+
+:  (threshold: 7.400e-02 MeV)
+    n * 1
+    Th227 * 1
+    photon * -1
+
+:  (threshold: 7.657e-02 MeV)
+    n * 1
+    Th227 * 1
+    photon * -1
+
+:  (threshold: 7.796e-02 MeV)
+    n * 1
+    Th227 * 1
+    photon * -1
+
+:  (threshold: 8.717e-02 MeV)
+    n * 1
+    Th227 * 1
+    photon * -1
+
+:  (threshold: 9.963e-02 MeV)
+    n * 1
+    Th227 * 1
+    photon * -1
+
+:  (threshold: 1.279e-01 MeV)
+    n * 1
+    Th227 * 1
+    photon * -1
+
+:  (threshold: 1.845e-01 MeV)
+    n * 1
+    Th227 * 1
+    photon * -1
+
+:  (threshold: 2.009e-01 MeV)
+    n * 1
+    Th227 * 1
+    photon * -1
+
+:  (threshold: 2.080e-01 MeV)
+    n * 1
+    Th227 * 1
+    photon * -1
+
+:  (threshold: 2.295e-01 MeV)
+    n * 1
+    Th227 * 1
+    photon * -1
+
+:  (threshold: 2.325e-01 MeV)
+    n * 1
+    Th227 * 1
+    photon * -1
+
+: continuum (threshold: 1.110e-01 MeV)
+    n * 1
+    Th227 * 1
+    photon * -1
+
+:  (threshold: 5.486e+00 MeV)
+    n * 2
+    Th226 * 1
+    photon * -1
+
+:  (threshold: 1.270e+01 MeV)
+    n * 3
+    Th225 * 1
+    photon * -1
+
+:  (threshold: 1.849e+01 MeV)
+    n * 4
+    Th224 * 1
+    photon * -1
+
+: totalFission (threshold: 1.000e-11 MeV)
+    n * -1
+    photon * -1
+
+:  (threshold: 1.000e-11 MeV)
+    Th228 * 1
+    photon * -1
+

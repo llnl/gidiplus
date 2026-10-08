@@ -81,7 +81,12 @@ int main( int argc, char **argv ) {
             double delta = crossSection - crossSectionSum;
             double ratio = 1;
             if( crossSection != 0 ) ratio = delta / crossSection;
+#ifdef MCGIDI_USE_DOUBLES
             if( ratio < 1e-14 ) {
+#else
+            if( ratio < 1e-7 ) {
+                crossSection = crossSectionSum;
+#endif
                 delta = 0;
                 ratio = 0;
             }

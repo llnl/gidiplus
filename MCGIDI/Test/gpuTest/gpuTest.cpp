@@ -107,16 +107,17 @@ __global__ void sample( MCGIDI::ProtareSingle *a_MCProtare, int a_numCollisions,
     double energy = pow( 10.0, myRNG( &seed ) * 1.3 );
 
     MCGIDI::Sampling::Input input( true, MCGIDI::Sampling::Upscatter::Model::B );
+    input.setTemperatureAndEnergy( temperature, energy );
 
     int hashIndex = domainHash.index( energy );
 
     MCGIDI::URR_protareInfos urr;
 // The next 4 lines cause a "nvlink warning".
     double crossSection = a_MCProtare->crossSection( urr, hashIndex, temperature, energy );
-    int reactionIndex = a_MCProtare->sampleReaction( urr, hashIndex, temperature, energy, crossSection, [&]( ) -> double { return myRNG( &seed ); } );
+    int reactionIndex = a_MCProtare->sampleReaction( input, urr, hashIndex, crossSection, [&]( ) -> double { return myRNG( &seed ); } );
 
     MCGIDI::Reaction const *reaction = a_MCProtare->reaction( reactionIndex );
-    reaction->sampleProducts( a_MCProtare, energy, input, [&]( ) -> double { return myRNG( &seed ); }, 
+    reaction->sampleProducts( a_MCProtare, input, [&]( ) -> double { return myRNG( &seed ); },
             [&]( MCGIDI::Sampling::Product &a_product ) -> void { products.push_back( a_product ); }, products );
 }
 
@@ -257,7 +258,6 @@ int main2( int argc, char *argv[] ) {                                   // main 
     MCGIDI::Protare *MCProtare = protares[numIsotopes-1];
     int numberOfReactions = MCProtare->numberOfReactions( );
 
-    MCGIDI::Sampling::Input input( true, MCGIDI::Sampling::Upscatter::Model::B );
     MCGIDI::Sampling::MCGIDIVectorProductHandler products;
     printf( "CPU OUTPUT\n" );
     if( doPrint ) {
@@ -337,13 +337,14 @@ int main2( int argc, char *argv[] ) {                                   // main 
             uint64_t seed = collisionIndex + 1;
             double energy = pow( 10.0, myRNG( &seed ) * 1.3 );
             MCGIDI::Sampling::Input input( true, MCGIDI::Sampling::Upscatter::Model::B );
+            input.setTemperatureAndEnergy( temperature, energy );
             int hashIndex = domainHash.index( energy );
             MCGIDI::URR_protareInfos urr;
             double crossSection = gidi_data.crossSection( urr, hashIndex, temperature, energy );
-            int reactionIndex = MCProtare->sampleReaction( urr, hashIndex, temperature, energy, crossSection, [&]( ) -> double { return myRNG(&seed); } );
+            int reactionIndex = MCProtare->sampleReaction( input, urr, hashIndex, crossSection, [&]( ) -> double { return myRNG(&seed); } );
 
             MCGIDI::Reaction const *reaction = gidi_data.reaction( reactionIndex );
-            reaction->sampleProducts( MCProtare, energy, input, [&]( ) -> double { return myRNG(&seed); }, 
+            reaction->sampleProducts( MCProtare, input, [&]( ) -> double { return myRNG(&seed); },
                     [&]( MCGIDI::Sampling::Product &a_product ) -> void { products.push_back( a_product ); }, products );
         }
         gettimeofday( &tv2, nullptr );

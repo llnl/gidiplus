@@ -1,0 +1,20 @@
+<targetInfo>
+  <isotopicAbundances>
+    <chemicalElements>
+      <chemicalElement symbol="C">
+        <nuclides>
+          <nuclide pid="C12" atomFraction="0.989"/>
+          <nuclide pid="C13" atomFraction="0.011"/></nuclides></chemicalElement>
+      <chemicalElement symbol="O">
+        <nuclides>
+          <nuclide pid="O16" atomFraction="0.99762"/>
+          <nuclide pid="O17" atomFraction="0.00038"/>
+          <nuclide pid="O18" atomFraction="0.002"/></nuclides></chemicalElement></chemicalElements></isotopicAbundances></targetInfo>
+
+Chemical element C
+    C12 0.989
+    C13 0.011
+Chemical element O
+    O16 0.99762
+    O17 0.00038
+    O18 0.002

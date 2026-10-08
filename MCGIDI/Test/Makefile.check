@@ -1,7 +1,7 @@
 # <<BEGIN-copyright>>
 # <<END-copyright>>
 
-.PHONY: default check clean realclean
+.PHONY: default floatDiffs check clean realclean
 
 PYTHON = python3
 
@@ -20,7 +20,12 @@ default: $(Executables)
 $(Executables): %: %.cpp ../../../include/*.h* ../../../lib/*.a
 	$(CXX) $(local_CXXFLAGS) $< -o $@ $(LIBS)
 
+floatDiffs:
+	if [ ! -e Benchmarks ]; then mkdir Benchmarks; fi
+	../Utilities/patchFloatDiffs.py "$(local_CXXFLAGS)"
+
 clean:
+	../Utilities/cleanFloatDiffs.py
 	rm -rf $(Executables) $(Archive) *.o Outputs file1 file2
 
 realclean: clean

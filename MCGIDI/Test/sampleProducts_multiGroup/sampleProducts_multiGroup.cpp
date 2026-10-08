@@ -126,7 +126,8 @@ int main( int argc, char **argv ) {
             products.clear( );
 
             std::cout << "    energy = " << LUPI::Misc::doubleToString3( "%.6g", energy, true )  << std::endl;
-            reaction->sampleProducts( MCProtare, energy, input, [&]( ) -> double { return float64RNG64( &rngState ); }, 
+            input.setTemperatureAndEnergy( 0.0, energy );
+            reaction->sampleProducts( MCProtare, input, [&]( ) -> double { return float64RNG64( &rngState ); }, 
                     [&]( MCGIDI::Sampling::Product &a_product ) -> void { products.push_back( a_product ); }, products );
             for( std::size_t i2 = 0; i2 < products.size( ); ++i2 ) {
                 MCGIDI::Sampling::Product const &product = products[i2];
@@ -159,7 +160,8 @@ int main( int argc, char **argv ) {
 
                 for( std::size_t i2 = 0; i2 < numberOfFissionSamples; ++i2 ) {
                     products.clear( );
-                    reaction->sampleProducts( MCProtare, energy, input, [&]( ) -> double { return float64RNG64( &rngState ); }, 
+                    input.setTemperatureAndEnergy( 0.0, energy );
+                    reaction->sampleProducts( MCProtare, input, [&]( ) -> double { return float64RNG64( &rngState ); }, 
                             [&]( MCGIDI::Sampling::Product &a_product ) -> void { products.push_back( a_product ); }, products );
                     for( std::size_t i3 = 0; i3 < products.size( ); ++i3 ) {
                         MCGIDI::Sampling::Product const &product = products[i3];

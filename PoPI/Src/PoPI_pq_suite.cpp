@@ -22,7 +22,7 @@ namespace PoPI {
 PQ_suite::PQ_suite( HAPI::Node const &a_node ) :
         m_label( a_node.name( ) ) {
 
-    for( HAPI::Node child = a_node.first_child( ); !child.empty( ); child = child.next_sibling( ) ) {
+    for( HAPI::Node child = a_node.first_child( ); !child.empty( ); child.to_next_sibling( ) ) {
         std::string name( child.name( ) );
         PhysicalQuantity *quantity;
 
@@ -66,7 +66,7 @@ void PQ_suite::toXMLList( std::vector<std::string> &a_XMLList, std::string const
 
     if( size( ) == 0 ) return;
     std::string header = a_indent1 + "<" + m_label + ">";
-    a_XMLList.push_back( header );
+    a_XMLList.push_back( std::move( header ) );
     for( std::vector<PhysicalQuantity *>::const_iterator iter = begin( ); iter != end( ); ++iter )
         (*iter)->toXMLList( a_XMLList, indent2 );
     appendXMLEnd( a_XMLList, m_label );

@@ -51,5 +51,10 @@ void main2( int argc, char **argv ) {
     GIDI::RISI::Projectiles projectiles;
 
     GIDI::RISI::readRIS( path, "MeV", projectiles );
-    projectiles.print( );
+    bool verbose = true;
+    if( !verbose ) {
+        projectiles.print( ); }
+    else {
+        projectiles.printAsRIS_file( );
+    }
 }

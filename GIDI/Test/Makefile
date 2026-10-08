@@ -13,7 +13,7 @@ DIRS = Utilities matrix VectorAndMatrixReverse map parseXML groupBoundaries inve
 	transportCorrection availableEnergy multiplicity Q averageProductData depositionData \
 	settingsProcess multiGroup temperatures splitString ancestry readAll photoAtomicScattering photoScattering TNSL gain \
 	multiGroups fluxes ENDLCValues activeReactions delayedNeutronProducts sumsCheck modifiedCrossSection RIS_viaMap \
-	areAllProductsTracked regions1dAsXYs1d suitePop
+	areAllProductsTracked regions1dAsXYs1d suitePop targetInfo
 
 default:
 	cd Utilities; $(MAKE)

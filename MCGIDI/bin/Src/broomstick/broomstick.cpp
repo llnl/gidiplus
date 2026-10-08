@@ -325,7 +325,6 @@ void main2( int argc, char **argv ) {
     }
 
     MCGIDI::Sampling::Input input( true, upscatterModel );
-    input.m_temperature = temperature_MeV_k;
     MCGIDI::Sampling::StdVectorProductHandler products;
     if( ( reactionIndex >= 0 ) && ( energyMode != EnergyMode::python ) ){
         MCGIDI::Reaction const *reaction = MCProtare->reaction( reactionIndex );
@@ -376,12 +375,13 @@ void main2( int argc, char **argv ) {
         }
 
         int hashIndex = domainHash.index( energy_in );
+        input.setTemperatureAndEnergy( temperature_MeV_k, energy_in );
 
         int reactionIndex2 = reactionIndex;
         if( reactionIndex2 < 0 ) {
             double totalCrossSection = MCProtare->crossSection( URR_protareInfos, hashIndex, temperature_MeV_k, energy_in );
-            reactionIndex2 = MCProtare->sampleReaction( URR_protareInfos, hashIndex, temperature_MeV_k, energy_in, 
-                    totalCrossSection, [&]( ) -> double { return float64RNG64( &rngState ); } );
+            reactionIndex2 = MCProtare->sampleReaction( input, URR_protareInfos, hashIndex, totalCrossSection, 
+                    [&]( ) -> double { return float64RNG64( &rngState ); } );
         }
         MCGIDI::Reaction const *reaction = MCProtare->reaction( reactionIndex2 );
 
@@ -393,7 +393,7 @@ void main2( int argc, char **argv ) {
                 << " reaction " << reactionIndex2 << ": " << reaction->label( ).c_str( ) << std::endl;
 
         products.clear( );
-        reaction->sampleProducts( MCProtare, energy_in, input, [&]( ) -> double { return float64RNG64( &rngState ); }, 
+        reaction->sampleProducts( MCProtare, input, [&]( ) -> double { return float64RNG64( &rngState ); }, 
                 [&]( MCGIDI::Sampling::Product &a_product ) -> void { products.push_back( a_product ); }, products );
 
         for( std::size_t productIndex = 0; productIndex < products.size( ); ++productIndex ) {

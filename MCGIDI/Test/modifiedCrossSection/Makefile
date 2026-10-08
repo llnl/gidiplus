@@ -13,7 +13,7 @@ CppSource = $(sort $(wildcard *.cpp))
 include $(GIDI_PLUS_PATH)/Makefile.paths
 include ../Makefile.check
 
-check: $(Executables)
+check: floatDiffs $(Executables)
 	if [ ! -e Outputs ]; then mkdir Outputs; fi
 	./modifiedCrossSection.sh modifiedCrossSection.out
 	./modifiedCrossSection.sh modifiedCrossSection___0.2_.out --offset 0.2

@@ -128,28 +128,32 @@ MG::MG( std::string const &a_projectileID, Mode a_mode, DelayedNeutrons a_delaye
 }
 
 /* *********************************************************************************************************//**
- * Searches the suite *a_suite* for the form style specified by *mode( )* and matching one in *a_temperatureInfo*.
+ * Searches the suite *a_suite* for the form style specified by *m_mode* and matching one in *a_temperatureInfo*.
  * This only works for multi-group data (i.e., multiGroup or multiGroupWithSnElasticUpScatter type data).
+ * If *a_label* is not an empty string, then it is used as the label for the form to return and *a_temperatureInfo* is ignored.
  *
  * @param a_smr                 [Out]   If errors are not to be thrown, then the error is reported via this instance.
  * @param a_suite               [in]    The suite to search for the requested form.
  * @param a_temperatureInfo     [in]    Specifies the temperature and labels use to lookup the requested data.
  * @param a_dataType            [in]    The type of data being required. Only used if data not found.
+ * @param a_label               [in]    The not an empty string, this is used as the label for the form to return.
  ***********************************************************************************************************/
 
 Form const *MG::form( LUPI::StatusMessageReporting &a_smr, GIDI::Suite const &a_suite, Styles::TemperatureInfo const &a_temperatureInfo,
-                    std::string a_dataType ) const {
+                    std::string a_dataType, std::string const &a_label ) const {
 
     std::string label;
 
-    if( m_mode == Mode::multiGroup ) {
+    if( a_label != "" ) {
+        label = a_label; }
+    else if( m_mode == Mode::multiGroup ) {
         label = a_temperatureInfo.heatedMultiGroup( ); }
     else if( m_mode == Mode::multiGroupWithSnElasticUpScatter ) {
         label = a_temperatureInfo.SnElasticUpScatter( );
     }
 
     Suite::const_iterator iter = a_suite.find( label, true );
-    if( iter == a_suite.end( ) ) {
+    if( ( iter == a_suite.end( ) ) && ( a_label == "" ) ) {
         if( m_mode == Mode::multiGroupWithSnElasticUpScatter ) iter = a_suite.find( a_temperatureInfo.heatedMultiGroup( ), true );
     }
 

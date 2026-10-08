@@ -1274,6 +1274,7 @@ LUPI_HOST_DEVICE ProtareSingle::ProtareSingle( ) :
         m_hasURR_probabilityTables( false ),
         m_URR_domainMin( -1.0 ),
         m_URR_domainMax( -1.0 ),
+        m_upscatterModelASupported( false ),
         m_projectileMultiGroupBoundaries( 0 ),
         m_projectileMultiGroupBoundariesCollapsed( 0 ),
         m_reactions( 0 ),
@@ -1304,6 +1305,10 @@ LUPI_HOST ProtareSingle::ProtareSingle( LUPI::StatusMessageReporting &a_smr, GID
         m_hasURR_probabilityTables( false ),
         m_URR_domainMin( -1.0 ),
         m_URR_domainMax( -1.0 ),
+        m_domainHash( a_domainHash ),
+        m_upscatterModelASupported( ( projectileIntid( ) != PoPI::Intids::photon ) &&
+                                    ( projectileIntid( ) != PoPI::Intids::electron ) &&
+                                    !isTNSL_ProtareSingle( ) ),
         m_projectileMultiGroupBoundaries( 0 ),
         m_projectileMultiGroupBoundariesCollapsed( 0 ),
         m_reactions( 0 ),
@@ -1527,6 +1532,7 @@ LUPI_HOST ProtareSingle::ProtareSingle( LUPI::StatusMessageReporting &a_smr, GID
         GIDI_orphanProducts.push_back( GIDI_reaction );
     }
 
+    bool removeContinuousEnergyData = false;
     if( m_continuousEnergy ) {
         m_heatedCrossSections.update( a_smr, setupInfo, a_settings, particles, a_domainHash, a_temperatureInfos, GIDI_reactions, GIDI_orphanProducts,
                 m_fixedGrid, zeroReactions );
@@ -1536,19 +1542,66 @@ LUPI_HOST ProtareSingle::ProtareSingle( LUPI::StatusMessageReporting &a_smr, GID
     else {
         m_heatedMultigroupCrossSections.update( a_smr, a_protare, setupInfo, a_settings, particles, a_temperatureInfos, GIDI_reactions, 
                 GIDI_orphanProducts, zeroReactions, a_reactionsToExclude );
+
+        if( a_settings.upscatterModelAGroupBoundaries().size( ) > 0 ) {
+            // also need to load pointwise data to recompute Model A cross sections on user-defined grid
+            removeContinuousEnergyData = true;
+            m_heatedCrossSections.update( a_smr, setupInfo, a_settings, particles, a_domainHash, a_temperatureInfos, GIDI_reactions, GIDI_orphanProducts,
+                    m_fixedGrid, zeroReactions );
+        }
     }
 
     if( ( PoPI::Intids::photon != projectileIntid( ) ) && ( PoPI::Intids::electron != projectileIntid( ) ) && ( a_settings.upscatterModel( ) == Sampling::Upscatter::Model::A ) ) {
-        GIDI::Styles::Base const *style = a_protare.styles( ).get<GIDI::Styles::Base>( a_settings.upscatterModelALabel( ) );
+        std::vector<double> const &upscatterModelAGroupBoundaries = a_settings.upscatterModelAGroupBoundaries( );
+        if( upscatterModelAGroupBoundaries.size( ) == 0 ) {
+            GIDI::Styles::Base const *style = a_protare.styles( ).get<GIDI::Styles::Base>( a_temperatureInfos[0].heatedMultiGroup( ) );
 
-        if( style->moniker( ) == GIDI_SnElasticUpScatterStyleChars ) style = a_protare.styles( ).get<GIDI::Styles::Base>( style->derivedStyle( ) );
-        if( style->moniker( ) != GIDI_heatedMultiGroupStyleChars ) throw GIDI::Exception( "Label does not yield a heatedMultiGroup style." );
+            if( style->moniker( ) == GIDI_SnElasticUpScatterStyleChars ) style = a_protare.styles( ).get<GIDI::Styles::Base>( style->derivedStyle( ) );
+            if( style->moniker( ) != GIDI_heatedMultiGroupStyleChars ) throw GIDI::Exception( "Label does not yield a heatedMultiGroup style." );
 
-        GIDI::Styles::HeatedMultiGroup const &heatedMultiGroup = *static_cast<GIDI::Styles::HeatedMultiGroup const *>( style );
-        std::vector<double> const &boundaries = heatedMultiGroup.groupBoundaries( a_protare.projectile( ).ID( ) );
+            GIDI::Styles::HeatedMultiGroup const &heatedMultiGroup = *static_cast<GIDI::Styles::HeatedMultiGroup const *>( style );
+            std::vector<double> const &boundaries = heatedMultiGroup.groupBoundaries( a_protare.projectile( ).ID( ) );
 
-        m_upscatterModelAGroupVelocities.resize( boundaries.size( ) );
-        for( std::size_t i1 = 0; i1 < boundaries.size( ); ++i1 ) m_upscatterModelAGroupVelocities[i1] = MCGIDI_particleBeta( projectileMass( ), boundaries[i1] );
+            m_upscatterModelAGroupEnergies.resize( boundaries.size( ) );
+            m_upscatterModelAGroupVelocities.resize( boundaries.size( ) );
+            for( std::size_t i1 = 0; i1 < boundaries.size( ); ++i1 ) {
+                m_upscatterModelAGroupEnergies[i1] = boundaries[i1];
+                m_upscatterModelAGroupVelocities[i1] = MCGIDI_particleBeta( projectileMass( ), boundaries[i1] );
+            }
+
+            GIDI::ExcludeReactionsSet reactionsToExclude;
+            auto upscatterModelACrossSectionForm = a_protare.multiGroupCrossSection( a_smr, multiGroupSettings, a_temperatureInfos[0], 
+                    reactionsToExclude, a_temperatureInfos[0].heatedMultiGroup( ) );
+            m_upscatterModelACrossSection.resize( upscatterModelACrossSectionForm.size( ) );
+            for( std::size_t i1 = 0; i1 < upscatterModelACrossSectionForm.size( ); ++i1 ) 
+                m_upscatterModelACrossSection[i1] = upscatterModelACrossSectionForm[i1]; }
+        else {
+            
+            m_upscatterModelAGroupEnergies.reserve( upscatterModelAGroupBoundaries.size( ) );
+            m_upscatterModelAGroupVelocities.reserve( upscatterModelAGroupBoundaries.size( ) );
+            for( auto iter = upscatterModelAGroupBoundaries.begin( ); iter != upscatterModelAGroupBoundaries.end( ); ++iter ) {
+                m_upscatterModelAGroupEnergies.push_back( *iter );
+                m_upscatterModelAGroupVelocities.push_back( MCGIDI_particleBeta( projectileMass( ), *iter ) );
+            }
+
+            GIDI::Transporting::MultiGroup boundaries( "Model A", upscatterModelAGroupBoundaries );
+
+            GIDI::Functions::XYs1d crossSectionXYs1d = m_heatedCrossSections.crossSectionAsGIDI_XYs1d( 0.0 );
+
+            GIDI::Transporting::Flux flux( "Model A", 0.0 );
+            std::vector<double> energies, fluxes;
+            energies.push_back( upscatterModelAGroupBoundaries[0] );
+            energies.push_back( upscatterModelAGroupBoundaries.back( ) );
+            fluxes.push_back( 1.0 );
+            fluxes.push_back( 1.0 );
+            flux.addFluxOrder( GIDI::Transporting::Flux_order( 0, energies, fluxes ) );
+
+            GIDI::Vector crossSectionVector = multiGroupXYs1d( boundaries, crossSectionXYs1d, flux );
+            m_upscatterModelACrossSection.resize( crossSectionVector.size( ) );
+            for( std::size_t index = 0; index < crossSectionVector.size( ); ++index )
+                    m_upscatterModelACrossSection[index] = crossSectionVector[index];
+        }
+
     }
 
     if( m_continuousEnergy && ( PoPI::Intids::neutron  == projectileIntid( ) ) && ( a_settings.upscatterModel( ) == Sampling::Upscatter::Model::DBRC ) ) {
@@ -1564,8 +1617,8 @@ LUPI_HOST ProtareSingle::ProtareSingle( LUPI::StatusMessageReporting &a_smr, GID
                 Vector<double> const &energies = heatedCrossSectionContinuousEnergy->energies( );
                 Vector<MCGIDI_FLOAT> const &crossSectionsFloat = heatedReactionCrossSectionContinuousEnergy->crossSections( );
                 Vector<double> crossSections( crossSectionsFloat.size( ) );
-                int index = 0;
-                for( auto iter = crossSectionsFloat.begin( ); iter != crossSectionsFloat.end( ); ++iter )
+                std::size_t index = 0;
+                for( auto iter = crossSectionsFloat.begin( ); iter != crossSectionsFloat.end( ); ++iter, ++index )
                     crossSections[index] = *iter;
 
                 Sampling::Upscatter::ModelDBRC_data *modelDBRC_data = 
@@ -1574,6 +1627,9 @@ LUPI_HOST ProtareSingle::ProtareSingle( LUPI::StatusMessageReporting &a_smr, GID
                 break;
             }
         }
+    }
+    if( removeContinuousEnergyData ) {
+        m_heatedCrossSections.clear( );
     }
 }
 
@@ -1922,9 +1978,13 @@ LUPI_HOST_DEVICE void ProtareSingle::serialize2( LUPI::DataBuffer &a_buffer, LUP
     DATA_MEMBER_CAST( m_hasURR_probabilityTables, a_buffer, a_mode, bool );
     DATA_MEMBER_DOUBLE( m_URR_domainMin, a_buffer, a_mode );
     DATA_MEMBER_DOUBLE( m_URR_domainMax, a_buffer, a_mode );
+    m_domainHash.serialize( a_buffer, a_mode );
     DATA_MEMBER_VECTOR_DOUBLE( m_projectileMultiGroupBoundaries, a_buffer, a_mode );
     DATA_MEMBER_VECTOR_DOUBLE( m_projectileMultiGroupBoundariesCollapsed, a_buffer, a_mode );
+    DATA_MEMBER_CAST( m_upscatterModelASupported, a_buffer, a_mode, bool );
+    DATA_MEMBER_VECTOR_DOUBLE( m_upscatterModelAGroupEnergies, a_buffer, a_mode );
     DATA_MEMBER_VECTOR_DOUBLE( m_upscatterModelAGroupVelocities, a_buffer, a_mode );
+    DATA_MEMBER_VECTOR_DOUBLE( m_upscatterModelACrossSection, a_buffer, a_mode );
 
     vectorSize = m_nuclideGammaBranchStateInfos.size( );
     int vectorSizeInt = (int) vectorSize;

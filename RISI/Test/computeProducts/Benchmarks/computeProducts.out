@@ -1,0 +1,17 @@
+Loading PoPs database from: /usr/gapps/data/nuclear/common/pops.xml
+=== Products Analysis ===
+Target         Target ZA      Product             Product ZA     Steps     
+===========================================================================
+
+--- Target: Th227 ---
+Th227          90227          Th224               90224          1              
+                              Th225               90225          1              
+                              Th226               90226          1              
+                              Th227               90227          0              
+                              Th228               90228          1              
+                              n                   0              1              
+                              photon              0              1              
+
+The final product list contains 1 products and fission.
+
+Products analysis complete.

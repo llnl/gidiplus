@@ -19,10 +19,10 @@
 static char const *description = "Does some testing of the serialize methods which are used to broadcast for use in MPI and on GPUs.";
 
 void main2( int argc, char **argv );
-void printDetails( MCGIDI::Protare *MCProtare, GIDI::Styles::TemperatureInfos &temperatures );
-void printProtareSingle( MCGIDI::ProtareSingle *MCProtare );
-void printReaction( MCGIDI::Reaction *reaction, LUPI::DataBuffer &dataBufferReactions, LUPI::DataBuffer &dataBufferDistributions );
-void printSizes( std::string const &a_prefix, LUPI::DataBuffer &a_dataBuffer, bool a_header );
+void printDetails( MCGIDI::Protare *MCProtare, GIDI::Styles::TemperatureInfos &temperatures, std::ostream &out );
+void printProtareSingle( MCGIDI::ProtareSingle *MCProtare, std::ostream &out );
+void printReaction( MCGIDI::Reaction *reaction, LUPI::DataBuffer &dataBufferReactions, LUPI::DataBuffer &dataBufferDistributions, std::ostream &out );
+void printSizes( std::string const &a_prefix, LUPI::DataBuffer &a_dataBuffer, std::ostream &out, bool a_header );
 /*
 =========================================================
 */
@@ -145,7 +145,16 @@ void main2( int argc, char **argv ) {
         throw std::runtime_error( Str );
     }
 
-    if( detailed ) printDetails( MCProtare, temperatures );
+    std::ostringstream protare1stream, protare2stream;
+    printDetails( MCProtare, temperatures, protare1stream );
+    printDetails( MCProtare2, temperatures, protare2stream );
+
+    if( detailed ) std::cout << protare2stream.str( );
+
+    if( protare1stream.str( ) != protare2stream.str( ) ) {
+        std::string Str = "Differences detected after deserialization!\n";
+        throw std::runtime_error( Str );
+    }
 
     delete protare;
     delete MCProtare;
@@ -157,7 +166,7 @@ void main2( int argc, char **argv ) {
 =========================================================
 */
 
-void printDetails( MCGIDI::Protare *MCProtare, GIDI::Styles::TemperatureInfos &temperatures ) {
+void printDetails( MCGIDI::Protare *MCProtare, GIDI::Styles::TemperatureInfos &temperatures, std::ostream& out ) {
 
     LUPI::DataBuffer dataBuffer;
 
@@ -168,14 +177,14 @@ void printDetails( MCGIDI::Protare *MCProtare, GIDI::Styles::TemperatureInfos &t
     bytes += dataBuffer.m_charIndex * sizeof( dataBuffer.m_charData[0] );
     bytes += dataBuffer.m_longIndex * sizeof( dataBuffer.m_longData[0] );
     double bytesMillion = bytes / 1e6;
-    std::cout << "Detail information: total bytes = " << bytes << " (" << bytesMillion << " million)." << std::endl;
-    std::cout << "Number of temperatures = " << temperatures.size( ) << std::endl;
+    out << "Detail information: total bytes = " << bytes << " (" << bytesMillion << " million)." << std::endl;
+    out << "Number of temperatures = " << temperatures.size( ) << std::endl;
 
-    printSizes( "Protare", dataBuffer, true );
-    printSizes( "Protare", dataBuffer, false );
+    printSizes( "Protare", dataBuffer, out, true );
+    printSizes( "Protare", dataBuffer, out, false );
     for( std::size_t protareIndex = 0; protareIndex < MCProtare->numberOfProtares( ); ++protareIndex ) {
         MCGIDI::ProtareSingle *protareSingle = MCProtare->protare( protareIndex );
-        printProtareSingle( protareSingle );
+        printProtareSingle( protareSingle, out );
     }
 }
 
@@ -183,55 +192,57 @@ void printDetails( MCGIDI::Protare *MCProtare, GIDI::Styles::TemperatureInfos &t
 =========================================================
 */
     
-void printProtareSingle( MCGIDI::ProtareSingle *MCProtare ) {
+void printProtareSingle( MCGIDI::ProtareSingle *MCProtare, std::ostream& out ) {
 
     LUPI::DataBuffer dataBuffer;
     LUPI::DataBuffer dataBufferReactions;
     LUPI::DataBuffer dataBufferDistributions;
     MCProtare->serialize( dataBuffer, LUPI::DataBuffer::Mode::Count );
-    printSizes( "ProtareSingle", dataBuffer, true );
-    printSizes( "ProtareSingle", dataBuffer, false );
+    printSizes( "ProtareSingle", dataBuffer, out, true );
+    printSizes( "ProtareSingle", dataBuffer, out, false );
+    out << "  " << MCProtare->projectileID( ).c_str( ) << " + " << MCProtare->targetID( ).c_str( )
+                << ", interaction = " << MCProtare->interaction( ).c_str( ) << std::endl;
 
-    printSizes( LUPI::Misc::argumentsToString( "%-44s", "" ), dataBuffer, true );
+    printSizes( LUPI::Misc::argumentsToString( "%-44s", "" ), dataBuffer, out, true );
 
     dataBuffer.zeroIndexes( );
     MCGIDI::HeatedCrossSectionsContinuousEnergy &heatedCrossSections = MCProtare->heatedCrossSections( );
     heatedCrossSections.serialize( dataBuffer, LUPI::DataBuffer::Mode::Count );
-    printSizes( LUPI::Misc::argumentsToString( "%-44s", "Continuous energy cross sections" ), dataBuffer, false );
+    printSizes( LUPI::Misc::argumentsToString( "%-44s", "Continuous energy cross sections" ), dataBuffer, out, false );
 
     dataBuffer.zeroIndexes( );
     MCGIDI::HeatedCrossSectionsMultiGroup &heatedMultigroupCrossSections = MCProtare->heatedMultigroupCrossSections( );
     heatedMultigroupCrossSections.serialize( dataBuffer, LUPI::DataBuffer::Mode::Count );
-    printSizes( LUPI::Misc::argumentsToString( "%-44s", "Multi-group cross sections" ), dataBuffer, false );
+    printSizes( LUPI::Misc::argumentsToString( "%-44s", "Multi-group cross sections" ), dataBuffer, out, false );
 
-    std::cout << "Reactions:" << std::endl;
+    out << "Reactions:" << std::endl;
     for( std::size_t reactionIndex = 0; reactionIndex < MCProtare->numberOfReactions( ); ++reactionIndex ) {
         MCGIDI::Reaction *reaction = const_cast<MCGIDI::Reaction *>( MCProtare->reaction( reactionIndex ) );
-        printReaction( reaction, dataBufferReactions, dataBufferDistributions );
+        printReaction( reaction, dataBufferReactions, dataBufferDistributions, out );
     }
-    printSizes( LUPI::Misc::argumentsToString( "    %-32s", "total distributions" ), dataBufferDistributions, false );
-    printSizes( LUPI::Misc::argumentsToString( "    %-32s", "total reactions" ), dataBufferReactions, false );
+    printSizes( LUPI::Misc::argumentsToString( "    %-32s", "total distributions" ), dataBufferDistributions, out, false );
+    printSizes( LUPI::Misc::argumentsToString( "    %-32s", "total reactions" ), dataBufferReactions, out, false );
 
-    std::cout << "Orphan products:" << std::endl;
+    out << "Orphan products:" << std::endl;
     for( std::size_t reactionIndex = 0; reactionIndex < MCProtare->numberOfOrphanProducts( ); ++reactionIndex ) {
         MCGIDI::Reaction *reaction = const_cast<MCGIDI::Reaction *>( MCProtare->orphanProduct( reactionIndex ) );
-        printReaction( reaction, dataBufferReactions, dataBufferDistributions );
+        printReaction( reaction, dataBufferReactions, dataBufferDistributions, out );
     }
-    printSizes( LUPI::Misc::argumentsToString( "    %-40s", "total distributions" ), dataBufferDistributions, false );
-    printSizes( LUPI::Misc::argumentsToString( "    %-32s", "total reactions" ), dataBufferReactions, false );
+    printSizes( LUPI::Misc::argumentsToString( "    %-40s", "total distributions" ), dataBufferDistributions, out, false );
+    printSizes( LUPI::Misc::argumentsToString( "    %-32s", "total reactions" ), dataBufferReactions, out, false );
 }
 
 /*
 =========================================================
 */
 
-void printReaction( MCGIDI::Reaction *reaction, LUPI::DataBuffer &dataBufferReactions, LUPI::DataBuffer &dataBufferDistributions ) {
+void printReaction( MCGIDI::Reaction *reaction, LUPI::DataBuffer &dataBufferReactions, LUPI::DataBuffer &dataBufferDistributions, std::ostream& out ) {
 
     std::string prefix = LUPI::Misc::argumentsToString( "    %-40s", reaction->label( ).c_str( ) );
     LUPI::DataBuffer dataBuffer;
 
     reaction->serialize( dataBuffer, LUPI::DataBuffer::Mode::Count );
-    printSizes( prefix, dataBuffer, false );
+    printSizes( prefix, dataBuffer, out, false );
     reaction->serialize( dataBufferReactions, LUPI::DataBuffer::Mode::Count );
 
     for( MCGIDI_VectorSizeType productIndex = 0; productIndex < reaction->numberOfProducts( ); ++productIndex ) {
@@ -240,12 +251,12 @@ void printReaction( MCGIDI::Reaction *reaction, LUPI::DataBuffer &dataBufferReac
 
         product->serialize( dataBuffer2, LUPI::DataBuffer::Mode::Count );
         prefix = LUPI::Misc::argumentsToString( "        %-36s", product->ID( ).c_str( ) );
-        printSizes( prefix, dataBuffer2, false );
+        printSizes( prefix, dataBuffer2, out, false );
 
         dataBuffer2.zeroIndexes( );
         MCGIDI::Distributions::Distribution *distribution = product->distribution( );
         MCGIDI::serializeDistribution( dataBuffer2, LUPI::DataBuffer::Mode::Count, distribution );
-        printSizes( LUPI::Misc::argumentsToString( "            %-32s", "distribution" ), dataBuffer2, false );
+        printSizes( LUPI::Misc::argumentsToString( "            %-32s", "distribution" ), dataBuffer2, out, false );
         MCGIDI::serializeDistribution( dataBufferDistributions, LUPI::DataBuffer::Mode::Count, distribution );
     }
 }
@@ -254,15 +265,15 @@ void printReaction( MCGIDI::Reaction *reaction, LUPI::DataBuffer &dataBufferReac
 =========================================================
 */
 
-void printSizes( std::string const &a_prefix, LUPI::DataBuffer &a_dataBuffer, bool a_header ) {
+void printSizes( std::string const &a_prefix, LUPI::DataBuffer &a_dataBuffer, std::ostream& out, bool a_header ) {
 
     if( a_header ) {
         std::size_t size = a_prefix.size( ) + 2;
-        for( std::size_t index = 0; index < size; ++index ) std::cout << " ";
-        std::cout << LUPI::Misc::argumentsToString( "%12s %12s %12s %12s %12s", "int", "float", "double", "char", "long" ) 
-                << std::endl; }
+        for( std::size_t index = 0; index < size; ++index ) out << " ";
+        out << LUPI::Misc::argumentsToString( "%12s %12s %12s %12s %12s", "int", "float", "double", "char", "long" )
+            << std::endl; }
     else {
-        std::cout << a_prefix << ": " 
+        out << a_prefix << ": "
                 << LUPI::Misc::argumentsToString( "%12lu %12lu %12lu %12lu %12lu", 
                 a_dataBuffer.m_intIndex, a_dataBuffer.m_floatIndex, a_dataBuffer.m_doubleIndex, a_dataBuffer.m_charIndex, 
                 a_dataBuffer.m_longIndex ) << std::endl;

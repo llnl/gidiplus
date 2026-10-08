@@ -69,7 +69,8 @@ IsotopicAbundancesByChemicalElement::IsotopicAbundancesByChemicalElement( std::s
     HAPI::Node isotopicAbundancesByChemicalElement = doc->first_child( );
 
     if( isotopicAbundancesByChemicalElement.name( ) != moniker( ) )
-        throw LUPI::Exception( "Invalid IsotopicAbundancesByChemicalElement node with moniker (name) " + moniker( ) );
+        throw LUPI::Exception( "Invalid IsotopicAbundancesByChemicalElement node with moniker (name) '" + 
+            isotopicAbundancesByChemicalElement.name( ) + "'." );
 
     m_format = isotopicAbundancesByChemicalElement.attribute_as_string( CADI_formatChars );
     m_evaluation = isotopicAbundancesByChemicalElement.attribute_as_string( CADI_evaluationChars );
@@ -107,7 +108,7 @@ ChemicalElement const *IsotopicAbundancesByChemicalElement::operator[]( std::str
  * @param a_symbol      [in]    The symbol for the chemical element whose isotopic abundance data are being requested.
  * @param a_evaluation  [in]    The evalation for the database.
  *
- * @return                      Pointer to matching **ChemicalElement** or **nullptr** if not match is found.
+ * @return                      Pointer to matching **ChemicalElement** or **nullptr** if no match is found.
  ***********************************************************************************************************/
 
 ChemicalElement const *IsotopicAbundancesByChemicalElement::find( std::string const &a_symbol, std::string const &a_evaluation ) const {

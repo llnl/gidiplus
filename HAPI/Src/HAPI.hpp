@@ -55,7 +55,7 @@ class Attribute {
     public:
         inline Attribute() : m_node(nullptr), m_name() {}
 
-        inline Attribute(Node_internal *a_node, std::string const a_name) :
+        inline Attribute(Node_internal *a_node, std::string const &a_name) :
           m_node(a_node),
           m_name(a_name)
         {
@@ -80,7 +80,7 @@ class Text {
 
     public:
         Text();
-        Text(std::string const a_text);
+        Text(std::string const &a_text);
         ~Text();
         std::string const &get() const { return( m_text ); }
 };

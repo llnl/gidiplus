@@ -321,7 +321,7 @@ Documentation_1_10::Suite &ProtareTNSL::documentations( ) {
  * @return                              The style with label *a_label*.
  ******************************************************************/
 
-Styles::Base &ProtareTNSL::style( std::string const a_label ) {
+Styles::Base &ProtareTNSL::style( std::string const &a_label ) {
 
     return( m_protare->style( a_label ) );
 }
@@ -583,23 +583,25 @@ Vector ProtareTNSL::multiGroupInverseSpeed( LUPI::StatusMessageReporting &a_smr,
  * @param a_settings            [in]    Specifies the requested label.
  * @param a_temperatureInfo     [in]    Specifies the temperature and labels use to lookup the requested data.
  * @param a_reactionsToExclude  [in]    A list of reaction indices that are to be ignored when calculating the cross section.
+ * @param a_label               [in]    If not an empty string, this is used as the label for the form to return and the *a_temperatureInfo* labels are ignored.
  *
  * @return                              The requested multi-group cross section as a GIDI::Vector.
  ***********************************************************************************************************/
 
 Vector ProtareTNSL::multiGroupCrossSection( LUPI::StatusMessageReporting &a_smr, Transporting::MG const &a_settings, 
-                Styles::TemperatureInfo const &a_temperatureInfo, ExcludeReactionsSet const &a_reactionsToExclude ) const {
+                Styles::TemperatureInfo const &a_temperatureInfo, ExcludeReactionsSet const &a_reactionsToExclude,
+                std::string const &a_label ) const {
 
     ExcludeReactionsSet excludeReactionsSet( a_reactionsToExclude );
-    Vector vector = m_protare->multiGroupCrossSection( a_smr, a_settings, a_temperatureInfo, excludeReactionsSet );
+    Vector vector = m_protare->multiGroupCrossSection( a_smr, a_settings, a_temperatureInfo, excludeReactionsSet, a_label );
     excludeReactionsSetAdjust( excludeReactionsSet, *m_protare );
 
     if( !m_elasticReaction->active( ) ) return( vector );
 
-    Vector vectorElastic = m_elasticReaction->multiGroupCrossSection( a_smr, a_settings, a_temperatureInfo );
+    Vector vectorElastic = m_elasticReaction->multiGroupCrossSection( a_smr, a_settings, a_temperatureInfo, a_label );
 
     combineVectors( a_settings, a_temperatureInfo, vector, vectorElastic, 
-            m_TNSL->multiGroupCrossSection( a_smr, a_settings, a_temperatureInfo, excludeReactionsSet ) );
+            m_TNSL->multiGroupCrossSection( a_smr, a_settings, a_temperatureInfo, excludeReactionsSet, a_label ) );
     return( vector );
 }
 

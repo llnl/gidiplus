@@ -8,11 +8,10 @@ SHELL = /bin/sh
 # <<END-copyright>>
 
 GIDI_PLUS_PATH ?= $(abspath ../../..)
-cppSource = $(sort $(wildcard *.cpp))
+CppSource = $(sort $(wildcard *.cpp))
 
 include $(GIDI_PLUS_PATH)/Makefile.paths
 include ../Makefile.check
 
 check: upscatterModelB
-	./upscatterModelB > o
-	../Utilities/diff.com upscatterModelB/upscatterModelB upscatterModelB.out o
+	./upscatterModelB

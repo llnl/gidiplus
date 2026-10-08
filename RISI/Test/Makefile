@@ -9,7 +9,7 @@ SHELL = /bin/sh
 
 .PHONY: default compile check clean realclean doDirs
 
-DIRS = read_RIS_file
+DIRS = read_RIS_file listTargets computeProducts productMultiplicities
 
 default:
 

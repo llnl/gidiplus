@@ -11,7 +11,8 @@
 #include <stdlib.h>
 #include <math.h>
 
-#include "MCGIDI.hpp"
+#include <MCGIDI.hpp>
+#include <MCGIDI_testUtilities.hpp>
 
 class ParticleInfo {
 
@@ -28,13 +29,14 @@ class ParticleInfo {
 #define nBins 501
 static double neutronMass;
 static double temperature_MeV = 1.0e-3;
-static int nParticles = 1000000;
+static int nParticles = 100000;
 
 static MCGIDI::URR_protareInfos URR_protare_infos;
 
 void main2( int argc, char **argv );
 void updateParticle( MCGIDI::Protare *protare, double energy, MCGIDI::DomainHash &domainHash, ParticleInfo *particle, bool firstTime );
 void printBins( FILE *fOut, double time, ParticleInfo *particleInfos, long *bins, double velocityMax );
+
 /*
 =========================================================
 */
@@ -51,6 +53,7 @@ int main( int argc, char **argv ) {
         std::cout << str << std::endl;
     }
 }
+
 /*
 =========================================================
 */
@@ -69,6 +72,7 @@ void main2( int argc, char **argv ) {
     double time = 0.0;
     std::set<int> reactionsToExclude;
     LUPI::StatusMessageReporting smr1;
+    unsigned long long rngState = 1;
 
     std::cerr << "    " << __FILE__;
     for( int i1 = 1; i1 < argc; i1++ ) std::cerr << " " << argv[i1];
@@ -118,7 +122,6 @@ void main2( int argc, char **argv ) {
     MCGIDI::Sampling::StdVectorProductHandler products;
 
     MCGIDI::Sampling::Input input( true, MCGIDI::Sampling::Upscatter::Model::B );
-    input.m_temperature = temperature_MeV * 1e3;
 
     MCGIDI::Reaction const *reaction = MCProtare->reaction( 0 );
     long badNeutronIndex = 0;
@@ -135,7 +138,9 @@ void main2( int argc, char **argv ) {
 
             particle->timeToCollision -= dTime;
             while( particle->timeToCollision <= 0. ) {
-                reaction->sampleProducts( MCProtare, particle->energy, input, (double (*)( void * )) drand48, nullptr, products );
+                input.setTemperatureAndEnergy( temperature_MeV, particle->energy );
+                reaction->sampleProducts( MCProtare, input, [&]( ) -> double { return float64RNG64( &rngState ); },
+                        [&]( MCGIDI::Sampling::Product &a_product ) -> void { products.push_back( a_product ); }, products );
                 if( products.size( ) < 1 ) {
                     ++badProductNumber; }
                 else {

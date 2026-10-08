@@ -127,7 +127,7 @@ Ys1d &Ys1d::operator+=( Ys1d const &a_rhs ) {
         std::vector<double> _Ys( a_rhs.Ys( ) );
 
         for( std::size_t i1 = 0; i1 < size( ); ++i1 ) _Ys[i1-deltaStart] += m_Ys[i1];
-        m_Ys = _Ys;
+        m_Ys = std::move( _Ys );
         m_start = a_rhs.start( );
     }
     return( *this );

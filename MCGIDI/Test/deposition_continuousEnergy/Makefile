@@ -13,7 +13,7 @@ CppSource = $(sort $(wildcard *.cpp))
 include $(GIDI_PLUS_PATH)/Makefile.paths
 include ../Makefile.check
 
-check: deposition_continuousEnergy photo-atomic
+check: floatDiffs deposition_continuousEnergy photo-atomic
 	$(PYTHON) deposition_continuousEnergy.py H1
 	$(PYTHON) deposition_continuousEnergy.py O16
 	$(PYTHON) deposition_continuousEnergy.py Th227

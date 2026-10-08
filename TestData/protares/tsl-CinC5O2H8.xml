@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<reactionSuite projectile="n" target="CinC5O2H8" evaluation="ENDF/B-8.1" format="2.1" projectileFrame="lab" interaction="thermalNeutronScatteringLaw">
+  <styles>
+    <evaluated label="eval" date="2025-06-27" library="ENDF/B" version="8.1.0">
+      <temperature value="0" unit="K"/>
+      <projectileEnergyDomain min="1e-5" max="5" unit="eV"/>
+      <targetInfo>
+        <isotopicAbundances>
+          <chemicalElements>
+            <chemicalElement symbol="C">
+              <nuclides>
+                <nuclide pid="C12" atomFraction="0.989"/>
+                <nuclide pid="C13" atomFraction="0.011"/></nuclides></chemicalElement>
+            <chemicalElement symbol="O">
+              <nuclides>
+                <nuclide pid="O16" atomFraction="0.99762"/>
+                <nuclide pid="O17" atomFraction="0.00038"/>
+                <nuclide pid="O18" atomFraction="0.002"/></nuclides></chemicalElement></chemicalElements></isotopicAbundances></targetInfo></evaluated></styles>
+    <PoPs name="protare_internal" version="1.0" format="2.1">
+      <unorthodoxes>
+      <unorthodox id="CinC5O2H8">
+        <mass>
+          <double label="eval" value="12.0110365689" unit="amu"/></mass></unorthodox></unorthodoxes></PoPs>
+</reactionSuite>

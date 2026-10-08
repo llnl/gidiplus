@@ -1,0 +1,28 @@
+68c68
+<     energy = 1.5407e-11 crossSection = 44.8627
+---
+>     energy = 1.5407e-11 crossSection = 44.8628
+104c104
+<     energy = 1.09205e-08 crossSection = 4.13971
+---
+>     energy = 1.09205e-08 crossSection = 4.13972
+118c118
+<     energy = 1.40211e-07 crossSection = 3.87481
+---
+>     energy = 1.40211e-07 crossSection = 3.8748
+181c181
+<     energy = 0.0136521 crossSection = 3.82281
+---
+>     energy = 0.0136521 crossSection = 3.8228
+200c200
+<     energy = 0.436157 crossSection = 16.3715
+---
+>     energy = 0.436157 crossSection = 16.3714
+249c249
+<     energy = 2.66233e-11 crossSection = 47.8895
+---
+>     energy = 2.66233e-11 crossSection = 47.8894
+277c277
+<     energy = 4.38871e-09 crossSection = 5.51278
+---
+>     energy = 4.38871e-09 crossSection = 5.51277
