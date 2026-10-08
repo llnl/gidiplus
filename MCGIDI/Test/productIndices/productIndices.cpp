@@ -21,7 +21,7 @@ static char const *description = "Loops over temperature and energy, printing th
 void main2( int argc, char **argv );
 void read_MCGIDI_protare( PoPI::Database const &a_pops, GIDI::Protare *a_protare, GIDI::Transporting::Groups_from_bdfls &groups_from_bdfls, 
                 GIDI::Transporting::Fluxes_from_bdfls &fluxes_from_bdfls, GIDI::Styles::TemperatureInfos const &a_temperatures, 
-                MCGIDI::Transporting::MC &a_settings, int productBinary, std::string &a_outputLines );
+                MCGIDI::Transporting::MC &a_settings, std::size_t a_productBinary, std::string &a_outputLines );
 void printProductList( PoPI::Database const &a_pops, MCGIDI::Protare * a_protare, bool a_transportablesOnly, std::string &a_outputLines );
 /*
 =========================================================
@@ -48,7 +48,7 @@ int main( int argc, char **argv ) {
 */
 void main2( int argc, char **argv ) {
 
-    int numberOfLoops = 1 << 7;
+    std::size_t numberOfLoops = 1 << 7;
     PoPI::Database pops;
     argvOptions argv_options( __FILE__, description );
     ParseTestOptions parseTestOptions( argv_options, argc, argv );
@@ -71,7 +71,7 @@ void main2( int argc, char **argv ) {
     GIDI::Transporting::Groups_from_bdfls groups_from_bdfls( "../../../GIDI/Test/bdfls" );
     GIDI::Transporting::Fluxes_from_bdfls fluxes_from_bdfls( "../../../GIDI/Test/bdfls", 0.0 );
 
-    int i1;
+    std::size_t i1;
     std::vector<std::string> outputList( numberOfLoops );
 
 #pragma omp parallel private( i1 ) shared( pops, protare, groups_from_bdfls, fluxes_from_bdfls, temperatures, settings, outputList )
@@ -92,9 +92,9 @@ void main2( int argc, char **argv ) {
 */
 void read_MCGIDI_protare( PoPI::Database const &a_pops, GIDI::Protare *a_protare, GIDI::Transporting::Groups_from_bdfls &groups_from_bdfls, 
                 GIDI::Transporting::Fluxes_from_bdfls &fluxes_from_bdfls, GIDI::Styles::TemperatureInfos const &a_temperatures, 
-                MCGIDI::Transporting::MC &a_settings, int productBinary, std::string &a_outputLines ) {
+                MCGIDI::Transporting::MC &a_settings, std::size_t a_productBinary, std::string &a_outputLines ) {
 
-    std::set<int> reactionsToExclude;
+    GIDI::ExcludeReactionsSet reactionsToExclude;
     LUPI::StatusMessageReporting smr1;
     std::map<std::string, std::string> particlesAndGIDs;
 
@@ -108,10 +108,10 @@ void read_MCGIDI_protare( PoPI::Database const &a_pops, GIDI::Protare *a_protare
 
     GIDI::Transporting::Particles particles;
 
-    int productDigit = 1;
+    std::size_t productDigit = 1;
     a_outputLines += '\n';
     for( std::map<std::string, std::string>::iterator iter = particlesAndGIDs.begin( ); iter != particlesAndGIDs.end( ); ++iter, productDigit <<= 1 ) {
-        if( productDigit & productBinary ) {
+        if( productDigit & a_productBinary ) {
             GIDI::Transporting::MultiGroup multi_group = groups_from_bdfls.viaLabel( iter->second );
             GIDI::Transporting::Particle particle( iter->first, multi_group );
 

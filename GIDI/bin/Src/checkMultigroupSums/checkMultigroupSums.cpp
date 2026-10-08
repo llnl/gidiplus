@@ -91,7 +91,7 @@ void main2( int argc, char **argv ) {
 
     std::string const &mapFilename( o_mapFile->value( 0 ) );
 
-    for( int index = 0; index < o_popsFiles->counts( ); ++index ) {
+    for( std::size_t index = 0; index < o_popsFiles->counts( ); ++index ) {
         pops.addFile( o_popsFiles->value( index ), false );
     }
 
@@ -99,10 +99,10 @@ void main2( int argc, char **argv ) {
 
     GIDI::Map::FindProtareEntries findProtareEntries;
     map.findProtareEntries( findProtareEntries, std::regex( ".*" ), std::regex( ".*" ) );
-    int numberOfProtare = static_cast<int>( findProtareEntries.size( ) );
+    std::size_t numberOfProtare = findProtareEntries.size( );
     std::vector<std::stringstream> stringstreams( numberOfProtare );
 
-    for( int counter = 0; counter < numberOfProtare; ++counter ) {
+    for( std::size_t counter = 0; counter < numberOfProtare; ++counter ) {
         readProtare( *findProtareEntries[counter], pops, stringstreams[counter] );
         std::cout << stringstreams[counter].str( );
     }
@@ -126,7 +126,7 @@ void readProtare( GIDI::Map::ProtareBase const &a_protareEntry, PoPI::Database c
         if( protare->multiGroupSummedReaction( ) == nullptr ) {
             a_stringstream << "          no multigroup sum data present." << std::endl; }
         else {
-            int maxLegendreOrder = 1;                       // Need to get from protare.
+            std::size_t maxLegendreOrder = 1;                       // Need to get from protare.
             std::set<std::string> pids;
             GIDI::Transporting::Particles particles;
             protare->productIDs( pids, particles, false );
@@ -183,7 +183,7 @@ Still need to add multiGroupTransportCorrection call.
                     checkVectors( a_stringstream, "multiGroupGain", "", *iter, protare->multiGroupGain( smr, settings1, *iter, *iterTransportable ), 
                                                                protare->multiGroupGain( smr, settings2, *iter, *iterTransportable ) );
 // This should be loop over max Legendre order.
-                    for( int lOrder = 0; lOrder < maxLegendreOrder; ++lOrder ) {
+                    for( std::size_t lOrder = 0; lOrder < maxLegendreOrder; ++lOrder ) {
                         if( skipMatrices ) break;
                         checkMatrices( a_stringstream, "multiGroupProductMatrix", *iterTransportable, *iter,
                                 protare->multiGroupProductMatrix( smr, settings1, *iter, particles, *iterTransportable, lOrder ),
@@ -196,7 +196,7 @@ Still need to add multiGroupTransportCorrection call.
                 checkVectors( a_stringstream, "multiGroupFissionGammaMultiplicity", "", *iter, protare->multiGroupFissionGammaMultiplicity( smr, settings1, *iter ), 
                                                                                protare->multiGroupFissionGammaMultiplicity( smr, settings2, *iter ) );
 
-                for( int lOrder = 0; lOrder < maxLegendreOrder; ++lOrder ) {
+                for( std::size_t lOrder = 0; lOrder < maxLegendreOrder; ++lOrder ) {
                     checkMatrices( a_stringstream, "multiGroupFissionMatrix", "", *iter,
                             protare->multiGroupFissionMatrix( smr, settings1, *iter, particles, lOrder ),
                             protare->multiGroupFissionMatrix( smr, settings2, *iter, particles, lOrder ) );
@@ -233,7 +233,7 @@ int checkVectors( std::stringstream &a_stringstream, std::string const &a_functi
     if( v1.size( ) != v2.size( ) ) {
         a_stringstream << "        For " << function << " vectors have different sizes: " << std::to_string( v1.size( ) ) << " vs. " << std::to_string( v1.size( ) ) << std::endl; }
     else { 
-        int maxIndex = 0;
+        std::size_t maxIndex = 0;
         double maxRelDiff = 0.0;
         double maxDiff = 0.0;
         std::vector<std::size_t> indices;

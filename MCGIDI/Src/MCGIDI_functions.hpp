@@ -73,7 +73,7 @@ class Function1d : public FunctionBase {
         LUPI_HOST_DEVICE String typeString( ) const ;
 
         template <typename RNG>
-        LUPI_HOST_DEVICE MCGIDI_VIRTUAL_FUNCTION int sampleBoundingInteger( double a_x1, RNG && a_rng ) const ;
+        LUPI_HOST_DEVICE_INLINE MCGIDI_VIRTUAL_FUNCTION int sampleBoundingInteger( double a_x1, RNG && a_rng ) const ;
         LUPI_HOST_DEVICE MCGIDI_VIRTUAL_FUNCTION double evaluate( double a_x1 ) const MCGIDI_TRUE_VIRTUAL;
         LUPI_HOST_DEVICE void serialize( LUPI::DataBuffer &a_buffer, LUPI::DataBuffer::Mode a_mode );
 };
@@ -491,7 +491,7 @@ class Regions2d : public ProbabilityBase2d_d1 {
 
     public:
         LUPI_HOST_DEVICE Regions2d( );
-        LUPI_HOST Regions2d( GIDI::Functions::Regions2d const &a_regions2d );
+        LUPI_HOST Regions2d( GIDI::Functions::Regions2d const &a_regions2d, SetupInfo &a_setupInfo );
         LUPI_HOST_DEVICE ~Regions2d( );
 
         LUPI_HOST_DEVICE double evaluate( double a_x2, double a_x1 ) const ;
@@ -555,7 +555,7 @@ class PrimaryGamma2d : public ProbabilityBase2d_d2 {
 
     public:
         LUPI_HOST_DEVICE PrimaryGamma2d( );
-        LUPI_HOST PrimaryGamma2d( GIDI::Functions::PrimaryGamma2d const &a_primaryGamma2d, SetupInfo *a_setupInfo );
+        LUPI_HOST PrimaryGamma2d( GIDI::Functions::PrimaryGamma2d const &a_primaryGamma2d, SetupInfo &a_setupInfo );
         LUPI_HOST_DEVICE ~PrimaryGamma2d( );
 
         double primaryEnergy( ) const { return( m_primaryEnergy ); }                /**< Returns the value of the *m_primaryEnergy* member. */
@@ -578,10 +578,11 @@ class Recoil2d: public ProbabilityBase2d_d2 {
 
     private:
         String m_xlink;
+        Probabilities::ProbabilityBase2d_d1 *m_angular;             /**< The 2d angular probability of the other (i.e., first) product. */
 
     public:
         LUPI_HOST_DEVICE Recoil2d( );
-        LUPI_HOST Recoil2d( GIDI::Functions::Recoil2d const &a_recoil2d );
+        LUPI_HOST Recoil2d( GIDI::Functions::Recoil2d const &a_recoil2d, SetupInfo &a_setupInfo );
         LUPI_HOST_DEVICE ~Recoil2d( );
 
         LUPI_HOST_DEVICE double evaluate( double a_x2, double a_x1 ) const ;
@@ -607,7 +608,7 @@ class NBodyPhaseSpace2d : public ProbabilityBase2d_d2 {
 
     public:
         LUPI_HOST_DEVICE NBodyPhaseSpace2d( );
-        LUPI_HOST NBodyPhaseSpace2d( GIDI::Functions::NBodyPhaseSpace2d const &a_NBodyPhaseSpace2d, SetupInfo *a_setupInfo );
+        LUPI_HOST NBodyPhaseSpace2d( GIDI::Functions::NBodyPhaseSpace2d const &a_NBodyPhaseSpace2d, SetupInfo &a_setupInfo );
         LUPI_HOST_DEVICE ~NBodyPhaseSpace2d( );
 
         LUPI_HOST_DEVICE double evaluate( double a_x2, double a_x1 ) const ;
@@ -718,7 +719,8 @@ class WeightedFunctionals2d: public ProbabilityBase2d {
 
     public:
         LUPI_HOST_DEVICE WeightedFunctionals2d( );
-        LUPI_HOST WeightedFunctionals2d( GIDI::Functions::WeightedFunctionals2d const &a_weightedFunctionals2d );
+        LUPI_HOST WeightedFunctionals2d( GIDI::Functions::WeightedFunctionals2d const &a_weightedFunctionals2d,
+                SetupInfo &a_setupInfo );
         LUPI_HOST_DEVICE ~WeightedFunctionals2d( );
 
         LUPI_HOST_DEVICE double evaluate( double a_x2, double a_x1 ) const ;
@@ -763,7 +765,7 @@ class XYs3d : public ProbabilityBase3d {
 
     public:
         LUPI_HOST_DEVICE XYs3d( );
-        LUPI_HOST XYs3d( GIDI::Functions::XYs3d const &a_XYs3d );
+        LUPI_HOST XYs3d( GIDI::Functions::XYs3d const &a_XYs3d, SetupInfo &a_setupInfo );
         LUPI_HOST_DEVICE ~XYs3d( );
 
         LUPI_HOST_DEVICE double evaluate( double a_x3, double a_x2, double a_x1 ) const ;
@@ -779,12 +781,11 @@ class XYs3d : public ProbabilityBase3d {
 */
 LUPI_HOST ProbabilityBase1d *parseProbability1d( Transporting::MC const &a_settings, GIDI::Suite const &a_suite );
 LUPI_HOST ProbabilityBase1d *parseProbability1d( GIDI::Functions::Function1dForm const *form1d );
-LUPI_HOST ProbabilityBase2d *parseProbability2d( Transporting::MC const &a_settings, GIDI::Suite const &a_suite, SetupInfo *a_setupInfo );
-LUPI_HOST ProbabilityBase2d *parseProbability2d( GIDI::Functions::Function2dForm const *form2d, SetupInfo *a_setupInfo );
-LUPI_HOST ProbabilityBase2d_d1 *parseProbability2d_d1( GIDI::Functions::Function2dForm const *form2d, SetupInfo *a_setupInfo );
-LUPI_HOST ProbabilityBase2d_d2 *parseProbability2d_d2( GIDI::Functions::Function2dForm const *form2d, SetupInfo *a_setupInfo );
-LUPI_HOST ProbabilityBase3d *parseProbability3d( Transporting::MC const &a_settings, GIDI::Suite const &a_suite );
-LUPI_HOST ProbabilityBase3d *parseProbability3d( GIDI::Functions::Function3dForm const *form3d );
+LUPI_HOST ProbabilityBase2d *parseProbability2d( Transporting::MC const &a_settings, GIDI::Suite const &a_suite, SetupInfo &a_setupInfo );
+LUPI_HOST ProbabilityBase2d *parseProbability2d( GIDI::Functions::Function2dForm const *form2d, SetupInfo &a_setupInfo );
+LUPI_HOST ProbabilityBase2d_d1 *parseProbability2d_d1( GIDI::Functions::Function2dForm const *form2d, SetupInfo &a_setupInfo );
+LUPI_HOST ProbabilityBase2d_d2 *parseProbability2d_d2( GIDI::Functions::Function2dForm const *form2d, SetupInfo &a_setupInfo );
+LUPI_HOST ProbabilityBase3d *parseProbability3d( GIDI::Functions::Function3dForm const *form3d, SetupInfo &a_setupInfo );
 
 
 }           // End of namespace Probabilities.

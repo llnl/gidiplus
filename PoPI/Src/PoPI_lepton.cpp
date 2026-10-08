@@ -18,6 +18,21 @@ namespace PoPI {
  */
 
 /* *********************************************************************************************************//**
+ * Basic lepton constructor.
+ *
+ * @param a_id              [in]    The **PoPs** id for the lepton.
+ * @param a_generation      [in]    The lepton's generation.
+ * @param a_mass            [in]    The mass of the lepton.
+ ***********************************************************************************************************/
+
+Lepton::Lepton( std::string const &a_id, std::string const &a_generation, PhysicalQuantity *a_mass ):
+        Particle( a_id, Particle_class::lepton, PoPI_leptonChars ),
+        m_generation( a_generation ) {
+
+    if( a_mass != nullptr ) m_mass.push_back( a_mass );
+}
+
+/* *********************************************************************************************************//**
  * Constructor that parses an **HAPI** instance to create a **PoPs** lepton node.
  *
  * @param a_node            [in]    The **HAPI::Node** to be parsed.

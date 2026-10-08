@@ -83,35 +83,35 @@ void main2( int argc, char **argv ) {
 
     std::cout << "    " << optionAppend->name( ) << " option: number entered " << optionAppend->counts( ) << std::endl;
     std::cout << "         ";
-    for( int index = 0; index < optionAppend->counts( ); ++index ) {
+    for( std::size_t index = 0; index < optionAppend->counts( ); ++index ) {
         std::cout << " '" << optionAppend->value( index ) << "'";
     }
     std::cout << std::endl;
 
     std::cout << "    " << p24->name( ) << " option: number entered " << p24->counts( ) << std::endl;
     std::cout << "         ";
-    for( int index = 0; index < p24->counts( ); ++index ) {
+    for( std::size_t index = 0; index < p24->counts( ); ++index ) {
         std::cout << " '" << p24->value( index ) << "'";
     }
     std::cout << std::endl;
 
     std::cout << "    " << positional1->name( ) << positional1->counts( ) << std::endl;
     std::cout << "         ";
-    for( int index = 0; index < positional1->counts( ); ++index ) {
+    for( std::size_t index = 0; index < positional1->counts( ); ++index ) {
         std::cout << " '" << positional1->value( index ) << "'";
     }
     std::cout << std::endl;
 
     std::cout << "    " << positional2->name( ) << positional2->counts( ) << std::endl;
     std::cout << "         ";
-    for( int index = 0; index < positional2->counts( ); ++index ) {
+    for( std::size_t index = 0; index < positional2->counts( ); ++index ) {
         std::cout << " '" << positional2->value( index ) << "'";
     }
     std::cout << std::endl;
 
     std::cout << "    " << positional3->name( ) << positional3->counts( ) << std::endl;
     std::cout << "         ";
-    for( int index = 0; index < positional3->counts( ); ++index ) {
+    for( std::size_t index = 0; index < positional3->counts( ); ++index ) {
         std::cout << " '" << positional3->value( index ) << "'";
     }
     std::cout << std::endl;

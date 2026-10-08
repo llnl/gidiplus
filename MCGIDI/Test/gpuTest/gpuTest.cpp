@@ -250,7 +250,7 @@ int main2( int argc, char *argv[] ) {                                   // main 
         GIDI::Transporting::MultiGroup continuous_energy_multigroup;
         GIDI::Transporting::Particle projectile( "n", continuous_energy_multigroup );
         particleList.add( projectile );
-        std::set<int> exclusionSet;
+        std::set<std::size_t> exclusionSet;
 
         protares[isoIndex] = MCGIDI::protareFromGIDIProtare( smr1, *protare, pops, MC, particleList, domainHash, temperatures, exclusionSet );
     }

@@ -40,7 +40,7 @@ int main2( int argc, char **argv ) {
     PoPI::Database pops( "../../../TestData/PoPs/pops.xml" );
     GIDI::Protare *protare;
     GIDI::Transporting::Particles particles;
-    std::set<int> reactionsToExclude;
+    GIDI::ExcludeReactionsSet reactionsToExclude;
     LUPI::StatusMessageReporting smr1;
 
     std::cerr << "    " << __FILE__;
@@ -60,7 +60,8 @@ int main2( int argc, char **argv ) {
     std::string projectileID = argv_options.find( "--pid" )->zeroOrOneOption( argv, PoPI::IDs::photon );
     std::string targetID = argv_options.find( "--tid" )->zeroOrOneOption( argv, "O16" );
 
-    for( std::size_t i1 = 0; i1 < argv_options.m_arguments.size( ); ++i1 ) reactionsToExclude.insert( asLong2( argv[argv_options.m_arguments[i1]] ) );
+    for( std::size_t i1 = 0; i1 < argv_options.m_arguments.size( ); ++i1 ) 
+        reactionsToExclude.insert( static_cast<std::size_t>( asLong2( argv[argv_options.m_arguments[i1]] ) ) );
 
     GIDI::Map::Map map( mapFilename, pops );
 

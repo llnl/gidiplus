@@ -12,7 +12,8 @@ SHELL = /bin/sh
 DIRS_nonGPUS = Utilities domainHash crossSection sampleReactions sampleProducts \
 		crossSection_multiGroup sampleReactions_multiGroup sampleProducts_multiGroup deposition_multiGroup \
 		deposition_continuousEnergy productIndices samplePhotoAtomic sampleTerrellPromptNeutronDistribution \
-		excludeReactions TNSL memoryCheck print_multiGroup modifiedCrossSection photoAtomicDopplerBroadening
+		excludeReactions TNSL memoryCheck print_multiGroup modifiedCrossSection photoAtomicDopplerBroadening \
+		miniProtareSingle
 
 DIRS_GPUS = gpuTest
 

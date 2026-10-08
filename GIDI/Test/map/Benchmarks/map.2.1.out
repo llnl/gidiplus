@@ -1,0 +1,83 @@
+
+GNDS format = 2.1
+library = neutrons2.1
+isProtareAvailable( PoPI::IDs::neutron, H1 ) 1
+isProtareAvailable( PoPI::IDs::neutron, H2 ) 0
+isProtareAvailable( PoPI::IDs::neutron, H2 ) 0
+isProtareAvailable( PoPI::IDs::neutron, H1, 'ENDF/BVII.1' ) 1
+isProtareAvailable( PoPI::IDs::neutron, H1, 'ENDF/BVII.2' ) 0
+isProtareAvailable( PoPI::IDs::neutron, H1, 'ENDF/BVIII.1' ) 0
+protareFilename( PoPI::IDs::neutron, H1 ) = </.../GIDI/Test/map/neutrons/n-001_H_001.xml>
+protareFilename( PoPI::IDs::neutron, H1 ) = <neutrons/n-001_H_001.xml>
+protareFilename( PoPI::IDs::neutron, H1 ) = </.../GIDI/Test/map/neutrons/n-001_H_001.xml>
+protareFilename( PoPI::IDs::neutron, H1 ) = </.../GIDI/Test/map/neutrons/n-001_H_001.xml>
+protareFilename( PoPI::IDs::neutron, H1, 'ENDF/BVII.1' ) = <neutrons/n-001_H_001.xml>
+protareFilename( PoPI::IDs::neutron, H1, 'ENDF/BVII.2' ) = <>
+protareFilename( PoPI::IDs::neutron, H1, 'ENDF/BVIII.1' ) = <>
+availableEvaluations( PoPI::IDs::neutron, H1 ) = <'ENDF/BVII.1'>
+availableEvaluations( PoPI::IDs::neutron, H2 ) = <>
+availableEvaluations( PoPI::IDs::neutron, O16 ) = <'ENDF/BVII.1'>
+availableEvaluations( PoPI::IDs::neutron, O17 ) = <'ENDF/BVII.1'>
+
+/.../GIDI/Test/map/neutrons/n-001_H_001.xml
+    neutrons2.1    ENDF/BVII.1
+/.../GIDI/Test/map/neutrons/n-008_O_016.xml
+    neutrons2.1    ENDF/BVII.1
+/.../GIDI/Test/map/neutrons/n-008_O_017.xml
+    neutrons2.1    ENDF/BVII.1
+/.../GIDI/Test/map/neutrons/n-018_Ar_036.xml
+    neutrons2.1    ENDF/BVII.1
+/.../GIDI/Test/map/neutrons/n-022_Ti_049.xml
+    neutrons2.1    ENDF/BVII.1
+/.../GIDI/Test/map/neutrons/n-028_Ni_061.xml
+    neutrons2.1    ENDF/BVII.1
+/.../GIDI/Test/map/neutrons/n-033_As_074.xml
+    neutrons2.1    ENDF/BVII.1
+/.../GIDI/Test/map/neutrons/n-035_Br_079.xml
+    neutrons2.1    ENDF/BVII.1
+/.../GIDI/Test/map/neutrons/n-039_Y_089.xml
+    neutrons2.1    ENDF/BVII.1
+/.../GIDI/Test/map/neutrons/n-042_Mo_098.xml
+    neutrons2.1    ENDF/BVII.1
+/.../GIDI/Test/map/neutrons/n-046_Pd_105.xml
+    neutrons2.1    ENDF/BVII.1
+/.../GIDI/Test/map/neutrons/n-049_In_113.xml
+    neutrons2.1    ENDF/BVII.1
+/.../GIDI/Test/map/neutrons/n-051_Sb_124.xml
+    neutrons2.1    ENDF/BVII.1
+/.../GIDI/Test/map/neutrons/n-053_I_135.xml
+    neutrons2.1    ENDF/BVII.1
+/.../GIDI/Test/map/neutrons/n-056_Ba_140.xml
+    neutrons2.1    ENDF/BVII.1
+/.../GIDI/Test/map/neutrons/n-060_Nd_145.xml
+    neutrons2.1    ENDF/BVII.1
+/.../GIDI/Test/map/neutrons/n-062_Sm_154.xml
+    neutrons2.1    ENDF/BVII.1
+/.../GIDI/Test/map/neutrons/n-066_Dy_156.xml
+    neutrons2.1    ENDF/BVII.1
+/.../GIDI/Test/map/neutrons/n-071_Lu_175.xml
+    neutrons2.1    ENDF/BVII.1
+/.../GIDI/Test/map/neutrons/n-073_Ta_181.xml
+    neutrons2.1    ENDF/BVII.1
+/.../GIDI/Test/map/neutrons/n-080_Hg_204.xml
+    neutrons2.1    ENDF/BVII.1
+/.../GIDI/Test/map/neutrons/n-090_Th_230.xml
+    neutrons2.1    ENDF/BVII.1
+/.../GIDI/Test/map/neutrons/n-092_U_234.xml
+    neutrons2.1    ENDF/BVII.1
+/.../GIDI/Test/map/neutrons/n-092_U_236.xml
+    neutrons2.1    ENDF/BVII.1
+/.../GIDI/Test/map/neutrons/n-092_U_238.xml
+    neutrons2.1    ENDF/BVII.1
+/.../GIDI/Test/map/neutrons/n-092_U_239.xml
+    neutrons2.1    ENDF/BVII.1
+/.../GIDI/Test/map/neutrons/n-094_Pu_242.xml
+    neutrons2.1    ENDF/BVII.1
+/.../GIDI/Test/map/neutrons/n-095_Am_244.xml
+    neutrons2.1    ENDF/BVII.1
+/.../GIDI/Test/map/neutrons/n-096_Cm_247.xml
+    neutrons2.1    ENDF/BVII.1
+/.../GIDI/Test/map/neutrons/n-100_Fm_255.xml
+    neutrons2.1    ENDF/BVII.1
+
+O16 mass = 15.9949 amu

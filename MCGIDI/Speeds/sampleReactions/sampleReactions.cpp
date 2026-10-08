@@ -45,7 +45,7 @@ void main2( int argc, char **argv ) {
     GIDI::Map::Map map( mapFilename, pops );
     GIDI::Transporting::Particles particles;
     std::vector<std::string> libraries;
-    std::set<int> reactionsToExclude;
+    GIDI::ExcludeReactionsSet reactionsToExclude;
     LUPI::StatusMessageReporting smr1;
     clock_t time0, time1;
     long numberOfSamples = 1000 * 1000, sampleTemperatures = 0, sampleEnergies = 0;

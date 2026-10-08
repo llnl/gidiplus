@@ -9,7 +9,7 @@ SHELL = /bin/sh
 
 # These must be set by hand when we do a release.
 gidiplus_major = 3
-gidiplus_minor = 34
+gidiplus_minor = 35
 baseTag = GIDI_plus.$(gidiplus_major).$(gidiplus_minor).0
 
 DIRS_GIDI_plus = LUPI Python HAPI GUPI PoPI CADI RISI GIDI MCGIDI include lib Doc
@@ -55,13 +55,13 @@ default2: pugixml
 	$(MAKE) doDIRS _DIRS="$(DIRS_default2)"
 
 pugixml:
-	rm -rf pugixml pugixml-1.13
-	unzip -q Misc/pugixml-1.13.zip
-	ln -s pugixml-1.13 pugixml
+	rm -rf pugixml pugixml-1.15
+	unzip -q Misc/pugixml-1.15.zip
+	ln -s pugixml-1.15 pugixml
 	cd pugixml; tar -xf ../Misc/pugixml.addon.tar
 
 pugixml_dummy:
-	rm -rf pugixml-1.13 pugixml
+	rm -rf pugixml-1.15 pugixml
 	mkdir pugixml
 	cp Misc/Makefile_dummy pugixml/Makefile
 

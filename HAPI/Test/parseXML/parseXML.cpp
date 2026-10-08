@@ -52,7 +52,7 @@ int main( LUPI_maybeUnused int argc, LUPI_maybeUnused char **argv ) {
     data.getDoubles(xscData);
 
     cout << "  cross section points: ";
-    for (int idx = 0; idx < data.length(); idx++)
+    for (std::size_t idx = 0; idx < data.length(); idx++)
         cout << " " << xscData[idx];
     cout << endl;
 

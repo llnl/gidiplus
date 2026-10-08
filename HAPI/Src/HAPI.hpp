@@ -99,7 +99,7 @@ class Data_internal {
         //virtual template <typename T> T read() = 0;
         virtual void getDoubles(nf_Buffer<double> &buffer) = 0;
         virtual void getInts(nf_Buffer<int> &buffer) = 0;
-        virtual int length() const = 0;
+        virtual size_t length() const = 0;
 };
 
 /*
@@ -156,7 +156,7 @@ class Data {
         ~Data();
         void getDoubles(nf_Buffer<double> &buffer);
         void getInts(nf_Buffer<int> &buffer);
-        int length() const;
+        size_t length() const;
 };
 
 /*
@@ -284,7 +284,8 @@ class PugiXMLData : public Data_internal {
 
     private:
         pugi::xml_node m_node;
-        int m_length;
+        size_t m_length;
+        bool m_dataRead;
 
     public:
         PugiXMLData();
@@ -292,7 +293,7 @@ class PugiXMLData : public Data_internal {
         virtual ~PugiXMLData();
         void getDoubles(nf_Buffer<double> &buffer);
         void getInts(nf_Buffer<int> &buffer);
-        int length() const;
+        size_t length() const;
 };
 
 class PugiXMLFile : public File {
@@ -304,6 +305,7 @@ class PugiXMLFile : public File {
     public:
         PugiXMLFile();
         PugiXMLFile(char const *filename, std::string const &a_callingFunctionName);
+        PugiXMLFile( std::string const &a_name, std::string const &a_xmlString, std::string const &a_callingFunctionName );
         virtual ~PugiXMLFile();
         Node child(char const *name);
         Node first_child();
@@ -364,7 +366,7 @@ class HDFData : public Data_internal {
     private:
         hid_t m_node_id;
         hid_t m_dataspace_id;
-        int m_length;
+        size_t m_length;
 
     public:
         HDFData();
@@ -372,7 +374,7 @@ class HDFData : public Data_internal {
         virtual ~HDFData();
         void getDoubles(nf_Buffer<double> &buffer);
         void getInts(nf_Buffer<int> &buffer);
-        int length() const;
+        size_t length() const;
 };
 
 class HDFFile : public File {

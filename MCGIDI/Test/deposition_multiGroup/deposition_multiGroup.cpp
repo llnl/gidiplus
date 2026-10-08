@@ -27,7 +27,7 @@ int main( int argc, char **argv ) {
     PoPI::Database pops( "../../../TestData/PoPs/pops.xml" );
     GIDI::Protare *protare;
     GIDI::Transporting::Particles particles;
-    std::set<int> reactionsToExclude;
+    GIDI::ExcludeReactionsSet reactionsToExclude;
     GIDI::Construction::PhotoMode photo_mode = GIDI::Construction::PhotoMode::nuclearOnly;
     LUPI::StatusMessageReporting smr1;
 
@@ -123,7 +123,7 @@ int main( int argc, char **argv ) {
     for( double temperature = 1e-8; temperature < 2e-3; temperature *= 100.0 ) {
         std::cout << "temperature = " << doubleToString2( "%8.1e", temperature ) << "                       deposition energy  deposition momentum  production energy" << std::endl;
         for( double energy = 1e-12; energy < 25; energy *= 1.1 ) {
-            int hashIndex = multiGroupHash.index( energy );
+            std::size_t hashIndex = multiGroupHash.index( energy );
 
             std::cout << "    energy = " << std::setw( 16 ) << energy << " index = " << std::setw( 6 ) << hashIndex;
             std::cout << doubleToString2( " %16.8e",    MCProtare->depositionEnergy( hashIndex, temperature, energy ) );

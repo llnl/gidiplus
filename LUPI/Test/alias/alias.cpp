@@ -73,7 +73,7 @@ void main2( int argc, char **argv ) {
 
     std::cout << "    " << optionAppend->name( ) << " option: number entered " << optionAppend->counts( ) << std::endl;
     std::cout << "         ";
-    for( int index = 0; index < optionAppend->counts( ); ++index ) {
+    for( std::size_t index = 0; index < optionAppend->counts( ); ++index ) {
         std::cout << " '" << optionAppend->value( index ) << "'";
     }
     std::cout << std::endl;

@@ -31,7 +31,7 @@ int main( int argc, char **argv ) {
     unsigned long long rngState = 1;
     double energyDomainMax = 20.0;
     std::size_t numberOfFissionSamples = 100 * 1000;
-    std::set<int> reactionsToExclude;
+    GIDI::ExcludeReactionsSet reactionsToExclude;
     LUPI::StatusMessageReporting smr1;
     GIDI::Construction::PhotoMode photo_mode = GIDI::Construction::PhotoMode::nuclearOnly;
 
@@ -55,7 +55,7 @@ int main( int argc, char **argv ) {
 
     std::string mapFilename = argv_options.find( "--map" )->zeroOrOneOption( argv, "../../../GIDI/Test/all3T.map" );
     std::string projectileID = argv_options.find( "--pid" )->zeroOrOneOption( argv, PoPI::IDs::neutron );
-    int neutronIndex = pops[PoPI::IDs::neutron];
+    int neutronIndex = static_cast<int>( pops[PoPI::IDs::neutron] );
     std::string targetID = argv_options.find( "--tid" )->zeroOrOneOption( argv, "O16" );
 
     GIDI::Transporting::DelayedNeutrons delayedNeutrons = GIDI::Transporting::DelayedNeutrons::off;
@@ -170,13 +170,13 @@ int main( int argc, char **argv ) {
                             ++totalFissionNeutrons;
                             if( product.m_delayedNeutronIndex > -1 ) {
                                 ++delayedFissionNeutrons;
-                                ++delayedFissionNeutronIndexCounts[product.m_delayedNeutronIndex];
+                                ++delayedFissionNeutronIndexCounts[static_cast<std::size_t>(product.m_delayedNeutronIndex)];
                             }
                         }
                     }
                 }
 
-                double totalMultiplicity = totalFissionNeutrons / (double) numberOfFissionSamples, delayedMultiplicity = delayedFissionNeutrons / (double) numberOfFissionSamples;
+                double totalMultiplicity = (double) totalFissionNeutrons / (double) numberOfFissionSamples, delayedMultiplicity = (double) delayedFissionNeutrons / (double) numberOfFissionSamples;
                 std::cout << "        energy = " << energy << " total neutrons = " << totalFissionNeutrons << " (" << doubleToString2( "%.4f", totalMultiplicity )
                         << ") delayed neutrons = " << delayedFissionNeutrons << " (" << doubleToString2( "%.3e", delayedMultiplicity ) << ")";
                 if( delayedFissionNeutrons > 0 ) {

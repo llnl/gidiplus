@@ -22,9 +22,14 @@ typedef struct ptwXY_integrateWithFunctionInfo_s {
     double x1, x2, y1, y2;
 } ptwXY_integrateWithFunctionInfo;
 
+static nfu_status ptwXY_groupCheckInputs( statusMessageReporting *smr, int numberOfptwXYs, ptwXYPoints **ptwXYs,
+            ptwXPoints *groupBoundaries, ptwXY_group_normType normType, ptwXPoints *ptwX_norm );
+static ptwXPoints *ptwXY_groupUnionize( statusMessageReporting *smr, ptwXPoints *groupBoundaries, int numberOfptwXYs,
+        ptwXYPoints **ptwXYs, ptwXYPoints **unionXYs );
 static nfu_status ptwXY_integrateWithFunction2( nf_Legendre_GaussianQuadrature_callback integrandFunction, void *argList, double x1,
         double x2, double *integral );
 static nfu_status ptwXY_integrateWithFunction3( double x, double *y, void *argList );
+
 /*
 ************************************************************
 */
@@ -900,9 +905,392 @@ Err2:
     smr_setReportError2p( smr, nfu_SMR_libraryID, status, "ptwXY_tweakDomainsToMutualify failed: most likely functions cannot be mutualified by tweaking." );
     goto Err;
 }
+
 /*
 ************************************************************
 */
+ptwXPoints *ptwXY_groupFourFunctions( statusMessageReporting *smr, ptwXYPoints *ptwXY1, ptwXYPoints *ptwXY2, 
+        ptwXYPoints *ptwXY3, ptwXYPoints *ptwXY4, ptwXPoints *groupBoundaries, ptwXY_group_normType normType, ptwXPoints *ptwX_norm ) {
+
+    int64_t i1, igs, ngs;
+    nfu_status status = nfu_Okay;
+    double x1, x2, xg1, xg2, sum, term0, term1, term2, term3;
+    double y11, y12, y12p, y21, y22, y22p, y31, y32, y32p, y41, y42, y42p;
+    ptwXYPoints *f1 = NULL, *f2 = NULL, *f3 = NULL, *f4 = NULL;
+    ptwXYPoints *u1 = NULL, *u2 = NULL, *u3 = NULL, *u4 = NULL, *ua = NULL, *ub = NULL;
+    ptwXPoints *groupedData = NULL;
+
+    if( ptwXY_simpleCoalescePoints( smr, ptwXY1 ) != nfu_Okay ) {
+        smr_setReportError2p( smr, nfu_SMR_libraryID, nfu_Error, "Via: source1." );
+        return( NULL );
+    }
+    if( ptwXY_simpleCoalescePoints( smr, ptwXY2 ) != nfu_Okay ) {
+        smr_setReportError2p( smr, nfu_SMR_libraryID, nfu_Error, "Via: source2." );
+        return( NULL );
+    }
+    if( ptwXY_simpleCoalescePoints( smr, ptwXY3 ) != nfu_Okay ) {
+        smr_setReportError2p( smr, nfu_SMR_libraryID, nfu_Error, "Via: source3." );
+        return( NULL );
+    }
+    if( ptwXY_simpleCoalescePoints( smr, ptwXY4 ) != nfu_Okay ) {
+        smr_setReportError2p( smr, nfu_SMR_libraryID, nfu_Error, "Via: source4." );
+        return( NULL );
+    }
+    if( groupBoundaries->status != nfu_Okay ) {
+        smr_setReportError2p( smr, nfu_SMR_libraryID, nfu_badSelf, "Via: groupBoundaries." );
+        return( NULL );
+    }
+
+    if( ptwXY1->interpolation == ptwXY_interpolationOther ) {
+        smr_setReportError2p( smr, nfu_SMR_libraryID, nfu_otherInterpolation, "Other interpolation not supported for integration: source1." );
+        return( NULL );
+    }
+    if( ptwXY2->interpolation == ptwXY_interpolationOther ) {
+        smr_setReportError2p( smr, nfu_SMR_libraryID, nfu_otherInterpolation, "Other interpolation not supported for integration: source2." );
+        return( NULL );
+    }
+    if( ptwXY3->interpolation == ptwXY_interpolationOther ) {
+        smr_setReportError2p( smr, nfu_SMR_libraryID, nfu_otherInterpolation, "Other interpolation not supported for integration: source3." );
+        return( NULL );
+    }
+    if( ptwXY4->interpolation == ptwXY_interpolationOther ) {
+        smr_setReportError2p( smr, nfu_SMR_libraryID, nfu_otherInterpolation, "Other interpolation not supported for integration: source3." );
+        return( NULL );
+    }
+
+    ngs = ptwX_length( smr, groupBoundaries ) - 1;
+    if( normType == ptwXY_group_normType_norm ) {
+        if( ptwX_norm == NULL ) {
+            smr_setReportError2p( smr, nfu_SMR_libraryID, nfu_badNorm, "Norm function required but is NULL." );
+            return( NULL );
+        }
+        if( ptwX_norm->status != nfu_Okay ) {
+            smr_setReportError2p( smr, nfu_SMR_libraryID, nfu_badSelf, "Via: norm." );
+            return( NULL );
+        }
+        if( ptwX_length( smr, ptwX_norm ) != ngs ) {
+            smr_setReportError2( smr, nfu_SMR_libraryID, nfu_badNorm, "Norm length = %d but there are %d groups.",
+                    (int) ptwX_length( NULL, ptwX_norm ), (int) ngs );
+            return( NULL );
+        }
+    }
+
+    if( ( f1 = ptwXY_intersectionWith_ptwX( smr, ptwXY1, groupBoundaries ) ) == NULL ) goto Err;
+    if( ( f2 = ptwXY_intersectionWith_ptwX( smr, ptwXY2, groupBoundaries ) ) == NULL ) goto Err;
+    if( ( f3 = ptwXY_intersectionWith_ptwX( smr, ptwXY3, groupBoundaries ) ) == NULL ) goto Err;
+    if( ( f4 = ptwXY_intersectionWith_ptwX( smr, ptwXY4, groupBoundaries ) ) == NULL ) goto Err;
+    if( ( f1->length == 0 ) || ( f2->length == 0 ) || ( f3->length == 0 ) || ( f4->length == 0 ) ) {
+        ptwXY_free( f1 );
+        ptwXY_free( f2 );
+        ptwXY_free( f3 );
+        ptwXY_free( f4 );
+        groupedData = ptwX_createLine( smr, ngs, ngs, 0, 0 );
+        if( groupedData == NULL ) smr_setReportError2p( smr, nfu_SMR_libraryID, nfu_Error, "Via." );
+        return( groupedData );
+    }
+
+    if( ( status = ptwXY_tweakDomainsToMutualify( smr, f1, f2, 4, 0 ) ) != nfu_Okay ) goto Err2;
+    if( ( status = ptwXY_tweakDomainsToMutualify( smr, f1, f3, 4, 0 ) ) != nfu_Okay ) goto Err2;
+    if( ( status = ptwXY_tweakDomainsToMutualify( smr, f1, f4, 4, 0 ) ) != nfu_Okay ) goto Err2;
+    if( ( status = ptwXY_tweakDomainsToMutualify( smr, f2, f3, 4, 0 ) ) != nfu_Okay ) goto Err2;
+    if( ( status = ptwXY_tweakDomainsToMutualify( smr, f2, f4, 4, 0 ) ) != nfu_Okay ) goto Err2;
+    if( ( status = ptwXY_tweakDomainsToMutualify( smr, f3, f4, 4, 0 ) ) != nfu_Okay ) goto Err2;
+
+    if( ( ua = ptwXY_union( smr,  f1,  f2, 0 ) ) == NULL ) goto Err;
+    if( ( ub = ptwXY_union( smr,  f3,  ua, 0 ) ) == NULL ) goto Err;
+    if( ( u4 = ptwXY_union( smr,  f4,  ub, ptwXY_union_fill ) ) == NULL ) goto Err;
+    if( ( u1 = ptwXY_union( smr,  f1,  u4, ptwXY_union_fill ) ) == NULL ) goto Err;
+    if( ( u2 = ptwXY_union( smr,  f2,  u4, ptwXY_union_fill ) ) == NULL ) goto Err;
+    if( ( u3 = ptwXY_union( smr,  f3,  u4, ptwXY_union_fill ) ) == NULL ) goto Err;
+
+    if( ( groupedData = ptwX_new( smr, ngs ) ) == NULL ) goto Err;
+
+    xg1 = groupBoundaries->points[0];
+    x1 = u1->points[0].x;
+    y11 = u1->points[0].y;
+    y21 = u2->points[0].y;
+    y31 = u3->points[0].y;
+    y41 = u4->points[0].y;
+    for( igs = 0, i1 = 1; igs < ngs; igs++ ) {
+        xg2 = groupBoundaries->points[igs+1];
+        sum = 0;
+        if( xg2 > x1 ) {
+            for( ; i1 < u1->length; i1++, x1 = x2, y11 = y12, y21 = y22, y31 = y32, y41 = y42 ) {
+                x2 = u1->points[i1].x;
+                if( x2 > xg2 ) break;
+
+                y12p = y12 = u1->points[i1].y;
+                if( f1->interpolation == ptwXY_interpolationFlat ) y12p = y11;
+
+                y22p = y22 = u2->points[i1].y;
+                if( f2->interpolation == ptwXY_interpolationFlat ) y22p = y21;
+
+                y32p = y32 = u3->points[i1].y;
+                if( f3->interpolation == ptwXY_interpolationFlat ) y32p = y31;
+
+                y42p = y42 = u4->points[i1].y;
+                if( f4->interpolation == ptwXY_interpolationFlat ) y42p = y41;
+
+                term0 = y11 * y21 * y31 * y41 + y12 * y22 * y32 * y42;
+                term1 = ( y11 + y12p ) * ( y21 + y22p ) * ( y31 + y32p ) * ( y41 + y42p );
+                term2 = ( y12p * y21 + y11 * y22p ) * ( y31 * y41 + y32p * y42p );
+                term3 = ( y32p * y41 + y31 * y42p ) * ( y11 * y21 + y12p * y22p );
+                sum += ( 10 * term0 + 2 * term1 + term2 + term3 ) * ( x2 - x1 );
+            }
+        }
+        if( sum != 0. ) {
+            if( normType == ptwXY_group_normType_dx ) {
+                sum /= ( xg2 - xg1 ); }
+            else if( normType == ptwXY_group_normType_norm ) {
+                if( ptwX_norm->points[igs] == 0. ) {
+                    smr_setReportError2( smr, nfu_SMR_libraryID, nfu_divByZero, "Divide by 0. Norm at index %d is 0.", (int) igs );
+                    goto Err;
+                }
+                sum /= ptwX_norm->points[igs];
+            }
+        }
+        groupedData->points[igs] = sum / 60.;
+        groupedData->length++;
+        xg1 = xg2;
+    }
+
+RET:
+    ptwXY_free( f1 );
+    ptwXY_free( f2 );
+    ptwXY_free( f3 );
+    ptwXY_free( f4 );
+    ptwXY_free( u1 );
+    ptwXY_free( u2 );
+    ptwXY_free( u3 );
+    ptwXY_free( u4 );
+    ptwXY_free( ua );
+    ptwXY_free( ub );
+
+    return( groupedData );
+
+Err:
+    smr_setReportError2p( smr, nfu_SMR_libraryID, nfu_Error, "Via." );
+    groupedData = ptwX_free( groupedData );
+
+    goto RET;
+
+Err2:
+    smr_setReportError2p( smr, nfu_SMR_libraryID, status, "ptwXY_tweakDomainsToMutualify failed: most likely functions cannot be mutualified by tweaking." );
+    goto Err;
+}
+
+/*
+************************************************************
+*/
+ptwXPoints *ptwXY_groupFiveFunctions( statusMessageReporting *smr, ptwXYPoints *ptwXY1, ptwXYPoints *ptwXY2, 
+        ptwXYPoints *ptwXY3, ptwXYPoints *ptwXY4, ptwXYPoints *ptwXY5, ptwXPoints *groupBoundaries, 
+        ptwXY_group_normType normType, ptwXPoints *ptwX_norm ) {
+
+    int64_t i1, igs, ngs;
+    double x1, x2, xg1, xg2, sum, term0, term1, term2, term3, term4;
+    double y11, y12, y12p, y21, y22, y22p, y31, y32, y32p, y41, y42, y42p, y51, y52, y52p;
+    ptwXPoints *groupedData = NULL;
+    ptwXYPoints *ptwXYs[5] = { ptwXY1, ptwXY2, ptwXY3, ptwXY4, ptwXY5 };
+    ptwXYPoints *unionXYs[5] = { NULL, NULL, NULL, NULL, NULL };
+    ptwXYPoints *u1 = NULL, *u2 = NULL, *u3 = NULL, *u4 = NULL, *u5 = NULL;
+
+    if( ptwXY_groupCheckInputs( smr, 5, ptwXYs, groupBoundaries, normType, ptwX_norm ) != nfu_Okay ) {
+        smr_setReportError2p( smr, nfu_SMR_libraryID, nfu_Error, "Via." );
+        return( NULL );
+    }
+
+    if( ( groupedData = ptwXY_groupUnionize( smr, groupBoundaries, 5, ptwXYs, unionXYs ) ) == NULL ) {
+        smr_setReportError2p( smr, nfu_SMR_libraryID, nfu_Error, "Via." );
+        return( NULL );
+    }
+
+    if( unionXYs[0] == NULL ) return( groupedData );        // At least one input function has no data.
+
+    ngs = ptwX_length( smr, groupBoundaries ) - 1;
+    xg1 = groupBoundaries->points[0];
+    u1 = unionXYs[0];
+    u2 = unionXYs[1];
+    u3 = unionXYs[2];
+    u4 = unionXYs[3];
+    u5 = unionXYs[4];
+    x1  = u1->points[0].x;
+    y11 = u1->points[0].y;
+    y21 = u2->points[0].y;
+    y31 = u3->points[0].y;
+    y41 = u4->points[0].y;
+    y51 = u5->points[0].y;
+    for( igs = 0, i1 = 1; igs < ngs; igs++ ) {
+        xg2 = groupBoundaries->points[igs+1];
+        sum = 0;
+        if( xg2 > x1 ) {
+            for( ; i1 < u1->length; i1++, x1 = x2, y11 = y12, y21 = y22, y31 = y32, y41 = y42, y51 = y52 ) {
+                x2 = u1->points[i1].x;
+                if( x2 > xg2 ) break;
+
+                y12p = y12 = u1->points[i1].y;
+                if( u1->interpolation == ptwXY_interpolationFlat ) y12p = y11;
+
+                y22p = y22 = u2->points[i1].y;
+                if( u2->interpolation == ptwXY_interpolationFlat ) y22p = y21;
+
+                y32p = y32 = u3->points[i1].y;
+                if( u3->interpolation == ptwXY_interpolationFlat ) y32p = y31;
+
+                y42p = y42 = u4->points[i1].y;
+                if( u4->interpolation == ptwXY_interpolationFlat ) y42p = y41;
+
+                y52p = y52 = u5->points[i1].y;
+                if( u5->interpolation == ptwXY_interpolationFlat ) y52p = y51;
+
+                term0 = ( y11 + y12p ) * ( y21 + y22p ) * ( y31 + y32p ) * ( y41 + y42p ) * ( y51 + y52p );
+                term1 = y11 * y21 * y31 * y41 * y51 + y12p * y22p * y32p * y42p * y52p;
+                term2 = ( y11 * y22p + y12p * y21 ) * ( y31 * y41 * y51 + y32p * y42p * y52p );
+                term3 = ( y11 * y21 ) * ( y32p * y41 * y51 + y31 * y42p * y51 + y31 * y41 * y52p );
+                term4 = ( y12p * y22p ) * ( y32p * y42p * y51 + y32p * y41 * y52p + y31 * y42p * y52p );
+                sum += ( term0 + 9 * term1 + term2 + term3 + term4 ) * ( x2 - x1 );
+            }
+        }
+        if( sum != 0. ) {
+            if( normType == ptwXY_group_normType_dx ) {
+                sum /= ( xg2 - xg1 ); }
+            else if( normType == ptwXY_group_normType_norm ) {
+                if( ptwX_norm->points[igs] == 0. ) {
+                    smr_setReportError2( smr, nfu_SMR_libraryID, nfu_divByZero, "Divide by 0. Norm at index %d is 0.", (int) igs );
+                    goto Err;
+                }
+                sum /= ptwX_norm->points[igs];
+            }
+        }
+        groupedData->points[igs] = sum / 60.;
+        groupedData->length++;
+        xg1 = xg2;
+    }
+
+RET:
+    for( int index = 0; index < 5; ++index ) ptwXY_free( unionXYs[index] );
+    return( groupedData );
+
+Err:
+    smr_setReportError2p( smr, nfu_SMR_libraryID, nfu_Error, "Via." );
+    ptwX_free( groupedData );
+
+    goto RET;
+}
+
+/*
+************************************************************
+*/
+
+static nfu_status ptwXY_groupCheckInputs( statusMessageReporting *smr, int numberOfptwXYs, ptwXYPoints **ptwXYs,
+            ptwXPoints *groupBoundaries, ptwXY_group_normType normType, ptwXPoints *ptwX_norm ) {
+
+    int64_t ngs;
+
+    for( int index = 0; index < numberOfptwXYs; ++index ) {
+        ptwXYPoints *ptwXY = ptwXYs[index];
+
+        if( ptwXY_simpleCoalescePoints( smr, ptwXY ) != nfu_Okay ) {
+            smr_setReportError2( smr, nfu_SMR_libraryID, nfu_Error, "Via: source %d.", index );
+            return( nfu_Error );
+        }
+
+        if( ptwXY->interpolation == ptwXY_interpolationOther ) {
+            smr_setReportError2( smr, nfu_SMR_libraryID, nfu_otherInterpolation, "Other interpolation not supported for integration: source %d.", index );
+            return( nfu_Error );
+        }
+    }
+
+    if( groupBoundaries->status != nfu_Okay ) {
+        smr_setReportError2p( smr, nfu_SMR_libraryID, nfu_badSelf, "Via: groupBoundaries." );
+        return( nfu_Error );
+    }
+
+    ngs = ptwX_length( smr, groupBoundaries ) - 1;
+    if( normType == ptwXY_group_normType_norm ) {
+        if( ptwX_norm == NULL ) {
+            smr_setReportError2p( smr, nfu_SMR_libraryID, nfu_badNorm, "Norm function required but is NULL." );
+            return( nfu_Error );
+        }
+        if( ptwX_norm->status != nfu_Okay ) {
+            smr_setReportError2p( smr, nfu_SMR_libraryID, nfu_badSelf, "Via: norm." );
+            return( nfu_Error );
+        }
+        if( ptwX_length( smr, ptwX_norm ) != ngs ) {
+            smr_setReportError2( smr, nfu_SMR_libraryID, nfu_badNorm, "Norm length = %d but there are %d groups.",
+                    (int) ptwX_length( NULL, ptwX_norm ), (int) ngs );
+            return( nfu_Error );
+        }
+    }
+
+    return( nfu_Okay );
+}
+
+/*
+************************************************************
+*/
+
+static ptwXPoints *ptwXY_groupUnionize( statusMessageReporting *smr, ptwXPoints *groupBoundaries, int numberOfptwXYs,
+        ptwXYPoints **ptwXYs, ptwXYPoints **unionXYs ) {
+
+    int index = 0;
+    int64_t ngs = ptwX_length( smr, groupBoundaries ) - 1;
+    ptwXPoints *groupedData = NULL;
+    ptwXYPoints *f1s[5] = { NULL, NULL, NULL, NULL, NULL };
+    ptwXYPoints *ua = NULL, *ub = NULL;
+    nfu_status status = nfu_Okay;
+
+    for( index = 0; index < numberOfptwXYs; ++index ) {
+        if( ( f1s[index] = ptwXY_intersectionWith_ptwX( smr, ptwXYs[index], groupBoundaries ) ) == NULL ) goto Err;
+        if( f1s[index]->length == 0 ) break;
+    }
+
+    if( index < numberOfptwXYs ) {
+        groupedData = ptwX_createLine( smr, ngs, ngs, 0, 0 );
+        if( groupedData == NULL ) smr_setReportError2p( smr, nfu_SMR_libraryID, nfu_Error, "Via." );
+        goto RET;
+    }
+
+    for( index = 0; index < numberOfptwXYs - 1; ++index ) {
+        for( int index2 = index + 1; index2 < numberOfptwXYs; ++index2 ) {
+            if( ( status = ptwXY_tweakDomainsToMutualify( smr, f1s[index], f1s[index2], 4, 0 ) ) != nfu_Okay ) {
+                smr_setReportError2p( smr, nfu_SMR_libraryID, status, "ptwXY_tweakDomainsToMutualify failed: most likely functions cannot be mutualified by tweaking." );
+                goto Err;
+            }
+        }
+    }
+
+    if( ( ua = ptwXY_union( smr,  f1s[0], f1s[1], 0 ) ) == NULL ) goto Err;
+    for( index = 2; index < numberOfptwXYs; ++index ) {
+        ub = ua;
+        if( ( ua = ptwXY_union( smr,  f1s[index],  ub, 0 ) ) == NULL ) goto Err;
+    }
+    for( index = 0; index < numberOfptwXYs; ++index ) {
+        if( ( unionXYs[index] = ptwXY_union( smr,  f1s[index],  ua, ptwXY_union_fill ) ) == NULL ) goto Err;
+    }
+
+    if( ( groupedData = ptwX_new( smr, ngs ) ) == NULL ) goto Err;
+
+RET:
+    for( index = 0; index < numberOfptwXYs; ++index ) {
+        ptwXY_free( f1s[index] );
+    }
+
+    ptwXY_free( ua );
+    ptwXY_free( ub );
+
+    return( groupedData );
+
+Err:
+    smr_setReportError2p( smr, nfu_SMR_libraryID, nfu_Error, "Via." );
+    groupedData = ptwX_free( groupedData );
+
+    goto RET;
+}
+
+/*
+************************************************************
+*/
+
 ptwXPoints *ptwXY_runningIntegral( statusMessageReporting *smr, ptwXYPoints *ptwXY ) {
 
     int i;

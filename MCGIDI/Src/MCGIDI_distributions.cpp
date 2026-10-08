@@ -45,7 +45,7 @@ LUPI_HOST Distribution::Distribution( Type a_type, GIDI::Distributions::Distribu
         m_productFrame( a_distribution.productFrame( ) ),
         m_projectileMass( a_setupInfo.m_protare.projectileMass( ) ),
         m_targetMass( a_setupInfo.m_protare.targetMass( ) ),
-        m_productMass( a_setupInfo.m_product1Mass ) {                           // Includes nuclear excitation energy.
+        m_productMass( a_setupInfo.m_productMass ) {                            // Includes nuclear excitation energy.
 
 }
 
@@ -60,7 +60,7 @@ LUPI_HOST Distribution::Distribution( Type a_type, GIDI::Frame a_productFrame, S
         m_productFrame( a_productFrame ),
         m_projectileMass( a_setupInfo.m_protare.projectileMass( ) ),
         m_targetMass( a_setupInfo.m_protare.targetMass( ) ),
-        m_productMass( a_setupInfo.m_product1Mass ) {                           // Includes nuclear excitation energy.
+        m_productMass( a_setupInfo.m_productMass ) {                            // Includes nuclear excitation energy.
 
 }
 
@@ -134,12 +134,14 @@ LUPI_HOST_DEVICE AngularTwoBody::AngularTwoBody( ) :
 
 LUPI_HOST AngularTwoBody::AngularTwoBody( GIDI::Distributions::AngularTwoBody const &a_angularTwoBody, SetupInfo &a_setupInfo ) :
         Distribution( Type::angularTwoBody, a_angularTwoBody, a_setupInfo ),
-        m_residualMass( a_setupInfo.m_product2Mass ),                           // Includes nuclear excitation energy.
+        m_residualMass( a_setupInfo.m_twobodyProduct2Mass ),                    // Includes nuclear excitation energy.
         m_Q( a_setupInfo.m_Q ),
         m_twoBodyThreshold( a_setupInfo.m_reaction->twoBodyThreshold( ) ),
         m_Upscatter( false ),
-        m_angular( Probabilities::parseProbability2d_d1( a_angularTwoBody.angular( ), &a_setupInfo ) ),
+        m_angular( Probabilities::parseProbability2d_d1( a_angularTwoBody.angular( ), a_setupInfo ) ),
         m_modelDBRC_data( nullptr )  {
+
+    if( m_residualMass == productMass( ) ) m_residualMass = a_setupInfo.m_twobodyProduct1Mass;      // This distribution is for the residual, or both products are the same.
 
     if( a_setupInfo.m_protare.projectileIntid( ) == PoPI::Intids::neutron ) {
         m_Upscatter = a_setupInfo.m_reaction->ENDF_MT( ) == 2;
@@ -176,6 +178,22 @@ LUPI_HOST_DEVICE void AngularTwoBody::serialize( LUPI::DataBuffer &a_buffer, LUP
 }
 
 /* *********************************************************************************************************//**
+ * This method is for internal use only. This method returns the pointer to the angular data of *this* and
+ * sets the member **m_angular** to *nullptr*. The caller is responsible for freeing instance returned by
+ * the pointer.
+ *
+ * @return                  A pointer to the angular data of *this*.
+ ***********************************************************************************************************/
+
+LUPI_HOST Probabilities::ProbabilityBase2d_d1 *AngularTwoBody::stealAngular( ) {
+
+    Probabilities::ProbabilityBase2d_d1 *angular1 = m_angular;
+    m_angular = nullptr;
+
+    return( angular1 );
+}
+
+/* *********************************************************************************************************//**
  * This method sets *this* *m_modelDBRC_data* to *a_modelDBRC_data*. It also deletes the current *m_modelDBRC_data* member.
  *
  * @param a_modelDBRC_data      [in]    The instance storing data needed to treat the DRRC upscatter mode.
@@ -209,8 +227,8 @@ LUPI_HOST_DEVICE Uncorrelated::Uncorrelated( ) :
 
 LUPI_HOST Uncorrelated::Uncorrelated( GIDI::Distributions::Uncorrelated const &a_uncorrelated, SetupInfo &a_setupInfo ) :
         Distribution( Type::uncorrelated, a_uncorrelated, a_setupInfo ),
-        m_angular( Probabilities::parseProbability2d_d1( a_uncorrelated.angular( ), nullptr ) ),
-        m_energy( Probabilities::parseProbability2d( a_uncorrelated.energy( ), &a_setupInfo ) ) {
+        m_angular( Probabilities::parseProbability2d_d1( a_uncorrelated.angular( ), a_setupInfo ) ),
+        m_energy( Probabilities::parseProbability2d( a_uncorrelated.energy( ), a_setupInfo ) ) {
 
 }
 
@@ -317,8 +335,8 @@ LUPI_HOST_DEVICE EnergyAngularMC::EnergyAngularMC( ) :
 
 LUPI_HOST EnergyAngularMC::EnergyAngularMC( GIDI::Distributions::EnergyAngularMC const &a_energyAngularMC, SetupInfo &a_setupInfo ) :
         Distribution( Type::energyAngularMC, a_energyAngularMC, a_setupInfo ),
-        m_energy( Probabilities::parseProbability2d_d1( a_energyAngularMC.energy( ), nullptr ) ),
-        m_angularGivenEnergy( Probabilities::parseProbability3d( a_energyAngularMC.energyAngular( ) ) ) {
+        m_energy( Probabilities::parseProbability2d_d1( a_energyAngularMC.energy( ), a_setupInfo ) ),
+        m_angularGivenEnergy( Probabilities::parseProbability3d( a_energyAngularMC.energyAngular( ), a_setupInfo ) ) {
 
 }
 
@@ -370,8 +388,8 @@ LUPI_HOST_DEVICE AngularEnergyMC::AngularEnergyMC( ) :
 
 LUPI_HOST AngularEnergyMC::AngularEnergyMC( GIDI::Distributions::AngularEnergyMC const &a_angularEnergyMC, SetupInfo &a_setupInfo ) :
         Distribution( Type::angularEnergyMC, a_angularEnergyMC, a_setupInfo ),
-        m_angular( Probabilities::parseProbability2d_d1( a_angularEnergyMC.angular( ), nullptr ) ),
-        m_energyGivenAngular( Probabilities::parseProbability3d( a_angularEnergyMC.angularEnergy( ) ) ) {
+        m_angular( Probabilities::parseProbability2d_d1( a_angularEnergyMC.angular( ), a_setupInfo ) ),
+        m_energyGivenAngular( Probabilities::parseProbability3d( a_angularEnergyMC.angularEnergy( ), a_setupInfo ) ) {
 
 }
 
@@ -425,7 +443,7 @@ LUPI_HOST KalbachMann::KalbachMann( GIDI::Distributions::KalbachMann const &a_Ka
         Distribution( Type::KalbachMann, a_KalbachMann, a_setupInfo ),
         m_energyToMeVFactor( 1 ),                                           // FIXME.
         m_eb_massFactor( 1 ),                                               // FIXME.
-        m_f( Probabilities::parseProbability2d_d1( a_KalbachMann.f( ), nullptr ) ),
+        m_f( Probabilities::parseProbability2d_d1( a_KalbachMann.f( ), a_setupInfo ) ),
         m_r( Functions::parseFunction2d( a_KalbachMann.r( ) ) ),
         m_a( Functions::parseFunction2d( a_KalbachMann.a( ) ) ) {
 
@@ -487,6 +505,7 @@ LUPI_HOST_DEVICE void KalbachMann::serialize( LUPI::DataBuffer &a_buffer, LUPI::
  ***********************************************************************************************************/
 
 LUPI_HOST_DEVICE CoherentPhotoAtomicScattering::CoherentPhotoAtomicScattering( ) :
+        m_anomalousDataPresent( false ),
         m_realAnomalousFactor( nullptr ),
         m_imaginaryAnomalousFactor( nullptr ) {
 
@@ -653,7 +672,8 @@ LUPI_HOST_DEVICE CoherentPhotoAtomicScattering::~CoherentPhotoAtomicScattering( 
 LUPI_HOST_DEVICE double CoherentPhotoAtomicScattering::evaluate( double a_energyIn, double a_mu ) const {
 
     double probability;
-    int lowerIndexEnergy = binarySearchVector( a_energyIn, m_energies, true );      // FIXME - need to handle case where lowerIndexEnergy = 0 like in evaluateScatteringFactor.
+    int intLowerIndexEnergy = binarySearchVector( a_energyIn, m_energies, true );      // FIXME - need to handle case where lowerIndexEnergy = 0 like in evaluateScatteringFactor.
+    std::size_t lowerIndexEnergy = static_cast<std::size_t>( intLowerIndexEnergy );
     double _a = m_a[lowerIndexEnergy];
     double _a_2 = _a * _a;
     double X1 = m_energies[lowerIndexEnergy];
@@ -701,13 +721,15 @@ LUPI_HOST_DEVICE double CoherentPhotoAtomicScattering::evaluate( double a_energy
 LUPI_HOST_DEVICE double CoherentPhotoAtomicScattering::evaluateFormFactor( double a_energyIn, double a_mu ) const {
 
     double X = a_energyIn * sqrt( 0.5 * ( 1 - a_mu ) );
-    int lowerIndex = binarySearchVector( X, m_energies );
+    int intLowerIndex = binarySearchVector( X, m_energies );
 
-    if( lowerIndex < 1 ) {
-        if( lowerIndex == 0 ) return( m_formFactor[0] );
-        if( lowerIndex == -2 ) return( m_formFactor[0] );               // This should never happend for proper a_energyIn and a_mu.
+    if( intLowerIndex < 1 ) {
+        if( intLowerIndex == 0 ) return( m_formFactor[0] );
+        if( intLowerIndex == -2 ) return( m_formFactor[0] );               // This should never happend for proper a_energyIn and a_mu.
         return( m_formFactor.back( ) );
     }
+
+    std::size_t lowerIndex = static_cast<std::size_t>( intLowerIndex );
 
     return( m_formFactor[lowerIndex] * pow( X / m_energies[lowerIndex] , m_a[lowerIndex] ) );
 }
@@ -937,13 +959,14 @@ LUPI_HOST_DEVICE double IncoherentPhotoAtomicScattering::evaluateKleinNishina( d
 
 LUPI_HOST_DEVICE double IncoherentPhotoAtomicScattering::evaluateScatteringFactor( double a_energyIn ) const {
 
-    int lowerIndex = binarySearchVector( a_energyIn, m_energies );
+    int intLowerIndex = binarySearchVector( a_energyIn, m_energies );
 
-    if( lowerIndex < 1 ) {
-        if( lowerIndex == -1 ) return( m_scatteringFactor.back( ) );
+    if( intLowerIndex < 1 ) {
+        if( intLowerIndex == -1 ) return( m_scatteringFactor.back( ) );
         return( m_scatteringFactor[1] * a_energyIn / m_energies[1] );
     }
 
+    std::size_t lowerIndex = static_cast<std::size_t>( intLowerIndex );
     return( m_scatteringFactor[lowerIndex] * pow( a_energyIn / m_energies[lowerIndex], m_a[lowerIndex] ) );
 }
 
@@ -964,6 +987,56 @@ LUPI_HOST_DEVICE void IncoherentPhotoAtomicScattering::serialize( LUPI::DataBuff
     DATA_MEMBER_VECTOR_DOUBLE( m_a, a_buffer, a_mode );
 }
 
+/*
+======================================================================================================
+========== IncoherentPhotoAtomicScatteringElectron                                          ==========
+======================================================================================================
+*/
+
+/*! \class IncoherentPhotoAtomicScatteringElectron
+ * Represents the distribution for the outgoing electron produced by incoherent photo-atomic scattering.
+ */
+
+/* *********************************************************************************************************//**
+ * Plain constructor.
+ ***********************************************************************************************************/
+
+LUPI_HOST_DEVICE IncoherentPhotoAtomicScatteringElectron::IncoherentPhotoAtomicScatteringElectron( ) {
+
+}
+
+/* *********************************************************************************************************//**
+ * Constructor.
+ *
+ * @param a_setupInfo                           [in]    Used internally when constructing a Protare to pass information to other constructors.
+ ***********************************************************************************************************/
+
+LUPI_HOST IncoherentPhotoAtomicScatteringElectron::IncoherentPhotoAtomicScatteringElectron( SetupInfo &a_setupInfo ) :
+        Distribution( Type::incoherentPhotoAtomicScatteringElectron, GIDI::Frame::lab, a_setupInfo ) {
+
+}
+
+/* *********************************************************************************************************//**
+ * Destructor.
+ ***********************************************************************************************************/
+
+LUPI_HOST_DEVICE IncoherentPhotoAtomicScatteringElectron::~IncoherentPhotoAtomicScatteringElectron( ) {
+
+}
+
+/* *********************************************************************************************************//**
+ * This method serializes *this* for broadcasting as needed for MPI and GPUs. The method can count the number of required
+ * bytes, pack *this* or unpack *this* depending on *a_mode*.
+ *
+ * @param a_buffer              [in]    The buffer to read or write data to depending on *a_mode*.
+ * @param a_mode                [in]    Specifies the action of this method.
+ ***********************************************************************************************************/
+
+LUPI_HOST_DEVICE void IncoherentPhotoAtomicScatteringElectron::serialize( LUPI::DataBuffer &a_buffer, LUPI::DataBuffer::Mode a_mode ) {
+
+    Distribution::serialize( a_buffer, a_mode );
+}
+
 /*! \class IncoherentBoundToFreePhotoAtomicScattering
  * This class represents the distribution for an outgoing photon via incoherent photo-atomic elastic scattering.
  */
@@ -972,7 +1045,8 @@ LUPI_HOST_DEVICE void IncoherentPhotoAtomicScattering::serialize( LUPI::DataBuff
  * Default constructor used when broadcasting a Protare as needed by MPI or GPUs.
  ***********************************************************************************************************/
 
-LUPI_HOST_DEVICE IncoherentBoundToFreePhotoAtomicScattering::IncoherentBoundToFreePhotoAtomicScattering( ) {
+LUPI_HOST_DEVICE IncoherentBoundToFreePhotoAtomicScattering::IncoherentBoundToFreePhotoAtomicScattering( ) :
+        m_bindingEnergy( 0.0 ) {
 
 }
 
@@ -1074,13 +1148,14 @@ LUPI_HOST_DEVICE double IncoherentBoundToFreePhotoAtomicScattering::evaluateOccu
     const double alpha_binding = -m_bindingEnergy/PoPI_electronMass_MeV_c2;  // BE [MeV] / 0.511 [MeV]
     const double pzmax = ( -alpha_binding + alpha_in*(alpha_in - alpha_binding)*(1-a_mu) )/( sqrt( 2*alpha_in*(alpha_in-alpha_binding)*(1-a_mu) + alpha_binding*alpha_binding ) ); // *mec
 
-    int lowerIndex = binarySearchVector( pzmax, m_pz );
-    const int size1 = m_occupationNumber.size();
+    int intLowerIndex = binarySearchVector( pzmax, m_pz );
+    std::size_t lowerIndex = static_cast<std::size_t>( intLowerIndex );
+    int size1 = static_cast<int>( m_occupationNumber.size( ) );
 
-    if( lowerIndex == -1 || lowerIndex == (size1 -1)){
+    if( intLowerIndex == -1 || intLowerIndex == ( size1 - 1 ) ) {
          return( m_occupationNumber.back( ) );
     }
-    if( lowerIndex == -2 ){
+    if( intLowerIndex == -2 ){
         return( m_occupationNumber[0] );
     }
 
@@ -1107,19 +1182,19 @@ LUPI_HOST_DEVICE void IncoherentBoundToFreePhotoAtomicScattering::serialize( LUP
 
 /*
 ======================================================================================================
-========== IncoherentPhotoAtomicScatteringElectron                                          ==========
+========== IncoherentBoundToFreePhotoAtomicScatteringElectron                               ==========
 ======================================================================================================
 */
 
-/*! \class IncoherentPhotoAtomicScatteringElectron
- * This class represents the distribution for the outgoing electron for incoherent photo-atomic scattering.
+/*! \class IncoherentBoundToFreePhotoAtomicScatteringElectron
+ * Represents the distribution for the outgoing electron produced by incoherent Doppler-broadened photo-atomic scattering.
  */
 
 /* *********************************************************************************************************//**
  * Plain constructor.
  ***********************************************************************************************************/
 
-LUPI_HOST_DEVICE IncoherentPhotoAtomicScatteringElectron::IncoherentPhotoAtomicScatteringElectron( ) {
+LUPI_HOST_DEVICE IncoherentBoundToFreePhotoAtomicScatteringElectron::IncoherentBoundToFreePhotoAtomicScatteringElectron( ) {
 
 }
 
@@ -1129,8 +1204,12 @@ LUPI_HOST_DEVICE IncoherentPhotoAtomicScatteringElectron::IncoherentPhotoAtomicS
  * @param a_setupInfo                           [in]    Used internally when constructing a Protare to pass information to other constructors.
  ***********************************************************************************************************/
 
-LUPI_HOST IncoherentPhotoAtomicScatteringElectron::IncoherentPhotoAtomicScatteringElectron( SetupInfo &a_setupInfo ) :
-        Distribution( Type::incoherentPhotoAtomicScatteringElectron, GIDI::Frame::lab, a_setupInfo ) {
+LUPI_HOST IncoherentBoundToFreePhotoAtomicScatteringElectron::IncoherentBoundToFreePhotoAtomicScatteringElectron( SetupInfo &a_setupInfo ) :
+        Distribution( Type::incoherentBoundToFreePhotoAtomicScatteringElectron, GIDI::Frame::lab, a_setupInfo ),
+        m_bindingEnergy( 0.0 ) {
+
+        
+    m_bindingEnergy = -a_setupInfo.m_Q;
 
 }
 
@@ -1138,7 +1217,7 @@ LUPI_HOST IncoherentPhotoAtomicScatteringElectron::IncoherentPhotoAtomicScatteri
  * Destructor.
  ***********************************************************************************************************/
 
-LUPI_HOST_DEVICE IncoherentPhotoAtomicScatteringElectron::~IncoherentPhotoAtomicScatteringElectron( ) {
+LUPI_HOST_DEVICE IncoherentBoundToFreePhotoAtomicScatteringElectron::~IncoherentBoundToFreePhotoAtomicScatteringElectron( ) {
 
 }
 
@@ -1150,9 +1229,11 @@ LUPI_HOST_DEVICE IncoherentPhotoAtomicScatteringElectron::~IncoherentPhotoAtomic
  * @param a_mode                [in]    Specifies the action of this method.
  ***********************************************************************************************************/
 
-LUPI_HOST_DEVICE void IncoherentPhotoAtomicScatteringElectron::serialize( LUPI::DataBuffer &a_buffer, LUPI::DataBuffer::Mode a_mode ) {
+LUPI_HOST_DEVICE void IncoherentBoundToFreePhotoAtomicScatteringElectron::serialize( LUPI::DataBuffer &a_buffer, LUPI::DataBuffer::Mode a_mode ) {
 
     Distribution::serialize( a_buffer, a_mode );
+
+    DATA_MEMBER_DOUBLE( m_bindingEnergy, a_buffer, a_mode );
 }
 
 /*
@@ -1206,6 +1287,139 @@ LUPI_HOST_DEVICE void PairProductionGamma::serialize( LUPI::DataBuffer &a_buffer
     Distribution::serialize( a_buffer, a_mode );
 
     DATA_MEMBER_INT( m_firstSampled, a_buffer, a_mode );
+}
+
+/*
+======================================================================================================
+========== PairProductionElectron                                                           ==========
+======================================================================================================
+*/
+
+/*! \class PairProductionElectron
+ * This class represents the distribution for the outgoing electron and positron from pair production.
+ */
+
+/* *********************************************************************************************************//**
+ * Plain constructor.
+ ***********************************************************************************************************/
+
+LUPI_HOST_DEVICE PairProductionElectron::PairProductionElectron( ) {
+
+}
+
+/* *********************************************************************************************************//**
+ * Constructor.
+ *
+ * @param a_setupInfo                           [in]    Used internally when constructing a Protare to pass information to other constructors.
+ ***********************************************************************************************************/
+
+LUPI_HOST PairProductionElectron::PairProductionElectron( SetupInfo &a_setupInfo ) :
+        Distribution( Type::pairProductionElectron, GIDI::Frame::lab, a_setupInfo ),
+        m_Z( 0 ),
+        m_screeningRadius( 0.0 ) {
+        
+    std::string const targetID( a_setupInfo.m_protare.targetID( ).c_str( ) );
+    std::string elementSymbol = a_setupInfo.m_pops.chemicalElementSymbol( targetID );
+    if( elementSymbol.empty( ) ) {
+        for( std::size_t i1 = 0; i1 < targetID.size( ); ++i1 ) {
+            unsigned char c = static_cast<unsigned char>( targetID[i1] );
+            if( std::isalpha( c ) == 0 ) break;
+            elementSymbol += targetID[i1];
+        }
+    }
+    if( elementSymbol.empty( ) ) elementSymbol = targetID;
+
+    m_Z = PoPI::Z_FromChemicalElementSymbol( elementSymbol );
+
+    m_screeningRadius = a_setupInfo.m_GIDI_protare.thickTargetBremsstrahlung( ).screeningRadius( );
+
+    if( m_Z == 0 ) {
+        throw std::runtime_error( "PairProductionElectron: unable to determine Z for target '" + targetID +
+                        "' (chemical element symbol '" + elementSymbol + "')." );
+    }
+    if( m_screeningRadius <= 0.0 ) {
+        throw std::runtime_error( "PairProductionElectron: missing screeningRadius in applicationData (LLNL::thickTargetBremsstrahlung/thickTargetBremsstrahlungModel/screeningRadius) for target '" +
+                        targetID + "'." );
+    }
+
+}
+
+/* *********************************************************************************************************//**
+ * Destructor.
+ ***********************************************************************************************************/
+
+LUPI_HOST_DEVICE PairProductionElectron::~PairProductionElectron( ) {
+
+}
+
+/* *********************************************************************************************************//**
+ * This method serializes *this* for broadcasting as needed for MPI and GPUs. The method can count the number of required
+ * bytes, pack *this* or unpack *this* depending on *a_mode*.
+ *
+ * @param a_buffer              [in]    The buffer to read or write data to depending on *a_mode*.
+ * @param a_mode                [in]    Specifies the action of this method.
+ ***********************************************************************************************************/
+
+LUPI_HOST_DEVICE void PairProductionElectron::serialize( LUPI::DataBuffer &a_buffer, LUPI::DataBuffer::Mode a_mode ) {
+
+    Distribution::serialize( a_buffer, a_mode );
+
+    DATA_MEMBER_DOUBLE( m_screeningRadius, a_buffer, a_mode );
+    DATA_MEMBER_INT( m_Z, a_buffer, a_mode );
+}
+
+/*
+======================================================================================================
+========== PhotoelectricElectron                                                            ==========
+======================================================================================================
+*/
+
+/*! \class PhotoelectricElectron
+ * Represents the distribution for the outgoing electron produced by the photoelectric effect.
+ */
+
+/* *********************************************************************************************************//**
+ * Plain constructor.
+ ***********************************************************************************************************/
+
+LUPI_HOST_DEVICE PhotoelectricElectron::PhotoelectricElectron( ) {
+
+}
+
+/* *********************************************************************************************************//**
+ * Constructor.
+ *
+ * @param a_setupInfo                           [in]    Used internally when constructing a Protare to pass information to other constructors.
+ ***********************************************************************************************************/
+
+LUPI_HOST PhotoelectricElectron::PhotoelectricElectron( SetupInfo &a_setupInfo ) :
+        Distribution( Type::photoelectricElectron, GIDI::Frame::lab, a_setupInfo ),
+        m_bindingEnergy( 0.0 ) {
+
+    m_bindingEnergy = -a_setupInfo.m_Q;
+}
+
+/* *********************************************************************************************************//**
+ * Destructor.
+ ***********************************************************************************************************/
+
+LUPI_HOST_DEVICE PhotoelectricElectron::~PhotoelectricElectron( ) {
+
+}
+
+/* *********************************************************************************************************//**
+ * This method serializes *this* for broadcasting as needed for MPI and GPUs. The method can count the number of required
+ * bytes, pack *this* or unpack *this* depending on *a_mode*.
+ *
+ * @param a_buffer              [in]    The buffer to read or write data to depending on *a_mode*.
+ * @param a_mode                [in]    Specifies the action of this method.
+ ***********************************************************************************************************/
+
+LUPI_HOST_DEVICE void PhotoelectricElectron::serialize( LUPI::DataBuffer &a_buffer, LUPI::DataBuffer::Mode a_mode ) {
+
+    Distribution::serialize( a_buffer, a_mode );
+
+    DATA_MEMBER_DOUBLE( m_bindingEnergy, a_buffer, a_mode );
 }
 
 /*! \class CoherentElasticTNSL
@@ -1371,6 +1585,11 @@ LUPI_HOST_DEVICE void IncoherentElasticTNSL::serialize( LUPI::DataBuffer &a_buff
     m_DebyeWallerIntegral = serializeFunction1d_d1( a_buffer, a_mode, m_DebyeWallerIntegral );
 }
 
+LUPI_HOST_DEVICE IncoherentElasticTNSL::~IncoherentElasticTNSL( ) {
+
+    delete m_DebyeWallerIntegral;
+}
+
 /*! \class Unspecified
  * This class represents the distribution for an outgoing product whose distribution is not specified.
  */
@@ -1495,18 +1714,18 @@ static LUPI_HOST Distribution *parseGIDI2( GIDI::Distributions::Distribution con
         GIDI::Distributions::Reference3d const *reference3d = static_cast<GIDI::Distributions::Reference3d const *>( &a_GIDI_distribution );
         GIDI::Distributions::Distribution const *linkedForm = static_cast<GIDI::Distributions::Distribution const *>( reference3d->findInAncestry( reference3d->href( ) ) );
         if( linkedForm == nullptr ) 
-            throw std::runtime_error( "MCGIDI::Distributions::parseGIDI: could not find link '" + a_GIDI_distribution.toXLink( ) + "." );
+            throw std::runtime_error( "MCGIDI::Distributions::parseGIDI2: could not find link '" + a_GIDI_distribution.toXLink( ) + "." );
         distribution = parseGIDI2( *linkedForm, a_setupInfo, a_settings ); }
         break;
     default :
-        throw std::runtime_error( "MCGIDI::Distributions::parseGIDI: unsupported distribution: " + a_GIDI_distribution.toXLink( ) + "." );
+        throw std::runtime_error( "MCGIDI::Distributions::parseGIDI2: unsupported distribution: " + a_GIDI_distribution.toXLink( ) + "." );
     }
 
     return( distribution );
 }
 
 /* *********************************************************************************************************//**
- * @param a_distribution        [in]    The GIDI::Protare whose data is to be used to construct *this*.
+ * @param a_distribution        [in]    The MCGIDI::Distributions::Distribution whose type is returned.
  *
  * @return                              The type of the distribution or Distributions::Type::none if *a_distribution* is a *nullptr* pointer.
  ***********************************************************************************************************/
@@ -1517,6 +1736,77 @@ LUPI_HOST_DEVICE Type DistributionType( Distribution const *a_distribution ) {
     return( a_distribution->type( ) );
 }
 
+}
+
+/* *********************************************************************************************************//**
+ * This function deletes an MCGIDI::Distributions::Distribution based on its type.
+ *
+ * @param a_distribution        [in]    The MCGIDI::Protare whose data is to be used to construct *this*.
+ *
+ * @return                              Always returns a **nullptr**.
+ ***********************************************************************************************************/
+
+LUPI_HOST_DEVICE Distributions::Distribution *deleteDistribution( Distributions::Distribution *a_distribution ) {
+
+    Distributions::Type type = Distributions::Type::none;
+    if( a_distribution != nullptr ) type = a_distribution->type( );
+    switch( type ) {
+    case Distributions::Type::none:
+        break;
+    case Distributions::Type::unspecified:
+        delete static_cast<Distributions::Unspecified *>( a_distribution );
+        break;
+    case Distributions::Type::angularTwoBody:
+        delete static_cast<Distributions::AngularTwoBody *>( a_distribution );
+        break;
+    case Distributions::Type::KalbachMann:
+        delete static_cast<Distributions::KalbachMann *>( a_distribution );
+        break;
+    case Distributions::Type::uncorrelated:
+        delete static_cast<Distributions::Uncorrelated *>( a_distribution );
+        break;
+    case Distributions::Type::branching3d:
+        delete static_cast<Distributions::Branching3d *>( a_distribution );
+        break;
+    case Distributions::Type::energyAngularMC:
+        delete static_cast<Distributions::EnergyAngularMC *>( a_distribution );
+        break;
+    case Distributions::Type::angularEnergyMC:
+        delete static_cast<Distributions::AngularEnergyMC *>( a_distribution );
+        break;
+    case Distributions::Type::coherentPhotoAtomicScattering:
+        delete static_cast<Distributions::CoherentPhotoAtomicScattering *>( a_distribution );
+        break;
+    case Distributions::Type::incoherentPhotoAtomicScattering:
+        delete static_cast<Distributions::IncoherentPhotoAtomicScattering *>( a_distribution );
+        break;
+    case Distributions::Type::incoherentBoundToFreePhotoAtomicScattering:
+        delete static_cast<Distributions::IncoherentBoundToFreePhotoAtomicScattering *>( a_distribution );
+        break;
+    case Distributions::Type::incoherentPhotoAtomicScatteringElectron:
+        delete static_cast<Distributions::IncoherentPhotoAtomicScatteringElectron *>( a_distribution );
+        break;
+    case Distributions::Type::incoherentBoundToFreePhotoAtomicScatteringElectron:
+        delete static_cast<Distributions::IncoherentBoundToFreePhotoAtomicScatteringElectron *>( a_distribution );
+        break;
+    case Distributions::Type::pairProductionGamma:
+        delete static_cast<Distributions::PairProductionGamma *>( a_distribution );
+        break;
+    case Distributions::Type::pairProductionElectron:
+        delete static_cast<Distributions::PairProductionElectron *>( a_distribution );
+        break;
+    case Distributions::Type::photoelectricElectron:
+        delete static_cast<Distributions::PhotoelectricElectron *>( a_distribution );
+        break;
+    case Distributions::Type::coherentElasticTNSL:
+        delete static_cast<Distributions::CoherentElasticTNSL *>( a_distribution );
+        break;
+    case Distributions::Type::incoherentElasticTNSL:
+        delete static_cast<Distributions::IncoherentElasticTNSL *>( a_distribution );
+        break;
+    }
+
+    return( nullptr );
 }
 
 /* *********************************************************************************************************//**
@@ -1653,6 +1943,30 @@ LUPI_HOST_DEVICE Distributions::Distribution *serializeDistribution( LUPI::DataB
                  a_distribution = new Distributions::IncoherentPhotoAtomicScatteringElectron;
              }
              break;
+        case Distributions::Type::incoherentBoundToFreePhotoAtomicScatteringElectron :
+            if( a_buffer.m_placement != nullptr ) {
+                 a_distribution = new(a_buffer.m_placement) Distributions::IncoherentBoundToFreePhotoAtomicScatteringElectron;
+                 a_buffer.incrementPlacement( sizeof( Distributions::IncoherentBoundToFreePhotoAtomicScatteringElectron ) ); }
+             else {
+                 a_distribution = new Distributions::IncoherentBoundToFreePhotoAtomicScatteringElectron;
+             }
+             break;
+        case Distributions::Type::pairProductionElectron :
+            if( a_buffer.m_placement != nullptr ) {
+                 a_distribution = new(a_buffer.m_placement) Distributions::PairProductionElectron;
+                 a_buffer.incrementPlacement( sizeof( Distributions::PairProductionElectron ) ); }
+             else {
+                 a_distribution = new Distributions::PairProductionElectron;
+             }
+             break;
+        case Distributions::Type::photoelectricElectron :
+            if( a_buffer.m_placement != nullptr ) {
+                 a_distribution = new(a_buffer.m_placement) Distributions::PhotoelectricElectron;
+                 a_buffer.incrementPlacement( sizeof( Distributions::PhotoelectricElectron ) ); }
+             else {
+                 a_distribution = new Distributions::PhotoelectricElectron;
+             }
+             break;
         }
     }
 
@@ -1702,6 +2016,15 @@ LUPI_HOST_DEVICE Distributions::Distribution *serializeDistribution( LUPI::DataB
         case Distributions::Type::incoherentPhotoAtomicScatteringElectron :
              a_buffer.incrementPlacement( sizeof( Distributions::IncoherentPhotoAtomicScatteringElectron ) );
              break;
+        case Distributions::Type::incoherentBoundToFreePhotoAtomicScatteringElectron :
+             a_buffer.incrementPlacement( sizeof( Distributions::IncoherentBoundToFreePhotoAtomicScatteringElectron ) );
+             break;
+        case Distributions::Type::pairProductionElectron :
+             a_buffer.incrementPlacement( sizeof( Distributions::PairProductionElectron ) );
+             break;
+        case Distributions::Type::photoelectricElectron :
+             a_buffer.incrementPlacement( sizeof( Distributions::PhotoelectricElectron) );
+             break;
         }
     }
 
@@ -1749,6 +2072,15 @@ LUPI_HOST_DEVICE Distributions::Distribution *serializeDistribution( LUPI::DataB
          break;
     case Distributions::Type::incoherentPhotoAtomicScatteringElectron :
         static_cast<Distributions::IncoherentPhotoAtomicScatteringElectron *>( a_distribution )->serialize( a_buffer, a_mode );
+         break;
+    case Distributions::Type::incoherentBoundToFreePhotoAtomicScatteringElectron :
+        static_cast<Distributions::IncoherentBoundToFreePhotoAtomicScatteringElectron *>( a_distribution )->serialize( a_buffer, a_mode );
+         break;
+    case Distributions::Type::pairProductionElectron :
+        static_cast<Distributions::PairProductionElectron *>( a_distribution )->serialize( a_buffer, a_mode );
+         break;
+    case Distributions::Type::photoelectricElectron :
+        static_cast<Distributions::PhotoelectricElectron *>( a_distribution )->serialize( a_buffer, a_mode );
          break;
     }
 

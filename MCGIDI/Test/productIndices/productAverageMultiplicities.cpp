@@ -78,7 +78,7 @@ void main2( int argc, char **argv ) {
     particles.add( photon );
 
     MCGIDI::DomainHash domainHash( 4000, 1e-8, 10 );
-    std::set<int> reactionsToExclude;
+    GIDI::ExcludeReactionsSet reactionsToExclude;
     LUPI::StatusMessageReporting smr1;
     MCGIDI::Protare *MCProtare = MCGIDI::protareFromGIDIProtare( smr1, *protare, pops, settings, particles, domainHash, temperatures, reactionsToExclude );
 
@@ -92,7 +92,7 @@ void main2( int argc, char **argv ) {
             auto indices = reaction->productIndices( );
             for( std::size_t productIndex = 0; productIndex < indices.size( ); ++productIndex ) {
                 int index = indices[productIndex];
-                PoPI::Base const &base= pops.get<PoPI::Base>( index );
+                PoPI::Base const &base= pops.get<PoPI::Base>( static_cast<std::size_t>( index ) );
                 if( base.isParticle() ) {
                     double aveIndex = reaction->productAverageMultiplicity( index, energy );
                     double aveIntid = reaction->productAverageMultiplicityViaIntid( base.intid( ), energy );

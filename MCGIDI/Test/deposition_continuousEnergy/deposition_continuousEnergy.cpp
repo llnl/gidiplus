@@ -20,7 +20,7 @@
 static char const *description = "Loops over temperature and energy, printing the total cross section. If projectile is a photon, see options *-pa* and *-pn*.";
 
 void main2( int argc, char **argv );
-void checkIntidGain( MCGIDI::Protare *MCProtare, int a_hashIndex, double a_temperature, double a_energy, int a_index, int a_intid );
+void checkIntidGain( MCGIDI::Protare *MCProtare, std::size_t a_hashIndex, double a_temperature, double a_energy, int a_index, int a_intid );
 /*
 =========================================================
 */
@@ -45,7 +45,7 @@ void main2( int argc, char **argv ) {
     PoPI::Database pops;
     GIDI::Protare *protare;
     GIDI::Transporting::Particles particles;
-    std::set<int> reactionsToExclude;
+    GIDI::ExcludeReactionsSet reactionsToExclude;
     GIDI::Construction::PhotoMode photo_mode = GIDI::Construction::PhotoMode::nuclearOnly;
     LUPI::StatusMessageReporting smr1;
 
@@ -74,7 +74,7 @@ void main2( int argc, char **argv ) {
 
     argvOption2 *popsOption = argv_options.find( "--pops" );
     if( popsOption->present( ) ) {
-        for( int index = 0; index < popsOption->m_counter; ++index ) {
+        for( std::size_t index = 0; index < static_cast<std::size_t>( popsOption->m_counter ); ++index ) {
             pops.addFile( argv[popsOption->m_indices[index]], false );
         } }
     else {
@@ -134,15 +134,15 @@ void main2( int argc, char **argv ) {
         std::cout << "    reaction: " << reaction.label( ).c_str( ) << std::endl;
     }
 
-    int neutronIndex = pops[PoPI::IDs::neutron];
-    int photonIndex = pops[PoPI::IDs::photon];
+    int neutronIndex = static_cast<int>( pops[PoPI::IDs::neutron] );
+    int photonIndex = static_cast<int>( pops[PoPI::IDs::photon] );
     for( double temperature = 1e-8; temperature < 2e-3; temperature *= 100.0 ) {
         std::cout << "temperature = " << doubleToString2( "%8.1e", temperature ) << "                          cross section deposition energy  deposition momentum  production energy";
         if( particles.hasParticle( PoPI::IDs::neutron ) ) std::cout << "      neutron gain";
         if( particles.hasParticle( PoPI::IDs::photon ) ) std::cout << "         photon gain";
         std::cout << std::endl;
         for( double energy = 1e-12; energy < 45.0; energy *= 2.0 ) {
-            int hashIndex = domainHash.index( energy );
+            std::size_t hashIndex = domainHash.index( energy );
 
             std::cout << "    energy = " << std::setw( 16 ) << energy << " index = " << std::setw( 6 ) << hashIndex;
             std::cout << doubleToString2( " %16.8e",    MCProtare->crossSection( URR_protare_infos, hashIndex, temperature, energy ) );
@@ -166,7 +166,7 @@ void main2( int argc, char **argv ) {
 /*
 =========================================================
 */
-void checkIntidGain( MCGIDI::Protare *MCProtare, int a_hashIndex, double a_temperature, double a_energy, int a_index, int a_intid ) {
+void checkIntidGain( MCGIDI::Protare *MCProtare, std::size_t a_hashIndex, double a_temperature, double a_energy, int a_index, int a_intid ) {
 
     double gainIndex = MCProtare->gain( a_hashIndex, a_temperature, a_energy, a_index );
     double gainIntid = MCProtare->gainViaIntid( a_hashIndex, a_temperature, a_energy, a_intid );

@@ -51,7 +51,7 @@ void main2( int argc, char **argv ) {
     LUPI::StatusMessageReporting smr;
     PoPI::Database pops;
     double temperature = 0.0;
-    int lOrder = 0;
+    std::size_t lOrder = 0;
 
     LUPI::ArgumentParser argumentParser( __FILE__, description );
     LUPI::Positional *popsPositional = argumentParser.add<LUPI::Positional>( "pops", "The path to the pops file to use.", 1, 1 );
@@ -79,7 +79,7 @@ void main2( int argc, char **argv ) {
     GIDI::Map::Map map( mapPositional->value( ), pops );
 
     if( lOrderOption->counts( ) > 0 ) {
-        LUPI::Misc::stringToInt( lOrderOption->value( ), lOrder );
+        LUPI::Misc::stringToSize_t( lOrderOption->value( ), lOrder );
     }
 
     int transportCorrection = 0;

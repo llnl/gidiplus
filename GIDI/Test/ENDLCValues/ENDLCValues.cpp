@@ -75,7 +75,7 @@ void main2( int argc, char **argv ) {
     for( std::set<int>::iterator iter = CValues.begin( ); iter != CValues.end( ); ++iter ) std::cout << " " << *iter;
     std::cout << std::endl;
 
-    std::set<int> indices = protare->reactionIndicesMatchingENDLCValues( CValues );
+    GIDI::ExcludeReactionsSet indices = protare->reactionIndicesMatchingENDLCValues( CValues );
 
     std::cout << std::endl;
     std::cout << "    Matching indices are:" << std::endl;

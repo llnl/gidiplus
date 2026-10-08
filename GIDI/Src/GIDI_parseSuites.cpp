@@ -373,7 +373,6 @@ Form *parseCrossSectionSuite( Construction::Settings const &a_construction, Suit
     if( ( a_construction.parseMode( ) == Construction::ParseMode::multiGroupOnly ) && ( a_name != GIDI_gridded1dChars ) ) return( nullptr );
     if( ( a_construction.parseMode( ) == Construction::ParseMode::MonteCarloContinuousEnergy ) && ( a_name != GIDI_Ys1dChars ) ) return( nullptr );
 
-// Form not parsed is CoulombPlusNuclearElastic.
     Form *form = nullptr;
 
     if( a_name == GIDI_resonancesWithBackgroundChars ) {
@@ -383,7 +382,7 @@ Form *parseCrossSectionSuite( Construction::Settings const &a_construction, Suit
     else if( a_name == GIDI_URR_probabilityTables1dChars ) {
         form = new Functions::URR_probabilityTables1d( a_construction, a_node, a_setupInfo, a_parent ); }
     else if( a_name == GIDI_CoulombPlusNuclearElasticChars ) {
-        }
+        form = new Functions::CoulombPlusNuclearElastic1d( a_construction, a_node, a_setupInfo, a_parent ); }
     else {
         form = data1dParse( a_construction, a_node, a_setupInfo, a_parent );
     }

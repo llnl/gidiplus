@@ -13,7 +13,7 @@
 #include "MCGIDI.hpp"
 
 static int check( std::vector<double> &domain );
-static int check2( int bins, double domainMin, double domainMax, std::vector<double> &domain );
+static int check2( std::size_t bins, double domainMin, double domainMax, std::vector<double> &domain );
 /*
 =========================================================
 */
@@ -95,7 +95,7 @@ static int check( std::vector<double> &domain ) {
 /*
 =========================================================
 */
-static int check2( int bins, double domainMin, double domainMax, std::vector<double> &domain ) {
+static int check2( std::size_t bins, double domainMin, double domainMax, std::vector<double> &domain ) {
 
     int errCount = 0;
 
@@ -109,25 +109,25 @@ static int check2( int bins, double domainMin, double domainMax, std::vector<dou
     std::cout << std::endl;
 
     MCGIDI::Vector<double> _domain( domain );
-    MCGIDI::Vector<int> map = domainHash.map( _domain );
+    auto map = domainHash.map( _domain );
     std::cout << "  map.size = " << map.size( ) << std::endl;
     for( std::size_t i1 = 0; i1 < map.size( ); ++i1 ) std::cout << "  " << map[i1];
     std::cout << std::endl;
 
-    int lastValue = 0;
+    std::size_t lastValue = 0;
     for( std::size_t i1 = 0; i1 < map.size( ); ++i1 ) {
         if( map[i1] < lastValue ) ++errCount;
         lastValue = map[i1];
     }
 
     for( std::size_t i1 = 0; i1 < domain.size( ); ++i1 ) {
-        int index = domainHash.index( domain[i1] );
-        int mapIndex = map[index];
+        auto index = domainHash.index( domain[i1] );
+        auto mapIndex = map[index];
 
         std::cout << "  " << i1 << "  index = " << index << "  energy = " << domain[i1] << std::endl;
 
         if( domain[mapIndex] > domain[i1] ) ++errCount;
-        if( ( mapIndex < map[map.size( )-1] ) && ( index < ( (int) map.size( ) - 1 ) ) ) {
+        if( ( mapIndex < map[map.size( )-1] ) && ( index < ( map.size( ) - 1 ) ) ) {
             mapIndex = map[index+1];
             if( domain[mapIndex] < domain[i1] ) {
                 ++errCount;

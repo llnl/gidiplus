@@ -49,10 +49,10 @@ int main( int argc, char **argv ) {
     LUPI::DeltaTime deltaTimer = timer.deltaTime( );
     std::cout << deltaTimer.toString( ) << std::endl;
 
-    double CPU_timePerLoad = deltaTimer.CPU_time( ) / numberOfLoops;
+    double CPU_timePerLoad = deltaTimer.CPU_time( ) / static_cast<double>( numberOfLoops );
     std::cout << "CPU time per instantiation  = " << CPU_timePerLoad << std::endl;
 
-    double wallTimePerLoad = deltaTimer.wallTime( ) / numberOfLoops;
+    double wallTimePerLoad = deltaTimer.wallTime( ) / static_cast<double>( numberOfLoops );
     std::cout << "Wall time per instantiation = " << wallTimePerLoad << std::endl;
 
     exit( EXIT_SUCCESS );

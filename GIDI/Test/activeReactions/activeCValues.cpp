@@ -63,8 +63,8 @@ void main2( int argc, char **argv ) {
 
     option = argv_options.find( "-C" );
     std::set<int> CValues;
-    for( int i1 = 0; i1 < option->m_counter; ++i1 ) CValues.insert( asInt( argv[option->m_indices[i1]] ) );
-    std::set<int> reactionIndices1 = protare->reactionIndicesMatchingENDLCValues( CValues );
+    for( std::size_t i1 = 0; i1 < option->m_counter; ++i1 ) CValues.insert( asInt( argv[option->m_indices[i1]] ) );
+    GIDI::ExcludeReactionsSet reactionIndices1 = protare->reactionIndicesMatchingENDLCValues( CValues );
     for( auto iter = reactionIndices1.begin( ); iter != reactionIndices1.end( ); ++iter ) {
         GIDI::Reaction *reaction = protare->reaction( *iter );
 
@@ -88,10 +88,10 @@ void main2( int argc, char **argv ) {
 
     CValues.clear( );
     option = argv_options.find( "-c" );
-    for( int i1 = 0; i1 < option->m_counter; ++i1 ) CValues.insert( asInt( argv[option->m_indices[i1]] ) );
+    for( std::size_t i1 = 0; i1 < option->m_counter; ++i1 ) CValues.insert( asInt( argv[option->m_indices[i1]] ) );
     bool a_checkActiveState = argv_options.find( "-a" )->present( );
     reactionIndices1 = protare->reactionIndicesMatchingENDLCValues( CValues, a_checkActiveState );
-    std::vector<int> reactionIndices2;
+    std::vector<std::size_t> reactionIndices2;
     for( auto iter = reactionIndices1.begin( ); iter != reactionIndices1.end( ); ++iter ) reactionIndices2.push_back( *iter );
     std::cout << "List of reaction indicies matching '-c' option:" << std::endl;
     for( auto iter = reactionIndices2.begin( ); iter != reactionIndices2.end( ); ++iter ) std::cout << "  " << *iter;
@@ -99,15 +99,15 @@ void main2( int argc, char **argv ) {
 
     std::cout << "    Number of reactions = " << protare->numberOfReactions( ) << std::endl;
     std::cout << "  index  label                                     C  state" << std::endl;
-    int length = outputChannelStringMaximumLength( protare );
+    std::size_t length = outputChannelStringMaximumLength( protare );
     for( std::size_t index = 0; index < protare->numberOfReactions( ); ++index ) {
         GIDI::Reaction const *reaction = protare->reaction( index );
         bool in_cList = false;
 
         for( auto iter = reactionIndices2.begin( ); iter != reactionIndices2.end( ); ++iter ) {
-            if( *iter == static_cast<int>( index ) ) in_cList = true;
+            if( *iter == index ) in_cList = true;
         }
-        std::cout << longToString( "    %3ld  ", index ) << fillString( reaction->label( ), length, Justification::left, false )
+        std::cout << longToString( "    %3ld  ", static_cast<long>( index ) ) << fillString( reaction->label( ), length, Justification::left, false )
                 << intToString( "  %3d", reaction->ENDL_C( ) ) << intToString( "    %d", reaction->active( ) )
                 << intToString( "    %d", in_cList ) << std::endl;
     }

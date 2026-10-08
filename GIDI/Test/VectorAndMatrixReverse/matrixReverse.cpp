@@ -12,7 +12,7 @@
 
 #include "GIDI_testUtilities.hpp"
 
-int checkMatrix( int n1, int n2 );
+int checkMatrix( std::size_t n1, std::size_t n2 );
 void print( std::string label, GIDI::Matrix &m1 );
 /*
 =========================================================
@@ -44,7 +44,7 @@ int main( int argc, char **argv ) {
 /*
 =========================================================
 */
-int checkMatrix( int n1, int n2 ) {
+int checkMatrix( std::size_t n1, std::size_t n2 ) {
 
     int errorCount = 0;
     GIDI::Matrix m1( n1, n2 );
@@ -59,10 +59,10 @@ int checkMatrix( int n1, int n2 ) {
     print( "    reversed again:", m1 );
 
     std::cout << "Matrix 1, linear" << std::endl;
-    int i3 = 0;
-    for( int i2 = 0; i2 < n1; ++i2 ) {
+    std::size_t i3 = 0;
+    for( std::size_t i2 = 0; i2 < n1; ++i2 ) {
         GIDI::Vector &v1 = m1[i2];
-        for( int i1 = 0; i1 < n2; ++i1, ++i3 ) v1[i1] = i3;
+        for( std::size_t i1 = 0; i1 < n2; ++i1, ++i3 ) v1[i1] = static_cast<double>( i3 );
     }
     print( "    matrix:", m1 );
     m1.reverse( );
@@ -70,14 +70,14 @@ int checkMatrix( int n1, int n2 ) {
 
     GIDI::Matrix m2( n1, n2 );
     i3 = n1 * n2 - 1;
-    for( int i2 = 0; i2 < n1; ++i2 ) {
+    for( std::size_t i2 = 0; i2 < n1; ++i2 ) {
         GIDI::Vector &v1 = m2[i2];
-        for( int i1 = 0; i1 < n2; ++i1, --i3 ) v1[i1] = i3;
+        for( std::size_t i1 = 0; i1 < n2; ++i1, --i3 ) v1[i1] = static_cast<double>( i3 );
     }
     print( "    m2 matrix:", m2 );
 
-    for( int i2 = 0; i2 < n1; ++i2 ) {
-        for( int i1 = 0; i1 < n2; ++i1 ) {
+    for( std::size_t i2 = 0; i2 < n1; ++i2 ) {
+        for( std::size_t i1 = 0; i1 < n2; ++i1 ) {
             if( m1[i2][i1] != m2[i2][i1] ) ++errorCount;
         }
     }
@@ -89,9 +89,9 @@ int checkMatrix( int n1, int n2 ) {
     m1 += m2;
     print( "    summed:", m1 );
 
-    int sum = n1 * n2 - 1;
-    for( int i2 = 0; i2 < n1; ++i2 ) {
-        for( int i1 = 0; i1 < n2; ++i1 ) {
+    double sum = static_cast<double>( n1 * n2 - 1 );
+    for( std::size_t i2 = 0; i2 < n1; ++i2 ) {
+        for( std::size_t i1 = 0; i1 < n2; ++i1 ) {
             if( m1[i2][i1] != sum ) ++errorCount;
         }
     }

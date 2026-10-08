@@ -1,0 +1,81 @@
+MCGIDI temperatures:
+    0
+
+List of reactions
+    reaction: n + O16                                 :  final Q = 0 threshold = 0
+
+temperature = 1e-08
+ energy:   1.00e-12   1.000000e-40   0.000000e+00   0.000000e+00 sampled reaction 0
+        productIndex 10   -1   KE = 8.58702e-13
+        productIndex 215  -1   KE = 1.41298e-13
+            total KE = 1e-12
+ energy:   1.00e-09   1.000000e-40   0.000000e+00   0.000000e+00 sampled reaction 0
+        productIndex 10   -1   KE = 8.3954e-10
+        productIndex 215  -1   KE = 1.6046e-10
+            total KE = 1e-09
+ energy:   1.00e-06   1.000000e-40   0.000000e+00   0.000000e+00 sampled reaction 0
+        productIndex 10   -1   KE = 8.45672e-07
+        productIndex 215  -1   KE = 1.54328e-07
+            total KE = 1e-06
+ energy:   1.00e-03   1.000000e-40   0.000000e+00   0.000000e+00 sampled reaction 0
+        productIndex 10   -1   KE = 0.00080679
+        productIndex 215  -1   KE = 0.00019321
+            total KE = 0.001
+ energy:   1.00e+00   1.000000e-40   0.000000e+00   0.000000e+00 sampled reaction 0
+        productIndex 10   -1   KE = 0.864452
+        productIndex 215  -1   KE = 0.135548
+            total KE = 1
+ energy:   1.00e+03   1.000000e-40   0.000000e+00   0.000000e+00 sampled reaction 0
+        productIndex 10   -1   KE = 906.576
+        productIndex 215  -1   KE = 93.4237
+            total KE = 1000
+temperature = 1.001e-06
+ energy:   1.00e-12   1.000000e-40   0.000000e+00   0.000000e+00 sampled reaction 0
+        productIndex 10   -1   KE = 8.6477e-13
+        productIndex 215  -1   KE = 1.3523e-13
+            total KE = 1e-12
+ energy:   1.00e-09   1.000000e-40   0.000000e+00   0.000000e+00 sampled reaction 0
+        productIndex 10   -1   KE = 9.11176e-10
+        productIndex 215  -1   KE = 8.88239e-11
+            total KE = 1e-09
+ energy:   1.00e-06   1.000000e-40   0.000000e+00   0.000000e+00 sampled reaction 0
+        productIndex 10   -1   KE = 8.21018e-07
+        productIndex 215  -1   KE = 1.78982e-07
+            total KE = 1e-06
+ energy:   1.00e-03   1.000000e-40   0.000000e+00   0.000000e+00 sampled reaction 0
+        productIndex 10   -1   KE = 0.000964881
+        productIndex 215  -1   KE = 3.51186e-05
+            total KE = 0.001
+ energy:   1.00e+00   1.000000e-40   0.000000e+00   0.000000e+00 sampled reaction 0
+        productIndex 10   -1   KE = 0.871008
+        productIndex 215  -1   KE = 0.128992
+            total KE = 1
+ energy:   1.00e+03   1.000000e-40   0.000000e+00   0.000000e+00 sampled reaction 0
+        productIndex 10   -1   KE = 838.849
+        productIndex 215  -1   KE = 161.151
+            total KE = 1000
+temperature = 0.0001002
+ energy:   1.00e-12   1.000000e-40   0.000000e+00   0.000000e+00 sampled reaction 0
+        productIndex 10   -1   KE = 7.85621e-13
+        productIndex 215  -1   KE = 2.14379e-13
+            total KE = 1e-12
+ energy:   1.00e-09   1.000000e-40   0.000000e+00   0.000000e+00 sampled reaction 0
+        productIndex 10   -1   KE = 8.76167e-10
+        productIndex 215  -1   KE = 1.23833e-10
+            total KE = 1e-09
+ energy:   1.00e-06   1.000000e-40   0.000000e+00   0.000000e+00 sampled reaction 0
+        productIndex 10   -1   KE = 8.81505e-07
+        productIndex 215  -1   KE = 1.18495e-07
+            total KE = 1e-06
+ energy:   1.00e-03   1.000000e-40   0.000000e+00   0.000000e+00 sampled reaction 0
+        productIndex 10   -1   KE = 0.000938726
+        productIndex 215  -1   KE = 6.12738e-05
+            total KE = 0.001
+ energy:   1.00e+00   1.000000e-40   0.000000e+00   0.000000e+00 sampled reaction 0
+        productIndex 10   -1   KE = 0.928855
+        productIndex 215  -1   KE = 0.0711453
+            total KE = 1
+ energy:   1.00e+03   1.000000e-40   0.000000e+00   0.000000e+00 sampled reaction 0
+        productIndex 10   -1   KE = 832.362
+        productIndex 215  -1   KE = 167.638
+            total KE = 1000

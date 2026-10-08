@@ -137,9 +137,18 @@ class Vector
                 _data = new T [_capacity];
                 break;
         }
- 
+
       for (std::size_t ii=0; ii<_size; ++ii)
          _data[ii] = aa._data[ii];
+   }
+
+   LUPI_HOST_DEVICE Vector(Vector<T>&& aa ) noexcept
+        : _data(aa._data), _capacity(aa._capacity), _size(aa._size), _mem_type(aa._mem_type)
+   {
+      aa._data = nullptr;
+      aa._capacity = 0;
+      aa._size = 0;
+      aa._mem_type = CPU_MEM;
    }
 
    LUPI_HOST Vector(const std::vector<T>& aa )
@@ -191,13 +200,13 @@ class Vector
         }
    }
 
-   LUPI_HOST_DEVICE iterator begin() { return _data; }
+   LUPI_HOST_DEVICE_INLINE iterator begin() { return _data; }
 
-   LUPI_HOST_DEVICE const_iterator begin() const { return _data; }
+   LUPI_HOST_DEVICE_INLINE const_iterator begin() const { return _data; }
 
-   LUPI_HOST_DEVICE iterator end() { return _data + _size; }
+   LUPI_HOST_DEVICE_INLINE iterator end() { return _data + _size; }
 
-   LUPI_HOST_DEVICE const_iterator end() const { return _data + _size; }
+   LUPI_HOST_DEVICE_INLINE const_iterator end() const { return _data + _size; }
 
    /// Needed for copy-swap idiom
    LUPI_HOST_DEVICE void swap(Vector<T>& other)
@@ -219,6 +228,16 @@ class Vector
       return *this;
    }
 
+   /// Move assignment operator
+   LUPI_HOST_DEVICE Vector<T>& operator=(Vector<T>&& aa) noexcept
+   {
+      if (&aa != this)
+      {
+         this->swap(aa);
+      }
+      return *this;
+   }
+
    LUPI_HOST Vector<T>& operator=(const std::vector<T>& aa)
    {
       Vector<T> temp(aa);
@@ -233,52 +252,53 @@ class Vector
 
    LUPI_HOST_DEVICE void push_back( const T& dataElem )
    {
+      assert( _data != nullptr );
       assert( _size < _capacity );
       _data[_size] = dataElem;
       _size++;
    }
 
-   LUPI_HOST_DEVICE const T& operator[]( std::size_t index ) const
+   LUPI_HOST_DEVICE_INLINE const T& operator[]( std::size_t index ) const
    {
       // assert( index < _capacity ); 
       // assert( index >= 0); comment out pointless assertion size_t type is >= 0 by definition
       return _data[index];
    }
 
-   LUPI_HOST_DEVICE T& operator[]( std::size_t index )
+   LUPI_HOST_DEVICE_INLINE T& operator[]( std::size_t index )
    {
       // assert( index < _capacity );
       // assert( index >= 0); comment out pointless assertion size_t type is >= 0 by definition
       return _data[index];
    }
    
-   LUPI_HOST_DEVICE std::size_t capacity() const
+   LUPI_HOST_DEVICE_INLINE std::size_t capacity() const
    {
       return _capacity;
    }
 
-   LUPI_HOST_DEVICE std::size_t size() const
+   LUPI_HOST_DEVICE_INLINE std::size_t size() const
    {
       return _size;
    }
    
-   LUPI_HOST_DEVICE T& back()
+   LUPI_HOST_DEVICE_INLINE T& back()
    {
       return _data[_size-1];
    }
    
-   LUPI_HOST_DEVICE T& back() const
+   LUPI_HOST_DEVICE_INLINE T& back() const
    {
       return _data[_size-1];
    }
    
    LUPI_HOST_DEVICE void reserve( std::size_t s, char ** address = nullptr, bool mem_flag = CPU_MEM )
    {
-      if (s == _capacity) return;
-      assert( _capacity == 0 );
+      if (s == _capacity && _data != nullptr) return;
+      assert( _capacity == 0 || s == _capacity );
       _capacity = s;
       _mem_type = mem_flag;
-      if( s == 0 ){ _data = nullptr; return;}	
+      if( s == 0 ){ _data = nullptr; return;}
         switch ( (int) _mem_type){
             case CPU_MEM:
                 if (address == nullptr || *address == nullptr) _data = new T [_capacity];
@@ -402,7 +422,7 @@ class Vector
          _data[ii] = d;
    }
 
-   LUPI_HOST_DEVICE bool empty() const
+   LUPI_HOST_DEVICE_INLINE bool empty() const
    {
        return ( _size == 0 );
    }

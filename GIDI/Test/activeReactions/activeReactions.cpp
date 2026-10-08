@@ -65,21 +65,23 @@ void main2( int argc, char **argv ) {
     parseTestOptions.particles( particles );
 
     option = argv_options.find( "-r" );
-    for( int i1 = 0; i1 < option->m_counter; ++i1 ) {
-        int reactionIndex = asInt( argv[option->m_indices[i1]] );
+    for( std::size_t i1 = 0; i1 < option->m_counter; ++i1 ) {
+        int intReactionIndex = asInt( argv[option->m_indices[i1]] );
+        std::size_t reactionIndex = static_cast<std::size_t>( intReactionIndex );
 
-        if( ( reactionIndex < 0 ) || ( reactionIndex > static_cast<int>( protare->numberOfReactions( ) ) ) ) throw GIDI::Exception( "Reaction index " + intToString( "%d", reactionIndex ) + " out of range." );
+        if( ( intReactionIndex < 0 ) || ( reactionIndex > protare->numberOfReactions( ) ) ) 
+            throw GIDI::Exception( "Reaction index " + intToString( "%d", static_cast<int>( reactionIndex ) ) + " out of range." );
         GIDI::Reaction *reaction = protare->reaction( reactionIndex );
 
         reaction->setActive( false );
     }
 
     option = argv_options.find( "-C" );
-    for( int i1 = 0; i1 < option->m_counter; ++i1 ) {
+    for( std::size_t i1 = 0; i1 < option->m_counter; ++i1 ) {
         std::set<int> CValues;
         CValues.insert( asInt( argv[option->m_indices[i1]] ) );
 
-        std::set<int> reactionIndices = protare->reactionIndicesMatchingENDLCValues( CValues );
+        GIDI::ExcludeReactionsSet reactionIndices = protare->reactionIndicesMatchingENDLCValues( CValues );
 
         for( auto iter = reactionIndices.begin( ); iter != reactionIndices.end( ); ++iter ) {
             GIDI::Reaction *reaction = protare->reaction( *iter );
@@ -104,11 +106,12 @@ void main2( int argc, char **argv ) {
     }
 
     std::cout << "    Number of reactions = " << protare->numberOfReactions( ) << std::endl;
-    int length = outputChannelStringMaximumLength( protare );
+    std::size_t length = outputChannelStringMaximumLength( protare );
     for( std::size_t index = 0; index < protare->numberOfReactions( ); ++index ) {
         GIDI::Reaction const *reaction = protare->reaction( index );
 
-        std::cout << longToString( "    %3ld ", index ) << fillString( reaction->label( ), length, Justification::left, false ) << intToString( "  %d", reaction->active( ) ) << std::endl;
+        std::cout << longToString( "    %3ld ", static_cast<long>( index ) ) << fillString( reaction->label( ), length, Justification::left, false ) 
+                << intToString( "  %d", reaction->active( ) ) << std::endl;
     }
     std::cout << std::endl;
 
@@ -165,14 +168,18 @@ void main2( int argc, char **argv ) {
         header = *iter + " multiplicity :: ";
         printVector( header, vector );
 
-        for( int order = 0; order < protare->maximumLegendreOrder( smr1, settings, temperatures[0], *iter ); ++order ) {
-            GIDI::Matrix matrix = protare->multiGroupProductMatrix( smr1, settings, temperatures[0], particles, *iter, order );
+        int intMaxOrder = protare->maximumLegendreOrder( smr1, settings, temperatures[0], *iter );
+        if( intMaxOrder > -1 ) {
+            std::size_t maxOrder = static_cast<std::size_t>( intMaxOrder );
+            for( std::size_t order = 0; order < maxOrder; ++order ) {
+                GIDI::Matrix matrix = protare->multiGroupProductMatrix( smr1, settings, temperatures[0], particles, *iter, order );
 
-            if( matrix.size( ) == 0 ) {
-                matrix = settings.multiGroupZeroMatrix( particles, *iter );
+                if( matrix.size( ) == 0 ) {
+                    matrix = settings.multiGroupZeroMatrix( particles, *iter );
+                }
+                header = "    " + *iter + " product matrix for Legendre order " + intToString( "%d", static_cast<int>( order ) );
+                printMatrix( header, -2, matrix );
             }
-            header = "    " + *iter + " product matrix for Legendre order " + intToString( "%d", order );
-            printMatrix( header, -2, matrix );
         }
     }
 

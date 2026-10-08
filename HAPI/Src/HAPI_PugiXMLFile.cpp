@@ -36,6 +36,24 @@ PugiXMLFile::PugiXMLFile(char const *filename, std::string const &a_callingFunct
     }
 
 }
+
+/* *********************************************************************************************************//**
+ * Constuctor for XML data in a std::string.
+ *
+ * @param a_name                        [in]    The user defined name of the XML string.
+ * @param a_xmlString                   [in]    The XML data to parse.
+ * @param a_callingFunctionName         [in]    Name of the calling function.
+ ***********************************************************************************************************/
+
+PugiXMLFile::PugiXMLFile( std::string const &a_name, std::string const &a_xmlString, std::string const &a_callingFunctionName ) :
+        m_name( a_name ) {
+
+    pugi::xml_parse_result result = m_doc.load_buffer( a_xmlString.c_str( ), a_xmlString.size( ) );
+    if( result.status != pugi::status_ok ) {
+        throw std::runtime_error( "ERROR from PugiXMLFile::PugiXMLFile via " + a_callingFunctionName + " for string named '" + a_name + "': " + result.description( ) );
+    }
+}
+
 /*
 =========================================================
 */

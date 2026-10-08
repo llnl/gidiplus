@@ -28,14 +28,27 @@ namespace PoPI {
 ======================== DecayData =========================
 ============================================================
 */
+
+/* *********************************************************************************************************//**
+ ***********************************************************************************************************/
+
+DecayData::DecayData( ) :
+        m_decayModes( PoPI_decayModesChars ) {
+
+}
+
+/* *********************************************************************************************************//**
+ ***********************************************************************************************************/
+
 DecayData::DecayData( HAPI::Node const &a_node ) :
         m_decayModes( PoPI_decayModesChars ) {
 
     m_decayModes.appendFromParentNode2( a_node.child( PoPI_decayModesChars ), this );
 }
-/*
-=========================================================
-*/
+
+/* *********************************************************************************************************//**
+ ***********************************************************************************************************/
+
 DecayData::~DecayData( ) {
 
 }
@@ -246,9 +259,9 @@ GammaDecayData::GammaDecayData( HAPI::Node const &a_node ) :
         std::string text = LUPI::Misc::stripString( data.text( ).get( ) );
         auto cells = LUPI::Misc::splitString( text, ' ', true );
 
-        m_ids.reserve( m_rows );
-        m_probabilities.reserve( m_rows );
-        m_photonEmissionProbabilities.reserve( m_rows );
+        m_ids.reserve( static_cast<std::size_t>( m_rows ) );
+        m_probabilities.reserve( static_cast<std::size_t>( m_rows ) );
+        m_photonEmissionProbabilities.reserve( static_cast<std::size_t>( m_rows ) );
         for( std::size_t cellIndex = 0; cellIndex < cells.size( ); cellIndex += 3 ) {
             m_ids.push_back( cells[cellIndex] );
             m_probabilities.push_back( std::stod( cells[cellIndex+1] ) );
@@ -272,7 +285,7 @@ void GammaDecayData::calculateNuclideGammaBranchStateInfo( PoPI::Database const 
     Particle const &initialState = a_pops.get<Particle>( a_nuclideGammaBranchStateInfo.state( ) );
     double initialStateMass = initialState.massValue( "amu" );
 
-    for( int index = 0; index < m_rows; ++index ) {
+    for( std::size_t index = 0; index < static_cast<std::size_t>( m_rows ); ++index ) {
         std::string residualState( m_ids[index] );
         double _probability = m_probabilities[index];
         double _photonEmissionProbabilities = m_photonEmissionProbabilities[index];

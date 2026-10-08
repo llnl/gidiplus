@@ -99,7 +99,7 @@ void main2( int argc, char **argv ) {
         std::string prefix( "Total " + productID + " production matrix: " );
         int maxOrder = protare->maximumLegendreOrder( smr1, settings, temperature, productID );
 
-        int order = argv_options.find( "--order" )->asInt( argv );
+        std::size_t order = static_cast<std::size_t>( argv_options.find( "--order" )->asInt( argv ) );
         GIDI::Matrix m1 = protare->multiGroupProductMatrix( smr1, settings, temperature, particles, productID, order );
         printMatrix( prefix, maxOrder, m1 );
 

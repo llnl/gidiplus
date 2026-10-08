@@ -50,7 +50,7 @@ void main2( int argc, char **argv ) {
     std::string photonId( PoPI::IDs::photon );
     PoPI::Database pops;
     argvOption *option;
-    long numberOfSamples = -1;
+    long longNumberOfSamples = -1;
     double energy = 0.1;
 
     argvOptions argv_options( "photoAtomicDopplerBroadening", description );
@@ -69,14 +69,15 @@ void main2( int argc, char **argv ) {
     parseTestOptions.parse( );
 
     option = argv_options.find( "-v" );
-    int verbosity = option->m_counter;
+    std::size_t verbosity = option->m_counter;
 
     option = argv_options.find( "--energy" );
     energy = option->asDouble( argv, energy );
 
     option = argv_options.find( "-n" );
-    numberOfSamples = option->asLong( argv, numberOfSamples );
-    if( numberOfSamples < 0 ) numberOfSamples *= -1000000;
+    longNumberOfSamples = option->asLong( argv, longNumberOfSamples );
+    if( longNumberOfSamples < 0 ) longNumberOfSamples *= -1000000;
+    std::size_t numberOfSamples = static_cast<std::size_t>( longNumberOfSamples );
     std::cout << "numberOfSamples = " << numberOfSamples << std::endl;
 
     option = argv_options.find( "--sampleProducts" );
@@ -147,7 +148,7 @@ void main2( int argc, char **argv ) {
     std::cout << std::endl << "MCGIDI:" << std::endl;
 
     GIDI::Styles::TemperatureInfos temperatures = protare->temperatures( );
-    std::set<int> reactionsToExclude;
+    GIDI::ExcludeReactionsSet reactionsToExclude;
     LUPI::StatusMessageReporting smr1;
     std::string label( temperatures[0].griddedCrossSection( ) );
     MCGIDI::Transporting::MC MC( pops, photonId, &protare->styles( ), label, GIDI::Transporting::DelayedNeutrons::off, 20.0 );
@@ -155,7 +156,7 @@ void main2( int argc, char **argv ) {
 
     MCGIDI::Protare *MCProtare = MCGIDI::protareFromGIDIProtare( smr1, *protare, pops, MC, particles, domainHash, temperatures, reactionsToExclude );
     MCGIDI::Sampling::Input input( true, MCGIDI::Sampling::Upscatter::Model::none );
-    int numberOfReactions = static_cast<int>( MCProtare->numberOfReactions( ) );
+    std::size_t numberOfReactions = MCProtare->numberOfReactions( );
 
     MCGIDI::Vector<MCGIDI::Protare *> protares( 1 );
     protares[0] = MCProtare;
@@ -178,7 +179,7 @@ void main2( int argc, char **argv ) {
             if( verbosity > 1 ) {
                 double temperature = 0;
                 for( double energy2 = 1e-8; energy2 < 100; energy2 *= 2.0 ) {
-                    int hashIndex = domainHash.index( energy2 );
+                    std::size_t hashIndex = domainHash.index( energy2 );
 
                     double mscop_xs = MCProtare->reactionCrossSection( reactionIndex, URR_protare_infos, hashIndex, temperature, energy2 );
                     std::cout << "  energy = " << energy2 << " crossSection = " << mscop_xs << std::endl;
@@ -186,9 +187,9 @@ void main2( int argc, char **argv ) {
             }
 
             if( sampleProducts ) {
-                int numberOfBins = 101;
+                std::size_t numberOfBins = 101;
                 unsigned long long rngState = 1;
-                int photonIndex = pops[photonId];
+                int photonIndex = static_cast<int>( pops[photonId] );
 
                 MCGIDI::Sampling::StdVectorProductHandler products;
                 double threshold = MCProtare->threshold( reactionIndex );
@@ -214,7 +215,7 @@ void main2( int argc, char **argv ) {
                     energyBins.setDomain( energy2 * 0.9 / ( 1 + 2.0 * energy2 / 0.510998946269 ), energy2 * 1.1 );
                     energyBins.clear( );
                     muBins.clear( );
-                    for( long i1 = 0; i1 < numberOfSamples; ++i1 ) {
+                    for( std::size_t i1 = 0; i1 < numberOfSamples; ++i1 ) {
                         products.clear( );
                         input.setTemperatureAndEnergy( 0.0, energy2 );
                         reaction->sampleProducts( MCProtare, input, [&]( ) -> double { return float64RNG64( &rngState ); }, 
@@ -243,7 +244,7 @@ void main2( int argc, char **argv ) {
         }
     }
 
-    int hashIndex = domainHash.index( energy );
+    std::size_t hashIndex = domainHash.index( energy );
     unsigned long long rngState = 1;
 
     double crossSection = MCProtare->crossSection( URR_protare_infos, hashIndex, 0, energy );
@@ -257,7 +258,7 @@ void main2( int argc, char **argv ) {
 
     std::vector<double> reactionCrossSections( numberOfReactions );
     std::cout << LUPI::Misc::argumentsToString( "  %-34s: ", "reactionCrossSection/crossSection" );
-    for( int i1 = 0; i1 < numberOfReactions; ++i1 ) {
+    for( std::size_t i1 = 0; i1 < numberOfReactions; ++i1 ) {
         double reactionCrossSection = MCProtare->reactionCrossSection( i1, URR_protare_infos, hashIndex, 0, energy );
         std::cout << LUPI::Misc::argumentsToString( " %10.7f", reactionCrossSection / crossSection );
     }
@@ -265,22 +266,22 @@ void main2( int argc, char **argv ) {
 
     std::vector<long> counts( numberOfReactions + 1, 0 );
     input.setTemperatureAndEnergy( 0.0, energy );
-    for( long i1 = 0; i1 < numberOfSamples; ++i1 ) {
-        int reactionIndex = MCProtare->sampleReaction( input, URR_protare_infos, hashIndex, crossSection, 
+    for( std::size_t i1 = 0; i1 < numberOfSamples; ++i1 ) {
+        std::size_t reactionIndex = MCProtare->sampleReaction( input, URR_protare_infos, hashIndex, crossSection, 
                 [&]() -> double { return float64RNG64( &rngState ); } );
         if( reactionIndex > numberOfReactions ) reactionIndex = numberOfReactions;
         ++counts[reactionIndex];
     }
 
     std::cout << LUPI::Misc::argumentsToString( "  %-34s: ", "ratio / numberOfSamples" );
-    for( int i1 = 0; i1 < numberOfReactions; ++i1 ) {
-        double ratio = counts[i1];
-        std::cout << LUPI::Misc::argumentsToString( " %10.7f", ratio / numberOfSamples );
+    for( std::size_t i1 = 0; i1 < numberOfReactions; ++i1 ) {
+        double ratio = static_cast<double>( counts[i1] );
+        std::cout << LUPI::Misc::argumentsToString( " %10.7f", ratio / static_cast<double>( numberOfSamples ) );
     }
     std::cout << std::endl;
 
     std::cout << LUPI::Misc::argumentsToString( "  %-34s: ", "counts" );
-    for( int i1 = 0; i1 < numberOfReactions; ++i1 ) {
+    for( std::size_t i1 = 0; i1 < numberOfReactions; ++i1 ) {
         std::cout << LUPI::Misc::argumentsToString( " %10ld", counts[i1] );
     }
     std::cout << std::endl;

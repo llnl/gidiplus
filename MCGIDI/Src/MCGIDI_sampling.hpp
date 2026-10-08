@@ -24,7 +24,7 @@ namespace MCGIDI {
 class DomainHash {
 
     private:
-        int m_bins;                                                         /**< The number of bins for the hash. */
+        std::size_t m_bins;                                                 /**< The number of bins for the hash. */
         double m_domainMin;                                                 /**< The minimum domain value for the hash. */
         double m_domainMax;                                                 /**< The maximum domain value for the hash. */
         double m_u_domainMin;                                               /**< The log of m_domainMin ). */
@@ -33,18 +33,18 @@ class DomainHash {
 
     public:
         LUPI_HOST_DEVICE DomainHash( );
-        LUPI_HOST_DEVICE DomainHash( int a_bins, double a_domainMin, double a_domainMax );
+        LUPI_HOST_DEVICE DomainHash( std::size_t a_bins, double a_domainMin, double a_domainMax );
         LUPI_HOST_DEVICE DomainHash( DomainHash const &a_domainHash );
 
-        LUPI_HOST_DEVICE int bins( ) const { return( m_bins ); }                     /**< Returns the value of the **m_bins**. */
+        LUPI_HOST_DEVICE std::size_t bins( ) const { return( m_bins ); }                     /**< Returns the value of the **m_bins**. */
         LUPI_HOST_DEVICE double domainMin( ) const { return( m_domainMin ); }        /**< Returns the value of the **m_domainMax**. */
         LUPI_HOST_DEVICE double domainMax( ) const { return( m_domainMax ); }        /**< Returns the value of the **m_domainMax**. */
         LUPI_HOST_DEVICE double u_domainMin( ) const { return( m_u_domainMin ); }    /**< Returns the value of the **m_u_domainMin**. */
         LUPI_HOST_DEVICE double u_domainMax( ) const { return( m_u_domainMax ); }    /**< Returns the value of the **m_u_domainMax**. */
         LUPI_HOST_DEVICE double inverse_du( ) const { return( m_inverse_du ); }      /**< Returns the value of the **m_inverse_du**. */
 
-        LUPI_HOST_DEVICE int index( double a_domain ) const ;
-        LUPI_HOST_DEVICE Vector<int> map( Vector<double> const &a_domainValues ) const ;
+        LUPI_HOST_DEVICE_INLINE std::size_t index( double a_domain ) const ;
+        LUPI_HOST_DEVICE Vector<std::size_t > map( Vector<double> const &a_domainValues ) const ;
 
         LUPI_HOST_DEVICE void serialize( LUPI::DataBuffer &a_buffer, LUPI::DataBuffer::Mode a_mode );
 
@@ -53,10 +53,12 @@ class DomainHash {
 
 namespace Sampling {
 
-enum class SampledType { firstTwoBody, secondTwoBody, uncorrelatedBody, unspecified, photon };
+enum class SampledType { firstTwoBody, secondTwoBody, uncorrelatedBody, unspecified };
+std::string sampleTypeToString( SampledType a_sampledType );
+
 class ProductHandler;
 
-LUPI_HOST_DEVICE int evaluationForHashIndex( int a_hashIndex, Vector<int> const &a_hashIndices, double a_energy, 
+LUPI_HOST_DEVICE_INLINE std::size_t evaluationForHashIndex( std::size_t a_hashIndex, Vector<std::size_t> const &a_hashIndices, double a_energy, 
                 Vector<double> const &a_energies, double *a_energyFraction );
 
 namespace Upscatter {
@@ -76,7 +78,7 @@ class ModelDBRC_data {
         double m_targetMass;                    /**< The mass of the target. */
         Vector<double> m_energies;              /**< The energy grid for the cross section. */
         Vector<double> m_crossSections;         /**< The cross sections corresponding to the energy grid. */
-        Vector<int> m_hashIndices;              /**< The indicies for the energy hash function. */
+        Vector<std::size_t> m_hashIndices;      /**< The indicies for the energy hash function. */
         MCGIDI::DomainHash m_domainHash;        /**< The hash "function". */
 
     public:
@@ -203,7 +205,7 @@ class Input {
         LUPI_HOST_DEVICE void setTemperatureAndEnergy( double a_temperature, double a_energy );
 
         LUPI_HOST_DEVICE bool dataInTargetFrame( ) const { return( m_dataInTargetFrame ); }             /**< Returns the value of the *m_dataInTargetFrame*. */
-        LUPI_HOST_DEVICE double modelTemperature( ) const { return( m_modelTemperature ); }             /**< Returns the value of the *m_dataInTargetFrame* member. */
+        LUPI_HOST_DEVICE double modelTemperature( ) const { return( m_modelTemperature ); }             /**< Returns the value of the *m_modelTemperature* member. */
         LUPI_HOST_DEVICE double modelEnergy( ) const { return( m_modelEnergy ); }                       /**< Returns the value of the *m_modelEnergy* member. */
 
         SampledType sampledType( ) const { return( m_sampledType ); }                                   /**< Returns the value of the *m_sampledType* member. */
@@ -247,7 +249,7 @@ class ProductHandler {
 
         template <typename RNG, typename PUSHBACK>
         LUPI_HOST_DEVICE void add( double a_projectileEnergy, int a_productIntid, int a_productIndex, int a_userProductIndex, double a_productMass, Input &a_input, 
-                RNG && a_rng, PUSHBACK && push_back, bool isPhoton );
+                RNG && a_rng, PUSHBACK && push_back );
 };
 
 /*
@@ -291,7 +293,7 @@ class StdVectorProductHandler : public ProductHandler {
         LUPI_HOST_DEVICE ~StdVectorProductHandler( ) { }
 
         LUPI_HOST_DEVICE std::size_t size( ) { return( m_products.size( ) ); }
-        LUPI_HOST_DEVICE Product &operator[]( long a_index ) { return( m_products[a_index] ); }
+        LUPI_HOST_DEVICE Product &operator[]( std::size_t a_index ) { return( m_products[a_index] ); }
         LUPI_HOST_DEVICE std::vector<Product> &products( ) { return( m_products ); }
         LUPI_HOST_DEVICE void push_back( Product &a_product ) { m_products.push_back( a_product ); }
         LUPI_HOST_DEVICE void clear( ) { m_products.clear( ); }

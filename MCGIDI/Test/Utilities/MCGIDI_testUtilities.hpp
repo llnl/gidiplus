@@ -48,12 +48,12 @@ class argvOptions2 {
 
         argvOptions2( std::string const &a_codeName, std::string const &a_descriptor = "" );
 
-        int size( ) { return( static_cast<int>( m_options.size( ) ) ); }
+        std::size_t size( ) { return( m_options.size( ) ); }
         void add( argvOption2 const &a_option ) { m_options.push_back( a_option ); }
         void parseArgv( int argc, char **argv );
         argvOption2 *find( std::string const &a_name );
-        long asLong( char **argv, int argumentIndex );
-        double asDouble( char **argv, int argumentIndex );
+        long asLong( char **argv, std::size_t argumentIndex );
+        double asDouble( char **argv, std::size_t argumentIndex );
         void help( );
         void print( );
 };
@@ -68,6 +68,6 @@ std::string longToString2( char const *format, long value );
 LUPI_HOST_DEVICE inline double float64RNG64( unsigned long long *a_state ) {
 
     *a_state = 0x27bb2ee687b0b0fd * *a_state + 0xb504f32d;
-    return( 5.42101086242752157e-20 * *a_state );
+    return( 5.42101086242752157e-20 * static_cast<double>( *a_state ) );
 }
 #endif          // MCGIDI_testUtilities_hpp_included

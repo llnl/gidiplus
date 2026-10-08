@@ -38,6 +38,7 @@
     #define LUPI_HOST __host__
     #define LUPI_DEVICE __device__
     #define LUPI_HOST_DEVICE __host__ __device__
+    #define LUPI_HOST_DEVICE_INLINE __host__ __device__
     #define LUPI_THROW(arg) printf("%s", arg)
     #define LUPI_WARP_SIZE 32
     #define LUPI_THREADID threadIdx.x
@@ -54,6 +55,7 @@ inline void gpuAssert(cudaError_t code, const char *file, int line, bool abort=t
     #define LUPI_HOST 
     #define LUPI_DEVICE 
     #define LUPI_HOST_DEVICE 
+    #define LUPI_HOST_DEVICE_INLINE
     #define LUPI_THROW(arg) printf("%s", arg)
     #define LUPI_WARP_SIZE 1
     #define LUPI_THREADID 
@@ -67,6 +69,7 @@ inline void gpuAssert(int code, const char *file, int line, bool abort=true) {}
     #define LUPI_HOST __host__
     #define LUPI_DEVICE __device__
     #define LUPI_HOST_DEVICE LUPI_HIP_INLINE_ATTRIBUTE __host__ __device__
+    #define LUPI_HOST_DEVICE_INLINE __attribute__((always_inline)) __host__ __device__
     #define LUPI_THROW(arg) 
     #define LUPI_WARP_SIZE 1
     #define LUPI_THREADID hipThreadIdx_x
@@ -81,6 +84,7 @@ inline void gpuAssert(hipError_t code, const char *file, int line, bool do_abort
     #define LUPI_HOST
     #define LUPI_DEVICE 
     #define LUPI_HOST_DEVICE
+    #define LUPI_HOST_DEVICE_INLINE
     #define LUPI_THROW(arg) throw arg
     #define LUPI_WARP_SIZE 1
     #define LUPI_THREADID 

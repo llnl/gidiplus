@@ -373,7 +373,8 @@ Vector OutputChannel::multiGroupQ( LUPI::StatusMessageReporting &a_smr, Transpor
  ***********************************************************************************************************/
 
 Matrix OutputChannel::multiGroupProductMatrix( LUPI::StatusMessageReporting &a_smr, Transporting::MG const &a_settings, 
-                Styles::TemperatureInfo const &a_temperatureInfo, Transporting::Particles const &a_particles, std::string const &a_productID, int a_order ) const {
+                Styles::TemperatureInfo const &a_temperatureInfo, Transporting::Particles const &a_particles, std::string const &a_productID, 
+                std::size_t a_order ) const {
 
     Matrix matrix( 0, 0 );
 
@@ -500,7 +501,7 @@ void OutputChannel::continuousEnergyProductData( Transporting::Settings const &a
  ***********************************************************************************************************/
  
 void OutputChannel::mapContinuousEnergyProductData( Transporting::Settings const &a_settings, std::string const &a_particleID, 
-                std::vector<double> const &a_energies, int a_offset, std::vector<double> &a_productEnergies, std::vector<double> &a_productMomenta, 
+                std::vector<double> const &a_energies, std::size_t a_offset, std::vector<double> &a_productEnergies, std::vector<double> &a_productMomenta, 
                 std::vector<double> &a_productGains, bool a_ignoreIncompleteParticles ) const {
 
     for( std::size_t index = 0; index < m_products.size( ); ++index ) {

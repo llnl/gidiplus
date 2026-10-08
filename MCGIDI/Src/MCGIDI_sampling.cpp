@@ -36,7 +36,7 @@ namespace Sampling {
  * @return                              The index bounding *a_energy* in the member *a_energies*.
  ***********************************************************************************************************/
 
-LUPI_HOST_DEVICE int evaluationForHashIndex( int a_hashIndex, Vector<int> const &a_hashIndices, double a_energy, 
+LUPI_HOST_DEVICE_INLINE std::size_t evaluationForHashIndex( std::size_t a_hashIndex, Vector<std::size_t> const &a_hashIndices, double a_energy, 
                 Vector<double> const &a_energies, double *a_energyFraction ) {
 
     *a_energyFraction = 1.0;
@@ -44,10 +44,10 @@ LUPI_HOST_DEVICE int evaluationForHashIndex( int a_hashIndex, Vector<int> const 
     if( a_energy <= a_energies[0] ) return( 0 );
     if( a_energy >= a_energies.back( ) ) {
         *a_energyFraction = 0.0;
-        return( (int) ( a_energies.size( ) - 2 ) );
+        return( ( a_energies.size( ) - 2 ) );
     }
 
-    int index1 = a_hashIndices[a_hashIndex];
+    std::size_t index1 = a_hashIndices[a_hashIndex];
 
 #ifdef MCGIDI_CrossSectionLinearSubSearch
     while( a_energies[index1] > a_energy ) --index1;            // Make sure the calls gave the correct *a_hashIndex*.
@@ -56,11 +56,11 @@ LUPI_HOST_DEVICE int evaluationForHashIndex( int a_hashIndex, Vector<int> const 
 #endif
 
 #ifdef MCGIDI_CrossSectionBinarySubSearch
-    int index2 = a_hashIndices[a_hashIndex];
-    int index3 = (int) a_energies.size( ) - 1;
-    if( ( a_hashIndex + 1 ) < (int) a_hashIndices.size( ) ) index3 = a_hashIndices[a_hashIndex+1] + 1;
-    if( index3 == (int) a_energies.size( ) ) --index3;
-    if( index2 != index3 ) index2 = binarySearchVectorBounded( a_energy, a_energies, index2, index3, false );
+    std::size_t index2 = a_hashIndices[a_hashIndex];
+    std::size_t index3 = a_energies.size( ) - 1;
+    if( ( a_hashIndex + 1 ) < a_hashIndices.size( ) ) index3 = a_hashIndices[a_hashIndex+1] + 1;
+    if( index3 == a_energies.size( ) ) --index3;
+    if( index2 != index3 ) index2 = static_cast<std::size_t>( binarySearchVectorBounded( a_energy, a_energies, index2, index3, false ) );
 #endif
 
 #ifdef MCGIDI_CrossSectionBinarySubSearch
@@ -130,8 +130,8 @@ LUPI_HOST_DEVICE ModelDBRC_data::~ModelDBRC_data( ) {
 LUPI_HOST_DEVICE double ModelDBRC_data::evaluate( double a_energy ) {
 
     double energyFraction;
-    int hashIndex = m_domainHash.index( a_energy );
-    int index = evaluationForHashIndex( hashIndex, m_hashIndices, a_energy, m_energies, &energyFraction );
+    std::size_t hashIndex = m_domainHash.index( a_energy );
+    std::size_t index = evaluationForHashIndex( hashIndex, m_hashIndices, a_energy, m_energies, &energyFraction );
 
     return( energyFraction * m_crossSections[index] + ( 1.0 - energyFraction ) * m_crossSections[index+1] );
 }
@@ -170,16 +170,16 @@ LUPI_HOST_DEVICE double ModelDBRC_data::crossSectionMax( double a_energy, double
     double speedMin = a_speed - 4 * a_targetThermalSpeed;
     if( speedMin < 0.0 ) speedMin = 0.0;
     double energyMin = 0.5 * m_neutronMass * speedMin * speedMin;
-    int hashIndex = m_domainHash.index( energyMin );
-    int indexMin = evaluationForHashIndex( hashIndex, m_hashIndices, energyMin, m_energies, &energyFraction );
+    std::size_t hashIndex = m_domainHash.index( energyMin );
+    std::size_t indexMin = evaluationForHashIndex( hashIndex, m_hashIndices, energyMin, m_energies, &energyFraction );
 
     double speedMax = a_speed + 4 * a_targetThermalSpeed;
     double energyMax = 0.5 * m_neutronMass * speedMax * speedMax;
     hashIndex = m_domainHash.index( energyMax );
-    int indexMax = evaluationForHashIndex( hashIndex, m_hashIndices, energyMax, m_energies, &energyFraction );
-    if( indexMax < static_cast<int>( m_energies.size( ) ) ) ++indexMax;
+    std::size_t indexMax = evaluationForHashIndex( hashIndex, m_hashIndices, energyMax, m_energies, &energyFraction );
+    if( indexMax < m_energies.size( ) ) ++indexMax;
 
-    for( int index = indexMin; index < indexMax; ++index ) {
+    for( std::size_t index = indexMin; index < indexMax; ++index ) {
         if( crossSectionMax2 < m_crossSections[index] ) crossSectionMax2 = m_crossSections[index];
     }
 
@@ -200,7 +200,7 @@ LUPI_HOST_DEVICE void ModelDBRC_data::serialize( LUPI::DataBuffer &a_buffer, LUP
     DATA_MEMBER_DOUBLE( m_targetMass, a_buffer, a_mode );
     DATA_MEMBER_VECTOR_DOUBLE( m_energies, a_buffer, a_mode );
     DATA_MEMBER_VECTOR_DOUBLE( m_crossSections, a_buffer, a_mode );
-    DATA_MEMBER_VECTOR_INT( m_hashIndices, a_buffer, a_mode );
+    DATA_MEMBER_VECTOR_SIZE_T( m_hashIndices, a_buffer, a_mode );
     m_domainHash.serialize( a_buffer, a_mode );
 }
 
@@ -282,6 +282,34 @@ LUPI_HOST_DEVICE void Input::setTemperatureAndEnergy( double a_temperature, doub
 
     m_energy = a_energy;
     m_modelEnergy = a_energy;
+}
+
+/* *********************************************************************************************************//**
+ * This function returns a string representation of an **SampledType** value.
+ *
+ * @param a_sampledType         [in]    The **SampledType** value.
+ *
+ * @return                              A std::string instance.
+ ***********************************************************************************************************/
+
+std::string sampleTypeToString( SampledType a_sampledType ) {
+
+    switch( a_sampledType ) {
+    case SampledType::firstTwoBody :
+        return( "firstTwoBody" );
+        break;
+    case SampledType::secondTwoBody:
+        return( "secondTwoBody" );
+        break;
+    case SampledType::uncorrelatedBody:
+        return( "uncorrelatedBody" );
+        break;
+    case  SampledType::unspecified:
+        return( "unspecified" );
+        break;
+    }
+
+    return( "" );
 }
 
 }           // End of namespace Sampling.

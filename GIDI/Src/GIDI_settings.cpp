@@ -25,6 +25,7 @@ namespace Transporting {
 Settings::Settings( std::string const &a_projectileID, DelayedNeutrons a_delayedNeutrons ) :
         m_projectileID( a_projectileID ),
         m_delayedNeutrons( a_delayedNeutrons ),
+        m_decayPositronium( true ),
         m_nuclearPlusCoulombInterferenceOnly( false ),
         m_throwOnError( true ),
         m_zeroDepositionIfAllProductsTracked( true ) {
@@ -51,7 +52,7 @@ Vector Settings::multiGroupZeroVector( Particles const &a_particles, bool a_coll
 
     Particle const *projectile( a_particles.particle( projectileID( ) ) );
 
-    int n1 = projectile->fineMultiGroup( ).numberOfGroups( );
+    std::size_t n1 = projectile->fineMultiGroup( ).numberOfGroups( );
     if( a_collapse ) n1 = projectile->numberOfGroups( );
 
     Vector vector( n1 );
@@ -73,8 +74,8 @@ Matrix Settings::multiGroupZeroMatrix( Particles const &a_particles, std::string
     Particle const *projectile( a_particles.particle( projectileID( ) ) );
     Particle const *product( a_particles.particle( a_pid ) );
 
-    int n1 = projectile->fineMultiGroup( ).numberOfGroups( );
-    int n2 = product->fineMultiGroup( ).numberOfGroups( );
+    std::size_t n1 = projectile->fineMultiGroup( ).numberOfGroups( );
+    std::size_t n2 = product->fineMultiGroup( ).numberOfGroups( );
     if( a_collapse ) {
         n1 = projectile->numberOfGroups( );
         n2 = product->numberOfGroups( );
@@ -140,7 +141,7 @@ MG::MG( std::string const &a_projectileID, Mode a_mode, DelayedNeutrons a_delaye
  ***********************************************************************************************************/
 
 Form const *MG::form( LUPI::StatusMessageReporting &a_smr, GIDI::Suite const &a_suite, Styles::TemperatureInfo const &a_temperatureInfo,
-                    std::string a_dataType, std::string const &a_label ) const {
+                    std::string const &a_dataType, std::string const &a_label ) const {
 
     std::string label;
 

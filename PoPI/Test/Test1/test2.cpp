@@ -23,7 +23,7 @@ int main( LUPI_maybeUnused int argc, LUPI_maybeUnused char **argv ) {
     try {
         PoPI::Database database( fileName );
 
-        int O16Index = database["O16"];
+        auto O16Index = database["O16"];
 
         PoPI::Particle const &O16_1 = database.get<PoPI::Particle>( O16Index );
         std::cout << "O16 -> " << O16_1.ID( ) << "  " << O16Index << "  " << O16_1.ID( ) << std::endl;

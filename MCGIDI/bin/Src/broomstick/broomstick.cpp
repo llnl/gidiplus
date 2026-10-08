@@ -91,10 +91,10 @@ void main2( int argc, char **argv ) {
 
     PoPI::Database pops;
     unsigned long long rngState = 1;
-    std::set<int> reactionsToExclude;
-    GIDI::Transporting::Particles particles, particlesEmpty;
+    GIDI::ExcludeReactionsSet reactionsToExclude;
+    GIDI::Transporting::Particles particles;
     LUPI::StatusMessageReporting smr1;
-    std::set<int> deactivateIndices;
+    std::set<std::size_t> deactivateIndices;
 
     std::map<std::string, std::string> particlesAndGIDs;
 
@@ -113,6 +113,7 @@ void main2( int argc, char **argv ) {
     parseTestOptions.m_askGNDS_File = true;
 
     argv_options.add( argvOption( "-n", true, "Number of samples. If value is negative, it is multiplied by -1000000." ) );
+    argv_options.add( argvOption( "--limitProducts", false, "If present, only products loaded are the projectile and the one specified by the '--oid' options." ) );
     argv_options.add( argvOption( "--energyMode", true, "Specifies how the projectile energies are sampled." ) );
     argv_options.add( argvOption( "--histograms", false, "If present, the energy and angular spectra bins are written as histograms; otherwise, the center of each bin is written." ) );
     argv_options.add( argvOption( "--logEnergySpacing", false, "If present, the energy spectrum bins are logarithmically spaced." ) );
@@ -121,6 +122,7 @@ void main2( int argc, char **argv ) {
     argv_options.add( argvOption( "--energyMin", true, "The minimum energy for binning. Default is 1e-11." ) );
     argv_options.add( argvOption( "--energyMax", true, "The maximum energy for binning. Default is 20." ) );
     argv_options.add( argvOption( "--temperature", true, "The temperature of the material in MeV/k. Default is 2.53e-8 MeV/k (293.6 K)." ) );
+    argv_options.add( argvOption( "--multiGroup", false, "If present, multi-group cross sections are used, if not present continuous energy cross sections are used." ) );
     argv_options.add( argvOption( "--upscatter", true, "The upscatter model to use. Default is none." ) );
     argv_options.add( argvOption( "-r", true, 
             "Specifies a reaction index to sample. If negative, all reactions are sampled using the protare's sampleReaction method." ) );
@@ -167,15 +169,18 @@ void main2( int argc, char **argv ) {
     long numberOfEBins = argv_options.find( "--numberOfEBins" )->asLong( argv, 1000 );
     long numberOfMuBins = argv_options.find( "--numberOfMuBins" )->asLong( argv, 1000 );
 
-    int reactionIndex = static_cast<int>( argv_options.find( "-r" )->asLong( argv, 999999 ) );
+    long reactionIndex = argv_options.find( "-r" )->asLong( argv, 999999 );
 
     GIDI::Styles::TemperatureInfos temperatures = protare->temperatures( );
     std::string label( temperatures[0].griddedCrossSection( ) );
+    if( argv_options.find( "--multiGroup" )->present( ) ) label = temperatures[0].heatedMultiGroup( );
     MCGIDI::Transporting::MC MC( pops, protare->projectile( ).ID( ), &protare->styles( ), label, GIDI::Transporting::DelayedNeutrons::on, 20.0 );
     MC.setThrowOnError( false );
     MC.setSampleNonTransportingParticles( true );
     MC.setMakePhotonEmissionProbabilitiesOne( argv_options.find( "--makePhotonEmissionProbabilitiesOne" )->present( ) );
     MC.setZeroNuclearLevelEnergyWidth( argv_options.find( "--zeroNuclearLevelEnergyWidth" )->present( ) );
+    if( argv_options.find( "--multiGroup" )->present( ) )
+        MC.setCrossSectionLookupMode( MCGIDI::Transporting::LookupMode::Data1d::multiGroup );
 
     double temperature_MeV_k = argv_options.find( "--temperature" )->asDouble( argv, 2.53e-8 );
 
@@ -196,17 +201,30 @@ void main2( int argc, char **argv ) {
         upscatterModel = MCGIDI::Sampling::Upscatter::Model::DBRC;
         MC.setUpscatterModelDBRC( );
         break;
+    case 4:
+        upscatterModel = MCGIDI::Sampling::Upscatter::Model::A;
+        MC.setUpscatterModelA( );
+        break;
     default:
         throw "Invalid upscatter option.";
     }
 
-    for( std::map<std::string, std::string>::iterator iter = particlesAndGIDs.begin( ); iter != particlesAndGIDs.end( ); ++iter ) {
-        GIDI::Transporting::Particle particle( iter->first );
+    if( argv_options.find( "--limitProducts" )->present( ) ) {
+        MC.setSampleNonTransportingParticles( false );
+        GIDI::Transporting::Particle particle( protare->projectile( ).ID( ) );
         particles.add( particle );
+        GIDI::Transporting::Particle particle2( productID );
+        particles.add( particle2 ); }
+    else {
+        for( std::map<std::string, std::string>::iterator iter = particlesAndGIDs.begin( ); iter != particlesAndGIDs.end( ); ++iter ) {
+            GIDI::Transporting::Particle particle( iter->first );
+            particles.add( particle );
+        }
     }
+    if( argv_options.find( "--multiGroup" )->present( ) ) particles.process( *protare, label );
 
     MCGIDI::DomainHash domainHash( 4000, 1e-8, 10 );
-    MCGIDI::Protare *MCProtare = MCGIDI::protareFromGIDIProtare( smr1, *protare, pops, MC, particlesEmpty, domainHash, temperatures, reactionsToExclude );
+    MCGIDI::Protare *MCProtare = MCGIDI::protareFromGIDIProtare( smr1, *protare, pops, MC, particles, domainHash, temperatures, reactionsToExclude );
 
     EnergyMode energyMode = EnergyMode::mono;
     std::string energyModeStr = argv_options.find( "--energyMode" )->zeroOrOneOption( argv, "mono" );
@@ -238,8 +256,8 @@ void main2( int argc, char **argv ) {
     MCGIDI::URR_protareInfos URR_protareInfos;
 
     argvOption *deactivateIndicesOption = argv_options.find( "-d" );
-    for( int optionCounter = 0; optionCounter < deactivateIndicesOption->m_counter; ++optionCounter ) {
-        deactivateIndices.insert( asInt( argv[deactivateIndicesOption->m_indices[optionCounter]] ) );
+    for( std::size_t optionCounter = 0; optionCounter < deactivateIndicesOption->m_counter; ++optionCounter ) {
+        deactivateIndices.insert( static_cast<std::size_t>( asInt( argv[deactivateIndicesOption->m_indices[optionCounter]] ) ) );
     }
 
     std::cout << std::endl;
@@ -248,7 +266,7 @@ void main2( int argc, char **argv ) {
     std::cout << "# -----------------------------------------------------------" << std::endl;
 
     bool reactionsDeativated = false;
-    for( int reactionIndex2 = 0; reactionIndex2 < static_cast<int>( MCProtare->numberOfReactions( ) ); ++reactionIndex2 ) {
+    for( std::size_t reactionIndex2 = 0; reactionIndex2 < MCProtare->numberOfReactions( ); ++reactionIndex2 ) {
         MCGIDI::Reaction const *reaction = MCProtare->reaction( reactionIndex2 );
         std::string deactiveFlag = "   ";
 
@@ -263,7 +281,7 @@ void main2( int argc, char **argv ) {
                 << "  " << reaction->label( ).c_str( ) << std::endl;
     }
 
-    if( reactionIndex > static_cast<int>( MCProtare->numberOfReactions( ) ) ) {
+    if( reactionIndex > static_cast<long>( MCProtare->numberOfReactions( ) ) ) {
         delete protare;
         delete MCProtare;
         exit( EXIT_SUCCESS );
@@ -271,14 +289,14 @@ void main2( int argc, char **argv ) {
 
     if( reactionsDeativated ) {
         delete MCProtare;
-        MCProtare = MCGIDI::protareFromGIDIProtare( smr1, *protare, pops, MC, particlesEmpty, domainHash, temperatures, reactionsToExclude );
+        MCProtare = MCGIDI::protareFromGIDIProtare( smr1, *protare, pops, MC, particles, domainHash, temperatures, reactionsToExclude );
     }
 
     int oidIndex = -1;
     int maxProductIndex = 0;
     std::cout << std::endl;
     for( auto particleIter = particles.particles( ).begin( ); particleIter != particles.particles( ).end( );  ++particleIter, ++maxProductIndex ) {
-        MCProtare->setUserParticleIndex( pops[(*particleIter).first], maxProductIndex );
+        MCProtare->setUserParticleIndex( static_cast<int>( pops[(*particleIter).first] ), maxProductIndex );
         if( (*particleIter).first == productID ) oidIndex = maxProductIndex;
         std::cout << "# particle ID/user defined index " << (*particleIter).first << " " << maxProductIndex << std::endl;
     }
@@ -295,7 +313,7 @@ void main2( int argc, char **argv ) {
     std::cout << "# projectile energy minimum " << energyInMin << " MeV" << std::endl;
     std::cout << "# projectile energy maximum " << energyInMax << " MeV" << std::endl;
     if( reactionIndex >= 0 ) {
-        MCGIDI::Reaction const *reaction = MCProtare->reaction( reactionIndex );
+        MCGIDI::Reaction const *reaction = MCProtare->reaction( static_cast<std::size_t>( reactionIndex ) );
         std::cout << "# Reaction Info:" << std::endl;
         std::cout << "#     index: " << reactionIndex << std::endl;
         std::cout << "#     label: " << reaction->label( ).c_str( ) << std::endl;
@@ -309,25 +327,25 @@ void main2( int argc, char **argv ) {
 
     long numberOfEBins2 = numberOfEBins;
     if( numberOfEBins2 < 1 ) numberOfEBins2 = 1;
-    Bins energyBins( numberOfEBins2, energyMin, energyMax, logEnergySpacing );
+    Bins energyBins( static_cast<std::size_t>( numberOfEBins2 ), energyMin, energyMax, logEnergySpacing );
 
     long numberOfMuBins2 = numberOfMuBins;
     if( numberOfMuBins2 < 1 ) numberOfMuBins2 = 1;
-    Bins muBins( numberOfMuBins2, -1.0, 1.0 );
+    Bins muBins( static_cast<std::size_t>( numberOfMuBins2 ), -1.0, 1.0 );
 
     std::vector<std::vector<long>> *hist2d = nullptr;
     if( ( numberOfEBins > 0 ) && ( numberOfMuBins > 0 ) ) {
         if( argv_options.find( "--hist2dPath" )->present( ) ) {
             hist2d = new std::vector<std::vector<long>>( );
-            hist2d->resize( numberOfEBins );
-            for( long i1 = 0; i1 < numberOfEBins; ++i1 ) (*hist2d)[i1].resize( numberOfMuBins );
+            hist2d->resize( static_cast<std::size_t>( numberOfEBins ) );
+            for( long i1 = 0; i1 < numberOfEBins; ++i1 ) (*hist2d)[static_cast<std::size_t>(i1)].resize( static_cast<std::size_t>( numberOfMuBins ) );
         }
     }
 
     MCGIDI::Sampling::Input input( true, upscatterModel );
     MCGIDI::Sampling::StdVectorProductHandler products;
     if( ( reactionIndex >= 0 ) && ( energyMode != EnergyMode::python ) ){
-        MCGIDI::Reaction const *reaction = MCProtare->reaction( reactionIndex );
+        MCGIDI::Reaction const *reaction = MCProtare->reaction( static_cast<std::size_t>( reactionIndex ) );
         if( reaction->crossSectionThreshold( ) > energyInMin ) energyInMin = reaction->crossSectionThreshold( );
         if( reaction->crossSectionThreshold( ) > energyInMax ) {
             delete protare;
@@ -352,7 +370,7 @@ void main2( int argc, char **argv ) {
                 modeCrossSection += protareSingle->heatedCrossSections( ).crossSectionAsGIDI_XYs1d( temperature_MeV_k );
             } }
         else {
-            MCGIDI::Reaction const *reaction = MCProtare->reaction( reactionIndex );
+            MCGIDI::Reaction const *reaction = MCProtare->reaction( static_cast<std::size_t>( reactionIndex ) );
             modeCrossSection = reaction->crossSectionAsGIDI_XYs1d( temperature_MeV_k );
         }
         modeCrossSection = modeCrossSection.domainSlice( energyInMin, energyInMax, true );
@@ -374,15 +392,18 @@ void main2( int argc, char **argv ) {
             energy_in = GIDIP::Python::callFunctionReturnDouble( py_function, nullptr );
         }
 
-        int hashIndex = domainHash.index( energy_in );
+        std::size_t hashIndex = domainHash.index( energy_in );
         input.setTemperatureAndEnergy( temperature_MeV_k, energy_in );
 
-        int reactionIndex2 = reactionIndex;
-        if( reactionIndex2 < 0 ) {
+        std::size_t reactionIndex2;
+        if( reactionIndex >= 0 ) {
+            reactionIndex2 = static_cast<std::size_t>( reactionIndex ); }
+        else {
             double totalCrossSection = MCProtare->crossSection( URR_protareInfos, hashIndex, temperature_MeV_k, energy_in );
             reactionIndex2 = MCProtare->sampleReaction( input, URR_protareInfos, hashIndex, totalCrossSection, 
                     [&]( ) -> double { return float64RNG64( &rngState ); } );
         }
+
         MCGIDI::Reaction const *reaction = MCProtare->reaction( reactionIndex2 );
 
         double crossSection = MCProtare->reactionCrossSection( reactionIndex2, URR_protareInfos, hashIndex, temperature_MeV_k, energy_in, false );
@@ -422,7 +443,7 @@ void main2( int argc, char **argv ) {
             if( hist2d != nullptr ) {
                 if( ( 0 <= eBinIndex )  && ( eBinIndex <= numberOfEBins ) &&
                     ( 0 <= muBinIndex ) && ( muBinIndex <= numberOfMuBins ) ) {
-                    (*hist2d)[eBinIndex][muBinIndex] += 1;
+                    (*hist2d)[static_cast<std::size_t>(eBinIndex)][static_cast<std::size_t>(muBinIndex)] += 1;
                 }
             }
         }
@@ -434,7 +455,7 @@ void main2( int argc, char **argv ) {
     }
 
     if( numberOfDBRC_samples > 0 ) {
-        double averageDBRC = numberOfDBRC_rejections / (double) numberOfDBRC_samples;
+        double averageDBRC = static_cast<double>( numberOfDBRC_rejections ) / static_cast<double>( numberOfDBRC_samples );
         std::cout << "# Number of DBRC samples = " << numberOfDBRC_samples << std::endl;
         std::cout << "# Total number of DBRC rejections = " << numberOfDBRC_rejections << std::endl;
         std::cout << "# Average number of DBRC rejections per sample = " << LUPI::Misc::doubleToString3( "%.3e", averageDBRC ) << std::endl;
@@ -459,17 +480,17 @@ void main2( int argc, char **argv ) {
         fout << ", projectile energy maximum : " << energyInMax << " MeV, product: " << productID;
         std::vector<double> edges = energyBins.edges( );
         fout << "\n# energy bin boundaries (MeV): " << edges[0];
-        for( size_t i1 = 1; i1 < edges.size( ); ++i1 )
+        for( std::size_t i1 = 1; i1 < edges.size( ); ++i1 )
             fout << "," << edges[i1];
         edges = muBins.edges( );
         fout << "\n# angle bin boundaries (mu): " << edges[0];
-        for( size_t i1 = 1; i1 < edges.size( ); ++i1 )
+        for( std::size_t i1 = 1; i1 < edges.size( ); ++i1 )
             fout << "," << edges[i1];
         fout << "\n";
 
-        for( long i1 = 0; i1 < numberOfEBins; ++i1 ) {
+        for( std::size_t i1 = 0; i1 < static_cast<std::size_t>( numberOfEBins ); ++i1 ) {
             fout << (*hist2d)[i1][0];
-            for( long i2 = 1; i2 < numberOfMuBins; ++i2 ) {
+            for( std::size_t i2 = 1; i2 < static_cast<std::size_t>( numberOfMuBins ); ++i2 ) {
                 fout << "," << (*hist2d)[i1][i2];
             }
             fout << "\n";

@@ -49,7 +49,7 @@ void main2( int argc, char **argv ) {
 
     PoPI::Database pops;
     GIDI::Transporting::Particles particles;
-    std::set<int> reactionsToExclude;
+    GIDI::ExcludeReactionsSet reactionsToExclude;
     LUPI::StatusMessageReporting smr1;
 
     argvOptions argv_options( "crossSections", description );
@@ -105,7 +105,7 @@ void main2( int argc, char **argv ) {
     for( double temperature = 1e-8; temperature < 2e-3; temperature *= 10.1 ) {
         std::cout << "temperature = " << temperature << std::endl;
         for( double energy = 1e-12; energy < 100; energy *= 1.2 ) {
-            int hashIndex = domainHash.index( energy );
+            std::size_t hashIndex = domainHash.index( energy );
 
             double crossSection = MCProtare->crossSection( URR_protare_infos, hashIndex, temperature, energy );
             std::cout << "    energy = " << energy << " crossSection = " << crossSection << std::endl;

@@ -8,9 +8,12 @@
 */
 
 #include <stdlib.h>
+#include <cctype>
 #include <iostream>
 #include <iomanip>
 #include <sstream>
+#include <stdexcept>
+#include <algorithm>
 
 #include <RISI.hpp>
 #include <PoPI.hpp>
@@ -19,6 +22,7 @@ static char const *description = "Loads a PoPs database and .ris file, then comp
 
 void main2( int argc, char **argv );
 void parseEnergyRange( const std::string& energyRangeString, double& minEnergy, double& maxEnergy );
+GIDI::RISI::ReactionTypes parseReactionType( std::string reactionTypeString );
 
 /*
 =========================================================
@@ -53,6 +57,9 @@ void main2( int argc, char **argv ) {
     LUPI::OptionStore *maxLevelArgument = argumentParser.add<LUPI::OptionStore>( "--max-level", "Maximum number of reaction steps to search (default: 5).", 0, 1 );
     LUPI::OptionStore *popsPathArgument = argumentParser.add<LUPI::OptionStore>( "--pops", "Path to PoPs database(s) (default: data/nuclear/common/pops.xml).", 0, -1 );
     LUPI::OptionStore *projectileArgument = argumentParser.add<LUPI::OptionStore>( "--projectile", "Projectile ID (default: n).", 0, 1 );
+    LUPI::OptionStore *reactionTypeArgument = argumentParser.add<LUPI::OptionStore>( "--reaction-type",
+            "Reaction type filter: All, AllButScatter, NeutronEmitting, NeutronAbsorbing, or FissionOnly (default: All).", 0, 1 );
+    LUPI::OptionTrue *includeSumOfRemainingArg = argumentParser.add<LUPI::OptionTrue>( "--includeSumOfRemaining", "Include MT=5 reaction products (default: false).", 0, -1 );
 
     argumentParser.parse( argc, argv );
 
@@ -82,6 +89,13 @@ void main2( int argc, char **argv ) {
     if( maxLevelArgument->counts( ) > 0 ) {
         maxLevel = std::stoi( maxLevelArgument->value( ) );
     }
+
+    GIDI::RISI::ReactionTypes reactionType = GIDI::RISI::ReactionTypes::All;
+    if( reactionTypeArgument->counts( ) > 0 ) {
+        reactionType = parseReactionType( reactionTypeArgument->value( ) );
+    }
+
+    bool includeSumOfRemainingOutputChannels = includeSumOfRemainingArg->isTrue( );
 
     // Load RIS file
     GIDI::RISI::Projectiles projectiles;
@@ -123,7 +137,7 @@ void main2( int argc, char **argv ) {
         // Get products for this target
         std::map<std::string, int> products;
         try {
-            projectile->products( targetId, 0, maxLevel, maxEnergy, products );
+            projectile->products( targetId, 0, maxLevel, maxEnergy, products, reactionType, includeSumOfRemainingOutputChannels );
             
             if( products.empty() ) {
                 std::cout << std::left << std::setw(15) << targetId 
@@ -174,11 +188,39 @@ void main2( int argc, char **argv ) {
     }
 
     // Compute the list of products for *all* seed targets and check whether any are fissionable:
-    std::vector<std::string> productIds = projectiles.products( projectileId, targets, maxLevel, maxEnergy );
+    std::vector<std::string> productIds = projectiles.products( projectileId, targets, maxLevel, maxEnergy, true, reactionType, includeSumOfRemainingOutputChannels );
     std::string fission = (projectile->fissionPresent(productIds) ? " and fission" : "");
 
     std::cout << std::endl << "The final product list contains " << productIds.size() << " products" << fission << "." << std::endl;
 
     std::cout << std::endl << "Products analysis complete." << std::endl;
 
+}
+
+/*
+=========================================================
+*/
+GIDI::RISI::ReactionTypes parseReactionType( std::string reactionTypeString ) {
+
+    std::string originalReactionTypeString = reactionTypeString;
+    std::transform( reactionTypeString.begin( ), reactionTypeString.end( ), reactionTypeString.begin( ),
+            []( unsigned char character ) { return static_cast<char>( std::tolower( character ) ); } );
+
+    if( ( reactionTypeString == "all" ) || ( reactionTypeString == "0" ) ) {
+        return GIDI::RISI::ReactionTypes::All;
+    }
+    if( ( reactionTypeString == "allbutscatter" ) || ( reactionTypeString == "1" ) ) {
+        return GIDI::RISI::ReactionTypes::AllButScatter;
+    }
+    if( ( reactionTypeString == "neutronemitting" ) || ( reactionTypeString == "2" ) ) {
+        return GIDI::RISI::ReactionTypes::NeutronEmitting;
+    }
+    if( ( reactionTypeString == "neutronabsorbing" ) || ( reactionTypeString == "3" ) ) {
+        return GIDI::RISI::ReactionTypes::NeutronAbsorbing;
+    }
+    if( ( reactionTypeString == "fissiononly" ) || ( reactionTypeString == "4" ) ) {
+        return GIDI::RISI::ReactionTypes::FissionOnly;
+    }
+    throw std::runtime_error( "Invalid reaction type '" + originalReactionTypeString
+            + "'. Expected All, AllButScatter, NeutronEmitting, NeutronAbsorbing, FissionOnly, 0, 1, 2, 3 or 4." );
 }

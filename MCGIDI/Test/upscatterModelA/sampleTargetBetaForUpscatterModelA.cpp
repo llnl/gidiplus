@@ -50,7 +50,7 @@ void main2( int argc, char **argv ) {
     double temperature_MeV = 1e-3;
     long numberOfSamples = 10 * 1000 * 1000;
     long bins[nBins+1];
-    std::set<int> reactionsToExclude;
+    GIDI::ExcludeReactionsSet reactionsToExclude;
     LUPI::StatusMessageReporting smr1;
     unsigned long long rngState = 1;
 

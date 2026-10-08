@@ -53,6 +53,10 @@ class ACE_URR_probabilityTables;
 class GRIN_capture;
 class GRIN_inelastic;
 
+namespace Distributions {
+    class Distribution;
+}           // End of namespace Distributions.
+
 }           // End of namespace MCGIDI.
 
 #include <LUPI_dataBuffer.hpp>
@@ -62,7 +66,7 @@ class GRIN_inelastic;
 
 namespace MCGIDI {
 
-#define MCGIDI_nullReaction -10001
+#define MCGIDI_nullReaction 999999999
 
 // FIXME, this should not be used once physicalQuantity can handle changing units.
 #define MCGIDI_speedOfLight_cm_sh 299.792458
@@ -258,15 +262,20 @@ class SetupInfo {
         PoPI::Database const &m_pops;                           /**< The PoPs from the GNDS protare. */
         int m_neutronIndex;
         int m_photonIndex;
+        int m_electronIndex;
         LUPI::FormatVersion m_formatVersion;
         double m_Q;
-        double m_product1Mass;
-        double m_product2Mass;
+        double m_productMass;
+        double m_twobodyProduct1Mass;
+        double m_twobodyProduct2Mass;
+        Distributions::Distribution *m_twobodyFirstProductDistribution;
         double m_domainMin;
         double m_domainMax;
         TwoBodyOrder m_twoBodyOrder;
         bool m_isPairProduction;
         bool m_isPhotoAtomicIncoherentScattering;
+        bool m_isPhotoAtomicIncoherentDopplerScattering;
+        bool m_isPhotoelectric;
         std::string m_distributionLabel;                        /**< Set by the ProtareSingle constructor to the distribution label to use for all products. */
         std::map<std::string, int> m_particleIntids;            /**< A list of the particle intids for the transportable particles. */
         std::map<std::string, int> m_particleIndices;           /**< A list of the particle indices for the transportable particles. */
@@ -299,13 +308,14 @@ LUPI_HOST int MCGIDI_popsIndex( PoPI::Database const &a_pops, std::string const 
  * The values of *a_Xs* must be ascending (i.e., *a_Xs*[i] < *a_Xs*[i+1]).
  *
  *
- *   Returns -2 if a_x < a_Xs[0] or 0 if a_boundIndex is true,
- *           -1 if a_x > last point of a_Xs or a_Xs.size( ) - 1 if a_boundIndex is true, or
+ *   Returns -2 if a_x < a_Xs[0] or return 0 if a_boundIndex is true,
+ *           -1 if a_x > last point of a_Xs or returns a_Xs.size( ) - 1 if a_boundIndex is true, or
  *           the lower index of a_Xs which bound a_x otherwise.
+             -3 if a_Xs has not data (i.e, its size is 0).
  *
- * Note, when *a_boundIndex* is false the returned *index* can be negative and when it is true
- * the return value will be a valid index of *a_Xs*, including its last point. The index of the last
- * point is only returned when *a_boundIndex* is true and *a_x* is great than the last point of *a_Xs*.
+ * Note, when *a_boundIndex* is false the returned *index* can be negative and when it is true the return 
+ * value will be a valid index of *a_Xs*, including its last point unless a_Xs has not data *. The index of 
+ * the last point is only returned when *a_boundIndex* is true and *a_x* is great than the last point of *a_Xs*.
  *
  * @param a_x               [in]    The values whose bounding index within *a_Xs* is to be determined.
  * @param a_Xs              [in]    The list of ascending values.
@@ -317,15 +327,15 @@ LUPI_HOST int MCGIDI_popsIndex( PoPI::Database const &a_pops, std::string const 
 
 LUPI_HOST_DEVICE inline int binarySearchVector( double a_x, Vector<double> const &a_Xs, bool a_boundIndex = false ) {
 
-    int lower = 0, middle, upper = (int) a_Xs.size( ) - 1;
+    std::size_t lower = 0, middle, upper = a_Xs.size( ) - 1;
 
-    if( a_x < a_Xs[0] ) {
+    if( a_Xs.size( ) == 0 ) {
+        return( -3 ); }
+    else if( a_x < a_Xs[0] ) {
         if( a_boundIndex ) return( 0 );
-        return( -2 );
-    }
-
-    if( a_x > a_Xs[upper] ) {
-        if( a_boundIndex ) return( upper );
+        return( -2 ); }
+    else if( a_x > a_Xs.back( ) ) {
+        if( a_boundIndex ) return( static_cast<int>( upper ) );
         return( -1 );
     }
 
@@ -338,24 +348,24 @@ LUPI_HOST_DEVICE inline int binarySearchVector( double a_x, Vector<double> const
             lower = middle;
         }
     }
-    return( lower );
+    return( static_cast<int>( lower ) );
 }
 
 /* *********************************************************************************************************//**
  ***********************************************************************************************************/
 
-LUPI_HOST_DEVICE inline int binarySearchVectorBounded( double a_x, Vector<double> const &a_Xs, int a_lower, 
-                int a_upper, bool a_boundIndex ) {
+LUPI_HOST_DEVICE inline int binarySearchVectorBounded( double a_x, Vector<double> const &a_Xs, std::size_t a_lower, 
+                std::size_t a_upper, bool a_boundIndex ) {
 
-    int middle;
+    std::size_t middle;
 
-    if( a_x < a_Xs[a_lower] ) {
-        if( a_boundIndex ) return( 0 );
-        return( -2 );
-    }
-
-    if( a_x > a_Xs[a_upper] ) {
-        if( a_boundIndex ) return( a_upper );
+    if( a_Xs.size( ) == 0 ) {
+        return( -3 ); }
+    else if( a_x < a_Xs[a_lower] ) {
+        if( a_boundIndex ) return( static_cast<int>( a_lower ) );
+        return( -2 ); }
+    else if( a_x > a_Xs[a_upper] ) {
+        if( a_boundIndex ) return( static_cast<int>( a_upper ) );
         return( -1 );
     }
 
@@ -368,11 +378,50 @@ LUPI_HOST_DEVICE inline int binarySearchVectorBounded( double a_x, Vector<double
             a_lower = middle;
         }
     }
-    return( a_lower );
+    return( static_cast<int>( a_lower ) );
 }
 
-}           // End of namespace MCGIDI.
+/* *********************************************************************************************************//**
+ * Stores thick target Bremsstrahlung data for use in MCGIDI transport and serialization.
+ ***********************************************************************************************************/
+class ThickTargetBremsstrahlung {
 
+    private:
+        double m_meanExcitationEnergy;         /**< Mean excitation energy for the material. */
+        Vector<double> m_electronsPerSubshell; /**< Electrons per subshell. */
+        Vector<double> m_ionizationEnergies;   /**< Subshell ionization energies. */
+        Vector<double> m_srad;                 /**< Radiative stopping power as a function of energy. */
+        Vector<double> m_egrid;                /**< Incident electron energy grid for the differential cross section. */
+        Vector<double> m_pgrid;                /**< Scaled outgoing photon energy grid for the differential cross section. */
+        Vector<double> m_dcs;                  /**< Flattened differential cross section values. */
+
+    public:
+        LUPI_HOST_DEVICE ThickTargetBremsstrahlung( );
+        LUPI_HOST_DEVICE ~ThickTargetBremsstrahlung( );
+        LUPI_HOST_DEVICE void serialize( LUPI::DataBuffer &a_buffer, LUPI::DataBuffer::Mode a_mode );
+
+        LUPI_HOST_DEVICE void setMeanExcitationEnergy( const double mee ) { m_meanExcitationEnergy = mee; } /**< Sets the mean excitation energy. */
+        LUPI_HOST_DEVICE void setElectronsPerSubshell( const std::vector<double> &eps ) { m_electronsPerSubshell = eps; } /**< Sets electrons per subshell. */
+        LUPI_HOST_DEVICE void setIonizationEnergies( const std::vector<double> &ionEs ) { m_ionizationEnergies = ionEs; } /**< Sets ionization energies. */
+        LUPI_HOST_DEVICE void setSrad( const std::vector<double> &srad ) { m_srad = srad; } /**< Sets radiative stopping power. */
+        LUPI_HOST_DEVICE void setEgrid( const std::vector<double> &egrid ) { m_egrid = egrid; } /**< Sets the incident electron energy grid. */
+        LUPI_HOST_DEVICE void setPgrid( const std::vector<double> &pgrid ) { m_pgrid = pgrid; } /**< Sets the outgoing photon energy grid. */
+        LUPI_HOST_DEVICE void setDCS( const std::vector<double> &dcs )     { m_dcs = dcs; } /**< Sets the flattened differential cross section. */
+
+        LUPI_HOST_DEVICE double meanExcitationEnergy( ) const { return( m_meanExcitationEnergy ); } /**< Returns the mean excitation energy. */
+        LUPI_HOST_DEVICE Vector<double> const &electronsPerSubshell( ) const { return( m_electronsPerSubshell ); } /**< Returns electrons per subshell. */
+        LUPI_HOST_DEVICE Vector<double> const &ionizationEnergies( ) const { return( m_ionizationEnergies ); } /**< Returns ionization energies. */
+        LUPI_HOST_DEVICE Vector<double> const &radiativeStoppingPower( ) const { return( m_srad ); } /**< Returns the radiative stopping power. */
+        LUPI_HOST_DEVICE Vector<double> const &photonGrid( ) const { return( m_pgrid ); } /**< Returns the outgoing photon energy grid. */
+        LUPI_HOST_DEVICE Vector<double> const &electronGrid( ) const { return( m_egrid ); } /**< Returns the incident electron energy grid. */
+        LUPI_HOST_DEVICE Vector<double> const &differentialCrossSection( ) const { return( m_dcs ); } /**< Returns the flattened differential cross section. */
+
+        bool m_hasData = false;                /**< True if thick target Bremsstrahlung data are present. */
+};
+
+
+}           // End of namespace MCGIDI.
+    
 #include "MCGIDI_functions.hpp"
 #include "MCGIDI_distributions.hpp"
 
@@ -393,17 +442,21 @@ class MultiGroupHash {
         LUPI_HOST void initialize( GIDI::Protare const &a_protare, GIDI::Styles::TemperatureInfo const &a_temperatureInfo, std::string a_particleID );
 
     public:
+        LUPI_HOST_DEVICE MultiGroupHash( );
         LUPI_HOST MultiGroupHash( std::vector<double> a_boundaries );
+        LUPI_HOST_DEVICE MultiGroupHash( Vector<double> a_boundaries );
         LUPI_HOST MultiGroupHash( GIDI::Protare const &a_protare, GIDI::Styles::TemperatureInfo const &a_temperatureInfo, std::string const &a_particleID = "" );
         LUPI_HOST MultiGroupHash( GIDI::Protare const &a_protare, GIDI::Transporting::Particles const &a_particles );
+        LUPI_HOST MultiGroupHash( MultiGroupHash const &a_multiGroupHash );
+        LUPI_HOST MultiGroupHash &operator=( MultiGroupHash const &a_rhs ) = default;
 
         LUPI_HOST_DEVICE Vector<double> const &boundaries( ) const { return( m_boundaries ); }   /**< Returns a reference to **m_styles**. */
-        LUPI_HOST_DEVICE int index( double a_domain ) const {
+        LUPI_HOST_DEVICE std::size_t index( double a_domain ) const {
             int _index = binarySearchVector( a_domain, m_boundaries );
 
             if( _index == -2 ) return( 0 );
             if( _index == -1 ) return( m_boundaries.size( ) - 2 );
-            return( _index );
+            return( static_cast<std::size_t>( _index ) );
         }
         LUPI_HOST_DEVICE void serialize( LUPI::DataBuffer &a_buffer, LUPI::DataBuffer::Mode a_mode );
 };
@@ -461,7 +514,7 @@ template <typename RNG>
         inline LUPI_HOST_DEVICE void updateProtare( MCGIDI::Protare const *a_protare, double a_energy, RNG && a_rng );
 
         LUPI_HOST_DEVICE void serialize( LUPI::DataBuffer &a_buffer, LUPI::DataBuffer::Mode a_mode );
-        LUPI_HOST_DEVICE long internalSize( ) const { return m_URR_protareInfos.internalSize( ); }
+        LUPI_HOST_DEVICE std::size_t internalSize( ) const { return m_URR_protareInfos.internalSize( ); }
 };
 
 /*
@@ -525,7 +578,7 @@ class ACE_URR_probabilityTables {
 class HeatedReactionCrossSectionContinuousEnergy {
 
     private:
-        int m_offset;                                               /**< The offset relative to the cross section grid of the first cross section value in *m_crossSections*. */
+        std::size_t m_offset;                                       /**< The offset relative to the cross section grid of the first cross section value in *m_crossSections*. */
         double m_threshold;                                         /**< The threshold for the reaction. */
         Vector<MCGIDI_FLOAT> m_crossSections;                       /**< The reaction's cross section. */
         Transporting::URR_mode m_URR_mode;                          /**< The URR data (i.e., mode) *this* has. */
@@ -534,13 +587,13 @@ class HeatedReactionCrossSectionContinuousEnergy {
 
     public:
         LUPI_HOST_DEVICE HeatedReactionCrossSectionContinuousEnergy( );
-        LUPI_HOST HeatedReactionCrossSectionContinuousEnergy( int a_offset, double a_threshold, Vector<double> &a_crossSection );
+        LUPI_HOST HeatedReactionCrossSectionContinuousEnergy( std::size_t a_offset, double a_threshold, Vector<double> &a_crossSection );
         LUPI_HOST HeatedReactionCrossSectionContinuousEnergy( double a_threshold, GIDI::Functions::Ys1d const &a_crossSection, 
                         Probabilities::ProbabilityBase2d *a_URR_probabilityTables, ACE_URR_probabilityTables *a_ACE_URR_probabilityTables );
         LUPI_HOST_DEVICE ~HeatedReactionCrossSectionContinuousEnergy( );
 
         LUPI_HOST_DEVICE double threshold( ) const { return( m_threshold ); }                           /**< Returns the value of the **m_threshold**. */
-        LUPI_HOST_DEVICE int offset( ) const { return( m_offset ); }                                    /**< Returns the value of the **m_offset**. */
+        LUPI_HOST_DEVICE std::size_t offset( ) const { return( m_offset ); }                            /**< Returns the value of the **m_offset**. */
         LUPI_HOST Vector<MCGIDI_FLOAT> const &crossSections( ) const { return( m_crossSections ); }     /**< Returns a reference to the member **m_crossSections**. */
         LUPI_HOST_DEVICE bool hasURR_probabilityTables( ) const {
             return( ( m_URR_probabilityTables != nullptr ) || ( m_ACE_URR_probabilityTables != nullptr ) );
@@ -551,18 +604,19 @@ class HeatedReactionCrossSectionContinuousEnergy {
         LUPI_HOST_DEVICE Probabilities::ProbabilityBase2d *URR_probabilityTables( ) const { return( m_URR_probabilityTables ); }      /**< Returns the value of the *m_URR_probabilityTables*. */
         LUPI_HOST_DEVICE ACE_URR_probabilityTables *_ACE_URR_probabilityTables( ) const { return( m_ACE_URR_probabilityTables ); }    /**< Returns the value of the *m_ACE_URR_probabilityTables*. */
         LUPI_HOST_DEVICE double crossSection( std::size_t a_index ) const {
-            int index = static_cast<int>( a_index ) - m_offset;
-            if( index < 0 ) return( 0.0 );
-            if( index >= static_cast<int>( m_crossSections.size( ) ) ) return( 0.0 );
+            if( a_index < m_offset ) return( 0.0 );
+            a_index -= m_offset;
+            if( a_index >= m_crossSections.size( ) ) return( 0.0 );
 
-            return( m_crossSections[index] );
+            return( m_crossSections[a_index] );
         }
         LUPI_HOST GIDI::Functions::XYs1d crossSectionAsGIDI_XYs1d( double a_temperature, Vector<double> const &a_energies ) const ;
 
         LUPI_HOST_DEVICE void serialize( LUPI::DataBuffer &a_buffer, LUPI::DataBuffer::Mode a_mode );
 
-        LUPI_HOST void print( ProtareSingle const *a_protareSingle, std::string const &a_indent, std::string const &a_iFormat, 
-                std::string const &a_energyFormat, std::string const &a_dFormat ) const ;
+        LUPI_HOST void print( ProtareSingle const *a_protareSingle, Vector<double> const &a_energies, 
+                std::string const &a_indent, std::string const &a_iFormat, std::string const &a_energyFormat, 
+                std::string const &a_dFormat ) const ;
 };
 
 /*
@@ -594,11 +648,12 @@ class ContinuousEnergyGain {
                 if( a_particleIntid == m_particleIntid ) m_userParticleIndex = a_userParticleIndex; }
                                                         /**< Sets member *m_userParticleIntid* to *a_userParticleIndex* if particle's intid matchs *m_particleIntid*. */
         LUPI_HOST_DEVICE Vector<MCGIDI_FLOAT> const &gain( ) const { return( m_gain ); }
-        LUPI_HOST void adjustGain( int a_energy_index, double a_gain ) { m_gain[a_energy_index] += a_gain; }
-        LUPI_HOST_DEVICE double gain( int a_energy_index, double a_energy_fraction ) const ;
+        LUPI_HOST void adjustGain( std::size_t a_energy_index, double a_gain ) { m_gain[a_energy_index] += a_gain; }
+        LUPI_HOST_DEVICE double gain( std::size_t a_energy_index, double a_energy_fraction ) const ;
 
         LUPI_HOST_DEVICE void serialize( LUPI::DataBuffer &a_buffer, LUPI::DataBuffer::Mode a_mode );
-        LUPI_HOST void print( ProtareSingle const *a_protareSingle, std::string const &a_indent, std::string const &a_iFormat, 
+        LUPI_HOST void print( ProtareSingle const *a_protareSingle, Vector<double> const &a_energies, 
+                std::string const &a_indent, std::string const &a_iFormat, 
                 std::string const &a_energyFormat, std::string const &a_dFormat ) const ;
 };
 
@@ -611,7 +666,7 @@ class HeatedCrossSectionContinuousEnergy {
 
     private:
         double m_temperature;                                   /**< The target temperature of the data. */
-        Vector<int> m_hashIndices;                              /**< The indicies for the energy hash function. */
+        Vector<std::size_t> m_hashIndices;                      /**< The indicies for the energy hash function. */
         Vector<double> m_energies;                              /**< Energy grid for cross sections. */
         Vector<MCGIDI_FLOAT> m_totalCrossSection;               /**< The total cross section. */
         Vector<MCGIDI_FLOAT> m_depositionEnergy;                /**< The total continuous energy, deposition-energy cross section (related to the kinetic energy of the untracked outgoing particles). */
@@ -619,7 +674,7 @@ class HeatedCrossSectionContinuousEnergy {
         Vector<MCGIDI_FLOAT> m_productionEnergy;                /**< The total continuous energy, Q-value cross section. */
         Vector<ContinuousEnergyGain *> m_gains;                 /**< The total continuous energy, gain cross section for each tracked particle. */
         Transporting::URR_mode m_URR_mode;                      /**< The URR data (i.e., mode) *this* has. */
-        Vector<int> m_reactionsInURR_region;                    /**< A list of reactions within or below the upper URR regions. This is empty unless URR probability tables present and used. */
+        Vector<std::size_t> m_reactionsInURR_region;            /**< A list of reactions within or below the upper URR regions. This is empty unless URR probability tables present and used. */
         Vector<HeatedReactionCrossSectionContinuousEnergy *> m_reactionCrossSections;
                                                                 /**< Reaction cross section data for each reaction. */
         ACE_URR_probabilityTables *m_ACE_URR_probabilityTables; /**< The ACE URR probability tables for the summed URR cross section, if they were loaded. */
@@ -631,40 +686,41 @@ class HeatedCrossSectionContinuousEnergy {
                 std::vector<GIDI::Reaction const *> const &a_orphanProducts, bool a_fixedGrid, bool a_zeroReactions );
         LUPI_HOST_DEVICE ~HeatedCrossSectionContinuousEnergy( );
 
-        LUPI_HOST_DEVICE int evaluationInfo( int a_hashIndex, double a_energy, double *a_energyFraction ) const ;
+        LUPI_HOST_DEVICE_INLINE std::size_t evaluationInfo( std::size_t a_hashIndex, double a_energy, double *a_energyFraction ) const ;
 
-        LUPI_HOST HeatedReactionCrossSectionContinuousEnergy const *reactionCrossSection( int a_index ) const 
+        LUPI_HOST HeatedReactionCrossSectionContinuousEnergy const *reactionCrossSection( std::size_t a_index ) const 
                 { return( m_reactionCrossSections[a_index] ); } /**< Returns the reaction cross section at index *a_index*. */
 
         LUPI_HOST_DEVICE double temperature( ) const { return( m_temperature ); }           /**< Returns the value of the **m_temperature** member. */
         LUPI_HOST_DEVICE double minimumEnergy( ) const { return( m_energies[0] ); }         /**< Returns the minimum cross section domain. */
         LUPI_HOST_DEVICE double maximumEnergy( ) const { return( m_energies.back( ) ); }    /**< Returns the maximum cross section domain. */
-        LUPI_HOST_DEVICE int numberOfReactions( ) const { return( (int) m_reactionCrossSections.size( ) ); } 
+        LUPI_HOST_DEVICE std::size_t numberOfReactions( ) const { return( m_reactionCrossSections.size( ) ); } 
                                                                 /**< Returns the number of reaction cross section. */
 
-        LUPI_HOST_DEVICE int thresholdOffset( int a_reactionIndex ) const { return( m_reactionCrossSections[a_reactionIndex]->offset( ) ); }
+        LUPI_HOST_DEVICE std::size_t thresholdOffset( std::size_t a_reactionIndex ) const { return( m_reactionCrossSections[a_reactionIndex]->offset( ) ); }
                                                                 /**< Returns the offset for the cross section for the reaction with index *a_reactionIndex*. */
-        LUPI_HOST_DEVICE double threshold( int a_reactionIndex ) const { return( m_reactionCrossSections[a_reactionIndex]->threshold( ) ); }
+        LUPI_HOST_DEVICE double threshold( std::size_t a_reactionIndex ) const { return( m_reactionCrossSections[a_reactionIndex]->threshold( ) ); }
                                                                 /**< Returns the threshold for the reaction with index *a_reactionIndex*. */
         LUPI_HOST_DEVICE bool hasURR_probabilityTables( ) const ;
         LUPI_HOST_DEVICE double URR_domainMin( ) const ;
         LUPI_HOST_DEVICE double URR_domainMax( ) const ;
-        LUPI_HOST_DEVICE bool reactionHasURR_probabilityTables( int a_index ) const { return( m_reactionCrossSections[a_index]->hasURR_probabilityTables( ) ); }
+        LUPI_HOST_DEVICE bool reactionHasURR_probabilityTables( std::size_t a_index ) const { return( m_reactionCrossSections[a_index]->hasURR_probabilityTables( ) ); }
 
         LUPI_HOST_DEVICE Vector<MCGIDI_FLOAT> &totalCrossSection( ) { return( m_totalCrossSection ); }     /**< Returns a reference to member *m_totalCrossSection*. */
-        LUPI_HOST_DEVICE double crossSection(                               URR_protareInfos const &a_URR_protareInfos, int a_URR_index, int a_hashIndex, double a_energy, bool a_sampling = false ) const ;
+        LUPI_HOST_DEVICE_INLINE double crossSection(                               URR_protareInfos const &a_URR_protareInfos, int a_URR_index, std::size_t a_hashIndex, double a_energy, bool a_sampling = false ) const ;
         LUPI_HOST GIDI::Functions::XYs1d crossSectionAsGIDI_XYs1d( ) const ;
 
-        LUPI_HOST_DEVICE double reactionCrossSection(  int a_reactionIndex, URR_protareInfos const &a_URR_protareInfos, int a_URR_index, int a_hashIndex, double a_energy, bool a_sampling = false ) const ;
-        LUPI_HOST_DEVICE double reactionCrossSection2( int a_reactionIndex, URR_protareInfos const &a_URR_protareInfos, int a_URR_index, double a_energy, int a_energyIndex, double a_energyFraction, bool a_sampling = false ) const ;
-        LUPI_HOST_DEVICE double reactionCrossSection(  int a_reactionIndex, URR_protareInfos const &a_URR_protareInfos, int a_URR_index, double a_energy ) const ;
-        LUPI_HOST GIDI::Functions::XYs1d reactionCrossSectionAsGIDI_XYs1d( int a_reactionIndex ) const ;
+        LUPI_HOST_DEVICE double reactionCrossSection(  std::size_t a_reactionIndex, URR_protareInfos const &a_URR_protareInfos, int a_URR_index, std::size_t a_hashIndex, double a_energy, bool a_sampling = false ) const ;
+        LUPI_HOST_DEVICE double reactionCrossSection2( std::size_t a_reactionIndex, URR_protareInfos const &a_URR_protareInfos, int a_URR_index, double a_energy, 
+                std::size_t a_energyIndex, double a_energyFraction, bool a_sampling = false ) const ;
+        LUPI_HOST_DEVICE double reactionCrossSection(  std::size_t a_reactionIndex, URR_protareInfos const &a_URR_protareInfos, int a_URR_index, double a_energy ) const ;
+        LUPI_HOST GIDI::Functions::XYs1d reactionCrossSectionAsGIDI_XYs1d( std::size_t a_reactionIndex ) const ;
 
-        LUPI_HOST_DEVICE double depositionEnergy(   int a_hashIndex, double a_energy ) const ;
-        LUPI_HOST_DEVICE double depositionMomentum( int a_hashIndex, double a_energy ) const ;
-        LUPI_HOST_DEVICE double productionEnergy(   int a_hashIndex, double a_energy ) const ;
-        LUPI_HOST_DEVICE double gain(               int a_hashIndex, double a_energy, int a_particleIndex ) const ;
-        LUPI_HOST_DEVICE double gainViaIntid(       int a_hashIndex, double a_energy, int a_particleIntid ) const ;
+        LUPI_HOST_DEVICE double depositionEnergy(   std::size_t a_hashIndex, double a_energy ) const ;
+        LUPI_HOST_DEVICE double depositionMomentum( std::size_t a_hashIndex, double a_energy ) const ;
+        LUPI_HOST_DEVICE double productionEnergy(   std::size_t a_hashIndex, double a_energy ) const ;
+        LUPI_HOST_DEVICE double gain(               std::size_t a_hashIndex, double a_energy, int a_particleIndex ) const ;
+        LUPI_HOST_DEVICE double gainViaIntid(       std::size_t a_hashIndex, double a_energy, int a_particleIntid ) const ;
 
         LUPI_HOST void setUserParticleIndex( int a_particleIndex, int a_userParticleIndex );
         LUPI_HOST void setUserParticleIndexViaIntid( int a_particleIntid, int a_userParticleIndex );
@@ -709,28 +765,33 @@ class HeatedCrossSectionsContinuousEnergy {
         LUPI_HOST_DEVICE bool hasURR_probabilityTables( ) const { return( m_heatedCrossSections[0]->hasURR_probabilityTables( ) ); }
         LUPI_HOST_DEVICE double URR_domainMin( ) const { return( m_heatedCrossSections[0]->URR_domainMin( ) ); }
         LUPI_HOST_DEVICE double URR_domainMax( ) const { return( m_heatedCrossSections[0]->URR_domainMax( ) ); }
-        LUPI_HOST_DEVICE bool reactionHasURR_probabilityTables( int a_index ) const { return( m_heatedCrossSections[0]->reactionHasURR_probabilityTables( a_index ) ); }
+        LUPI_HOST_DEVICE bool reactionHasURR_probabilityTables( std::size_t a_index ) const { return( m_heatedCrossSections[0]->reactionHasURR_probabilityTables( a_index ) ); }
 
-        LUPI_HOST_DEVICE double crossSection(                              URR_protareInfos const &a_URR_protareInfos, int a_URR_index, int a_hashIndex, 
+        LUPI_HOST_DEVICE_INLINE double crossSection(                              URR_protareInfos const &a_URR_protareInfos, int a_URR_index, std::size_t a_hashIndex, 
                 double a_temperature, double a_energy, bool a_sampling = false ) const ;
+        template<typename T>
+        LUPI_HOST_DEVICE void crossSectionVectorT( double a_temperature, double a_userFactor, std::size_t a_numberAllocated, 
+                T *a_crossSectionVector, bool a_sampling = false ) const ;
         LUPI_HOST_DEVICE void crossSectionVector( double a_temperature, double a_userFactor, std::size_t a_numberAllocated, 
-                double *a_crossSectionVector ) const ;
+                double *a_crossSectionVector, bool a_sampling = false ) const ;
+        LUPI_HOST_DEVICE void crossSectionVector( double a_temperature, double a_userFactor, std::size_t a_numberAllocated, 
+                float *a_crossSectionVector, bool a_sampling = false ) const ;
         LUPI_HOST GIDI::Functions::XYs1d crossSectionAsGIDI_XYs1d( double a_temperature ) const ;
 
-        LUPI_HOST_DEVICE double reactionCrossSection( int a_reactionIndex, URR_protareInfos const &a_URR_protareInfos, int a_URR_index, int a_hashIndex, 
+        LUPI_HOST_DEVICE double reactionCrossSection( std::size_t a_reactionIndex, URR_protareInfos const &a_URR_protareInfos, int a_URR_index, std::size_t a_hashIndex, 
                 double a_temperature, double a_energy, bool a_sampling = false ) const ;
-        LUPI_HOST_DEVICE double reactionCrossSection( int a_reactionIndex, URR_protareInfos const &a_URR_protareInfos, int a_URR_index, double a_temperature, double a_energy_in ) const ;
-        LUPI_HOST GIDI::Functions::XYs1d reactionCrossSectionAsGIDI_XYs1d( int a_reactionIndex, double a_temperature ) const ;
+        LUPI_HOST_DEVICE double reactionCrossSection( std::size_t a_reactionIndex, URR_protareInfos const &a_URR_protareInfos, int a_URR_index, double a_temperature, double a_energy_in ) const ;
+        LUPI_HOST GIDI::Functions::XYs1d reactionCrossSectionAsGIDI_XYs1d( std::size_t a_reactionIndex, double a_temperature ) const ;
 
         template <typename RNG>
-        inline LUPI_HOST_DEVICE int sampleReaction(                        URR_protareInfos const &a_URR_protareInfos, int a_URR_index, 
-                int a_hashIndex, double a_temperature, double a_energy, double a_crossSection, RNG && a_rng) const ;
+        inline LUPI_HOST_DEVICE std::size_t sampleReaction(                        URR_protareInfos const &a_URR_protareInfos, int a_URR_index, 
+                std::size_t a_hashIndex, double a_temperature, double a_energy, double a_crossSection, RNG && a_rng) const ;
 
-        LUPI_HOST_DEVICE double depositionEnergy(   int a_hashIndex, double a_temperature, double a_energy ) const ;
-        LUPI_HOST_DEVICE double depositionMomentum( int a_hashIndex, double a_temperature, double a_energy ) const ;
-        LUPI_HOST_DEVICE double productionEnergy(   int a_hashIndex, double a_temperature, double a_energy ) const ;
-        LUPI_HOST_DEVICE double gain(               int a_hashIndex, double a_temperature, double a_energy, int a_particleIndex ) const ;
-        LUPI_HOST_DEVICE double gainViaIntid(       int a_hashIndex, double a_temperature, double a_energy, int a_particleIntid ) const ;
+        LUPI_HOST_DEVICE double depositionEnergy(   std::size_t a_hashIndex, double a_temperature, double a_energy ) const ;
+        LUPI_HOST_DEVICE double depositionMomentum( std::size_t a_hashIndex, double a_temperature, double a_energy ) const ;
+        LUPI_HOST_DEVICE double productionEnergy(   std::size_t a_hashIndex, double a_temperature, double a_energy ) const ;
+        LUPI_HOST_DEVICE double gain(               std::size_t a_hashIndex, double a_temperature, double a_energy, int a_particleIndex ) const ;
+        LUPI_HOST_DEVICE double gainViaIntid(       std::size_t a_hashIndex, double a_temperature, double a_energy, int a_particleIntid ) const ;
 
         LUPI_HOST void setUserParticleIndex( int a_particleIndex, int a_userParticleIndex );
         LUPI_HOST void setUserParticleIndexViaIntid( int a_particleIntid, int a_userParticleIndex );
@@ -769,7 +830,7 @@ class MultiGroupGain {
                 if( a_particleIntid == m_particleIntid ) m_userParticleIndex = a_userParticleIndex; }
                                                         /**< Sets member *m_userParticleIntid* to *a_userParticleIndex* if particle's intid matchs *m_particleIntid*. */
         LUPI_HOST_DEVICE Vector<double> const &gain( ) const { return( m_gain ); }
-        LUPI_HOST_DEVICE double gain( int a_hashIndex ) const { return( m_gain[a_hashIndex] ); }
+        LUPI_HOST_DEVICE double gain( std::size_t a_hashIndex ) const { return( m_gain[a_hashIndex] ); }
 
         LUPI_HOST_DEVICE void serialize( LUPI::DataBuffer &a_buffer, LUPI::DataBuffer::Mode a_mode );
         LUPI_HOST void write( FILE *a_file ) const ;
@@ -784,23 +845,23 @@ class HeatedReactionCrossSectionMultiGroup {
 
     private:
         double m_threshold;
-        int m_offset;
+        std::size_t m_offset;
         Vector<double> m_crossSections;             // Multi-group reaction cross section
         double m_augmentedThresholdCrossSection;    // Augmented cross section at m_offset for rejecting when projectile energy is below m_threshold.
                                                     // This value is added to m_crossSections[m_offset] when sampling an isotope or reaction.
 
     public:
         LUPI_HOST_DEVICE HeatedReactionCrossSectionMultiGroup( );
-        LUPI_HOST HeatedReactionCrossSectionMultiGroup( SetupInfo &a_setupInfo, Transporting::MC const &a_settings, int a_offset, 
-                std::vector<double> const &a_crossSection, double a_threshold );
+        LUPI_HOST HeatedReactionCrossSectionMultiGroup( SetupInfo &a_setupInfo, Transporting::MC const &a_settings, 
+                std::size_t a_offset, std::vector<double> const &a_crossSection, double a_threshold );
 
         LUPI_HOST_DEVICE double operator[]( std::size_t a_index ) const { return( m_crossSections[a_index] ); }  /**< Returns the value of the cross section at multi-group index *a_index*. */
         LUPI_HOST_DEVICE double threshold( ) const { return( m_threshold ); }        /**< Returns the value of the **m_threshold**. */
-        LUPI_HOST_DEVICE int offset( ) const { return( m_offset ); }                 /**< Returns the value of the **m_offset**. */
-        LUPI_HOST_DEVICE double crossSection( std::size_t a_index, bool a_sampling = false ) const {
-            int index = (int)a_index - m_offset;
-            if( index < 0 ) return( 0 );
-            if( index >= (int)m_crossSections.size( ) ) return( 0 );
+        LUPI_HOST_DEVICE std::size_t offset( ) const { return( m_offset ); }                 /**< Returns the value of the **m_offset**. */
+        LUPI_HOST_DEVICE_INLINE double crossSection( std::size_t a_index, bool a_sampling = false ) const {
+            if( a_index < m_offset ) return( 0.0 );
+            std::size_t index = a_index - m_offset;
+            if( index >= m_crossSections.size( ) ) return( 0.0 );
 
             double _crossSection( m_crossSections[index] );
             if( a_sampling && ( index == 0 ) ) {
@@ -810,7 +871,7 @@ class HeatedReactionCrossSectionMultiGroup {
         }
         LUPI_HOST_DEVICE double augmentedThresholdCrossSection( ) const { return( m_augmentedThresholdCrossSection ); }  /**< Returns the value of the **m_augmentedThresholdCrossSection**. */
         LUPI_HOST_DEVICE void serialize( LUPI::DataBuffer &a_buffer, LUPI::DataBuffer::Mode a_mode );
-        LUPI_HOST void write( FILE *a_file, int a_reactionIndex ) const ;
+        LUPI_HOST void write( FILE *a_file, std::size_t a_reactionIndex ) const ;
 };
 
 /*
@@ -839,26 +900,27 @@ class HeatedCrossSectionMultiGroup {
 
         LUPI_HOST_DEVICE HeatedReactionCrossSectionMultiGroup *operator[]( std::size_t a_index ) const { return( m_reactionCrossSections[a_index] ); }
                                                                                 /**< Returns the HeatedReactionCrossSectionMultiGroup for the reaction at index *a_index *a_index*. */
-        LUPI_HOST_DEVICE int numberOfReactions( ) const { return( (int) m_reactionCrossSections.size( ) ); }
+        LUPI_HOST_DEVICE std::size_t numberOfReactions( ) const { return( m_reactionCrossSections.size( ) ); }
                                                                                 /**< Returns the number of reactions stored in *this*. */
 
-        LUPI_HOST_DEVICE int thresholdOffset(                              int a_index ) const { return( m_reactionCrossSections[a_index]->offset( ) ); }
+        LUPI_HOST_DEVICE std::size_t thresholdOffset(                      std::size_t a_index ) const { return( m_reactionCrossSections[a_index]->offset( ) ); }
                                                                                 /**< Returns the offset for the cross section for the reaction with index *a_index*. */
-        LUPI_HOST_DEVICE double threshold(                                 int a_index ) const { return( m_reactionCrossSections[a_index]->threshold( ) ); }
+        LUPI_HOST_DEVICE double threshold(                                 std::size_t a_index ) const { return( m_reactionCrossSections[a_index]->threshold( ) ); }
 
         LUPI_HOST_DEVICE Vector<double> &totalCrossSection( ) { return( m_totalCrossSection ); }    /**< Returns a reference to member *m_totalCrossSection*. */
-        LUPI_HOST_DEVICE double crossSection(                              int a_hashIndex, bool a_sampling = false ) const ;
-        LUPI_HOST_DEVICE double augmentedCrossSection(                     int a_hashIndex ) const { return( m_augmentedCrossSection[a_hashIndex] ); }
+        LUPI_HOST_DEVICE double crossSection(                              std::size_t a_hashIndex, bool a_sampling = false ) const ;
+        LUPI_HOST_DEVICE double augmentedCrossSection(                     std::size_t a_hashIndex ) const { return( m_augmentedCrossSection[a_hashIndex] ); }
                                                                                 /**< Returns the value of the of the augmented cross section the reaction at index *a_index*. */
-        LUPI_HOST_DEVICE double reactionCrossSection( int a_reactionIndex, int a_hashIndex, bool a_sampling = false ) const {
+        LUPI_HOST_DEVICE_INLINE double reactionCrossSection( std::size_t a_reactionIndex, std::size_t a_hashIndex, 
+                bool a_sampling = false ) const {
                 return( m_reactionCrossSections[a_reactionIndex]->crossSection( a_hashIndex, a_sampling ) ); }
                 /**< Returns the reaction's cross section for the reaction at index *a_reactionIndex* and multi-group index *a_hashIndex*. */
 
-        LUPI_HOST_DEVICE double depositionEnergy(   int a_hashIndex ) const { return( m_depositionEnergy[a_hashIndex] ); }
-        LUPI_HOST_DEVICE double depositionMomentum( int a_hashIndex ) const { return( m_depositionMomentum[a_hashIndex] ); }
-        LUPI_HOST_DEVICE double productionEnergy(   int a_hashIndex ) const { return( m_productionEnergy[a_hashIndex] ); }
-        LUPI_HOST_DEVICE double gain(               int a_hashIndex, int a_particleIndex ) const ;
-        LUPI_HOST_DEVICE double gainViaIntid(       int a_hashIndex, int a_particleIntid ) const ;
+        LUPI_HOST_DEVICE double depositionEnergy(   std::size_t a_hashIndex ) const { return( m_depositionEnergy[a_hashIndex] ); }
+        LUPI_HOST_DEVICE double depositionMomentum( std::size_t a_hashIndex ) const { return( m_depositionMomentum[a_hashIndex] ); }
+        LUPI_HOST_DEVICE double productionEnergy(   std::size_t a_hashIndex ) const { return( m_productionEnergy[a_hashIndex] ); }
+        LUPI_HOST_DEVICE double gain(               std::size_t a_hashIndex, int a_particleIndex ) const ;
+        LUPI_HOST_DEVICE double gainViaIntid(       std::size_t a_hashIndex, int a_particleIntid ) const ;
 
         LUPI_HOST void setUserParticleIndex( int a_particleIndex, int a_userParticleIndex );
         LUPI_HOST void setUserParticleIndexViaIntid( int a_particleIntid, int a_userParticleIndex );
@@ -877,7 +939,7 @@ class HeatedCrossSectionsMultiGroup {
     private:
         Vector<double> m_temperatures;
         Vector<double> m_thresholds;
-        Vector<int> m_multiGroupThresholdIndex;                         /**< This is the group where threshold starts, -1 otherwise. */
+        Vector<int> m_multiGroupThresholdIndex;                             /**< This is the group where threshold starts, -1 otherwise. */
         Vector<double> m_projectileMultiGroupBoundariesCollapsed;
         Vector<HeatedCrossSectionMultiGroup *> m_heatedCrossSections;
 
@@ -901,20 +963,25 @@ class HeatedCrossSectionsMultiGroup {
 
         LUPI_HOST_DEVICE double threshold( std::size_t a_index ) const { return( m_thresholds[a_index] ); }     /**< Returns the threshold for the reaction at index *a_index*. */
 
-        LUPI_HOST_DEVICE double crossSection(                              int a_hashIndex, double a_temperature, bool a_sampling = false ) const ;
+        LUPI_HOST_DEVICE double crossSection(                              std::size_t a_hashIndex, double a_temperature, bool a_sampling = false ) const ;
+        template<typename T>
+        LUPI_HOST_DEVICE void crossSectionVectorT( double a_temperature, double a_userFactor, std::size_t a_numberAllocated, 
+                T *a_crossSectionVector, bool a_sampling = false ) const ;
         LUPI_HOST_DEVICE void crossSectionVector( double a_temperature, double a_userFactor, std::size_t a_numberAllocated, 
-                double *a_crossSectionVector ) const ;
-        LUPI_HOST_DEVICE double reactionCrossSection( int a_reactionIndex, int a_hashIndex, double a_temperature, bool a_sampling = false ) const ;
-        LUPI_HOST_DEVICE double reactionCrossSection( int a_reactionIndex, double a_temperature, double a_energy_in ) const ;
+                double *a_crossSectionVector, bool a_sampling = false ) const ;
+        LUPI_HOST_DEVICE void crossSectionVector( double a_temperature, double a_userFactor, std::size_t a_numberAllocated, 
+                float *a_crossSectionVector, bool a_sampling = false ) const ;
+        LUPI_HOST_DEVICE double reactionCrossSection( std::size_t a_reactionIndex, std::size_t a_hashIndex, double a_temperature, bool a_sampling = false ) const ;
+        LUPI_HOST_DEVICE double reactionCrossSection( std::size_t a_reactionIndex, double a_temperature, double a_energy_in ) const ;
         template <typename RNG>
-        inline LUPI_HOST_DEVICE int sampleReaction(                        int a_hashIndex, double a_temperature, double a_energy_in, 
+        inline LUPI_HOST_DEVICE std::size_t sampleReaction(                std::size_t a_hashIndex, double a_temperature, double a_energy_in, 
                 double a_crossSection, RNG &&rng) const;
 
-        LUPI_HOST_DEVICE double depositionEnergy(   int a_hashIndex, double a_temperature ) const ;
-        LUPI_HOST_DEVICE double depositionMomentum( int a_hashIndex, double a_temperature ) const ;
-        LUPI_HOST_DEVICE double productionEnergy(   int a_hashIndex, double a_temperature ) const ;
-        LUPI_HOST_DEVICE double gain(               int a_hashIndex, double a_temperature, int a_particleIndex ) const ;
-        LUPI_HOST_DEVICE double gainViaIntid(       int a_hashIndex, double a_temperature, int a_particleIntid ) const ;
+        LUPI_HOST_DEVICE double depositionEnergy(   std::size_t a_hashIndex, double a_temperature ) const ;
+        LUPI_HOST_DEVICE double depositionMomentum( std::size_t a_hashIndex, double a_temperature ) const ;
+        LUPI_HOST_DEVICE double productionEnergy(   std::size_t a_hashIndex, double a_temperature ) const ;
+        LUPI_HOST_DEVICE double gain(               std::size_t a_hashIndex, double a_temperature, int a_particleIndex ) const ;
+        LUPI_HOST_DEVICE double gainViaIntid(       std::size_t a_hashIndex, double a_temperature, int a_particleIntid ) const ;
 
         LUPI_HOST void setUserParticleIndex( int a_particleIndex, int a_userParticleIndex );
         LUPI_HOST void setUserParticleIndexViaIntid( int a_particleIntid, int a_userParticleIndex );
@@ -968,7 +1035,7 @@ class NuclideGammaBranchStateInfo {
         double m_nuclearLevelEnergyWidth;                   /**< This is 0.0 except for GRIN realized continuum levels where this is the energy width from this level to the next higher level. */
         double m_multiplicity;                              /**< The average multiplicity of photons emitted including the emission from sub-levels. */
         double m_averageGammaEnergy;                        /**< The average energy of photons emitted including the emission from sub-levels. */
-        Vector<int> m_branchIndices;                        /**< The list of indices into the ProtareSingle.m_branches member that this level decays to. */
+        Vector<std::size_t> m_branchIndices;                /**< The list of indices into the ProtareSingle.m_branches member that this level decays to. */
 
     public:
         LUPI_HOST_DEVICE NuclideGammaBranchStateInfo( );
@@ -984,7 +1051,7 @@ class NuclideGammaBranchStateInfo {
                                                                                 /**< Returns the value of the *m_nuclearLevelEnergyWidth* member. */
         LUPI_HOST_DEVICE double multiplicity( ) const { return( m_multiplicity ); }                           /**< Returns the value of the **m_multiplicity** member. */
         LUPI_HOST_DEVICE double averageGammaEnergy( ) const { return( m_averageGammaEnergy ); }               /**< Returns the value of the **m_averageGammaEnergy** member. */
-        LUPI_HOST_DEVICE Vector<int> const &branchIndices( ) const { return( m_branchIndices ); }             /**< Returns the value of the **m_branchIndices** member. */
+        LUPI_HOST_DEVICE Vector<std::size_t> const &branchIndices( ) const { return( m_branchIndices ); }     /**< Returns the value of the **m_branchIndices** member. */
 
         LUPI_HOST_DEVICE void serialize( LUPI::DataBuffer &a_buffer, LUPI::DataBuffer::Mode a_mode );
         LUPI_HOST void print( ProtareSingle const *a_protareSingle, std::string const &a_indent, std::string const &a_iFormat,
@@ -1026,7 +1093,7 @@ class GRIN_levelsAndProbabilities {
 class GRIN_inelasticForEnergy {
 
     private:
-        Vector<int> m_indices;
+        Vector<std::size_t> m_indices;
         Vector<double> m_thresholds;
         GRIN_levelsAndProbabilities m_levelsAndProbabilities;
 
@@ -1084,15 +1151,15 @@ class GRIN_inelastic {
 class GRIN_captureToCompound {
 
     private:
-        int m_index;                                        /**< This is the index into ProtareSingle.m_nuclideGammaBranchStateInfos of the compound level forms by the capture. */
+        std::size_t m_index;                                /**< This is the index into ProtareSingle.m_nuclideGammaBranchStateInfos of the compound level forms by the capture. */
         GRIN_levelsAndProbabilities m_continuumIndices;     /**< This is the list of the levels the compound can decay to minus the known levels. */
 
     public:
         LUPI_HOST_DEVICE GRIN_captureToCompound( );
-        LUPI_HOST GRIN_captureToCompound( SetupInfo &a_setupInfo, PoPI::Database const &a_pops, std::string a_compoundId );
+        LUPI_HOST GRIN_captureToCompound( SetupInfo &a_setupInfo, PoPI::Database const &a_pops, std::string const &a_compoundId );
         LUPI_HOST_DEVICE ~GRIN_captureToCompound( );
 
-        LUPI_HOST_DEVICE int index( ) const { return( m_index ); }
+        LUPI_HOST_DEVICE std::size_t index( ) const { return( m_index ); }
         template <typename RNG>
         inline LUPI_HOST_DEVICE int sampleCaptureLevel( ProtareSingle const *a_protare, double a_energy, RNG && a_rng, bool a_checkEnergy ) const ;
         LUPI_HOST_DEVICE void serialize( LUPI::DataBuffer &a_buffer, LUPI::DataBuffer::Mode a_mode );
@@ -1191,17 +1258,19 @@ class Product {
         LUPI_HOST_DEVICE ~Product( );
 
         LUPI_HOST String const &ID( ) const { return( m_ID ); }                                 /**< Returns a const reference to the *m_ID* member. */
-        LUPI_HOST_DEVICE int intid( ) const { return( m_intid); }                               /**< Returns the value of the *m_intid* member. */
-        LUPI_HOST_DEVICE int index( ) const { return( m_index); }                               /**< Returns the value of the *m_index* member. */
-        LUPI_HOST_DEVICE int userParticleIndex( ) const { return( m_userParticleIndex ); }      /**< Returns the value of the **m_userParticleIndex**. */
+        LUPI_HOST_DEVICE_INLINE int intid( ) const { return( m_intid); }                               /**< Returns the value of the *m_intid* member. */
+        LUPI_HOST_DEVICE_INLINE int index( ) const { return( m_index); }                               /**< Returns the value of the *m_index* member. */
+        LUPI_HOST_DEVICE_INLINE int userParticleIndex( ) const { return( m_userParticleIndex ); }      /**< Returns the value of the **m_userParticleIndex**. */
         LUPI_HOST void setUserParticleIndex( int a_particleIndex, int a_userParticleIndex );
         LUPI_HOST void setUserParticleIndexViaIntid( int a_particleIntid, int a_userParticleIndex );
+        LUPI_HOST void setParticleIndex( int a_particleIndex ) { m_index = a_particleIndex;}
         LUPI_HOST void setModelDBRC_data( Sampling::Upscatter::ModelDBRC_data *a_modelDBRC_data );
         LUPI_HOST_DEVICE String label( ) const { return( m_label ); }                           /**< Returns the value of the **m_label**. */
         LUPI_HOST_DEVICE bool isCompleteParticle( ) const { return( m_isCompleteParticle ); }   /**< Returns the value of the **m_isCompleteParticle**. */
         LUPI_HOST_DEVICE double mass( ) const { return( m_mass ); }                             /**< Returns the value of the **m_mass**. */
         LUPI_HOST_DEVICE double excitationEnergy( ) const { return( m_excitationEnergy ); }     /**< Returns the value of the **m_excitationEnergy**. */
         LUPI_HOST_DEVICE TwoBodyOrder twoBodyOrder( ) const { return( m_twoBodyOrder ); }       /**< Returns the value of the **m_twoBodyOrder**. */
+        LUPI_HOST_DEVICE void setTwoBodyOrder( TwoBodyOrder a_twoBodyOrder ) { m_twoBodyOrder = a_twoBodyOrder;}
         LUPI_HOST_DEVICE double finalQ( double a_x1 ) const ;
         LUPI_HOST_DEVICE bool hasFission( ) const ;
 
@@ -1218,7 +1287,7 @@ class Product {
         LUPI_HOST_DEVICE OutputChannel *outputChannel( ) { return( m_outputChannel ); }                  /**< Returns the value of the **m_outputChannel**. */
 
         template <typename RNG, typename PUSHBACK>
-        inline LUPI_HOST_DEVICE void sampleProducts( ProtareSingle const *a_protare, double a_projectileEnergy, Sampling::Input &a_input,
+        LUPI_HOST_DEVICE_INLINE void sampleProducts( ProtareSingle const *a_protare, double a_projectileEnergy, Sampling::Input &a_input,
                 RNG && a_rng, PUSHBACK && a_push_back, Sampling::ProductHandler &a_products ) const ;
         template <typename RNG, typename PUSHBACK>
         inline LUPI_HOST_DEVICE void sampleFinalState( ProtareSingle const *a_protare, double a_projectileEnergy, Sampling::Input &a_input,
@@ -1297,7 +1366,7 @@ class OutputChannel {
         LUPI_HOST_DEVICE Vector<Product *> const &products( ) const { return( m_products ); }    /**< Returns the value of the **m_products**. */
 
         Vector<DelayedNeutron *> delayedNeutrons( ) const { return( m_delayedNeutrons ); }
-        LUPI_HOST_DEVICE DelayedNeutron const *delayedNeutron( int a_index ) const { return( m_delayedNeutrons[a_index] ); }
+        LUPI_HOST_DEVICE DelayedNeutron const *delayedNeutron( std::size_t a_index ) const { return( m_delayedNeutrons[a_index] ); }
 
         LUPI_HOST void moveProductsEtAlToReaction( std::vector<Product *> &a_products, Functions::Function1d **a_totalDelayedNeutronMultiplicity, 
                 std::vector<DelayedNeutron *> &a_delayedNeutrons, std::vector<Functions::Function1d_d1 *> &a_Qs );
@@ -1330,8 +1399,8 @@ class Reaction {
 
     private:
         ProtareSingle *m_protareSingle;                     /**< The ProtareSingle this reaction resides in. */
-        int m_reactionIndex;                                /**< The index of the reaction in the ProtareSingle. */
-        int m_GIDI_reactionIndex;                           /**< The index of the reaction in the GIDI::ProtareSingle. */
+        std::size_t m_reactionIndex;                        /**< The index of the reaction in the ProtareSingle. */
+        std::size_t m_GIDI_reactionIndex;                   /**< The index of the reaction in the GIDI::ProtareSingle. */
         String m_label;                                     /**< The **GNDS** label for the reaction. */
         int m_ENDF_MT;                                      /**< The ENDF MT value for the reaction. */
         int m_ENDL_C;                                       /**< The ENDL C value for the reaction. */
@@ -1366,7 +1435,7 @@ class Reaction {
 #ifdef MCGIDI_USE_OUTPUT_CHANNEL
         OutputChannel *m_outputChannel;                     /**< The output channel for this reaction. Only used if the C macro MCGIDI_USE_OUTPUT is defined. */
 #endif
-        Vector<int> m_associatedOrphanProductIndices;       /**< The indices in the Protare's m_orphanProducts member for the orphanProducts associated with this reaction. */
+        Vector<std::size_t> m_associatedOrphanProductIndices;   /**< The indices in the Protare's m_orphanProducts member for the orphanProducts associated with this reaction. */
         Vector<Product *> m_associatedOrphanProducts;       /**< The list of products from the orphanProduct reaction. */ /* Do not delete entries as owned by orphanProduct reaction. */
 // Still need m_availableEnergy and m_availableMomentum.
 
@@ -1386,13 +1455,13 @@ class Reaction {
                 GIDI::Styles::TemperatureInfos const &a_temperatureInfos );
         LUPI_HOST_DEVICE ~Reaction( );
 
-        inline LUPI_HOST_DEVICE void updateProtareSingleInfo( ProtareSingle *a_protareSingle, int a_reactionIndex ) {
+        inline LUPI_HOST_DEVICE void updateProtareSingleInfo( ProtareSingle *a_protareSingle, std::size_t a_reactionIndex ) {
                 m_protareSingle = a_protareSingle;
                 m_reactionIndex = a_reactionIndex;
         }
-        LUPI_HOST_DEVICE ProtareSingle const *protareSingle( ) const { return( m_protareSingle ); }   /**< Returns the value of the **m_protareSingle**. */
-        LUPI_HOST_DEVICE int reactionIndex( ) const { return( m_reactionIndex ); }       /**< Returns the value of the **m_reactionIndex**. */
-        LUPI_HOST_DEVICE int GIDI_reactionIndex( ) const { return( m_GIDI_reactionIndex ); }       /**< Returns the value of the **m_GIDI_reactionIndex** member. */
+        LUPI_HOST_DEVICE ProtareSingle const *protareSingle( ) const { return( m_protareSingle ); }     /**< Returns the value of the **m_protareSingle**. */
+        LUPI_HOST_DEVICE std::size_t reactionIndex( ) const { return( m_reactionIndex ); }              /**< Returns the value of the **m_reactionIndex**. */
+        LUPI_HOST_DEVICE std::size_t GIDI_reactionIndex( ) const { return( m_GIDI_reactionIndex ); }    /**< Returns the value of the **m_GIDI_reactionIndex** member. */
         LUPI_HOST_DEVICE String const &label( ) const { return( m_label ); }             /**< Returns the value of the **m_label**. */
         LUPI_HOST_DEVICE int ENDF_MT( ) const { return( m_ENDF_MT ); }                   /**< Returns the value of the **m_ENDF_MT**. */
         LUPI_HOST_DEVICE int ENDL_C( ) const { return( m_ENDL_C ); }                     /**< Returns the value of the **m_ENDL_C**. */
@@ -1404,15 +1473,16 @@ class Reaction {
         LUPI_HOST_DEVICE double targetMass( ) const { return( m_targetMass ); }          /**< Returns the value of the **m_targetMass**. */
         LUPI_HOST_DEVICE double crossSectionThreshold( ) const { return( m_crossSectionThreshold ); }    /**< Returns the value of the **m_crossSectionThreshold**. */
         LUPI_HOST_DEVICE double twoBodyThreshold( ) const { return( m_twoBodyThreshold ); }              /**< Returns the value of the *m_twoBodyThreshold* member. */
-        LUPI_HOST_DEVICE double crossSection( URR_protareInfos const &a_URR_protareInfos, int a_hashIndex, double a_temperature, double a_energy ) const ;
+        LUPI_HOST_DEVICE double crossSection( URR_protareInfos const &a_URR_protareInfos, std::size_t a_hashIndex, 
+                double a_temperature, double a_energy ) const ;
         LUPI_HOST_DEVICE double crossSection( URR_protareInfos const &a_URR_protareInfos, double a_temperature, double a_energy ) const ;
         LUPI_HOST GIDI::Functions::XYs1d crossSectionAsGIDI_XYs1d( double a_temperature ) const ;
 
         LUPI_HOST_DEVICE Vector<int> const &productIntids( ) const { return( m_productIntids ); }
         LUPI_HOST_DEVICE Vector<int> const &productIndices( ) const { return( m_productIndices ); }            /**< Returns a const reference to the *m_productIntids* member. */
         LUPI_HOST_DEVICE Vector<int> const &userProductIndices( ) const { return( m_userProductIndices ); }    /**< Returns a const reference to the *m_productIndices* member. */
-        LUPI_HOST_DEVICE MCGIDI_VectorSizeType numberOfProducts( ) const { return( m_products.size( ) ); }     /**< Returns the number of products in the **m_products** member. */
-        LUPI_HOST_DEVICE Product const *product( int a_index ) const { return( m_products[a_index] ); }
+        LUPI_HOST_DEVICE std::size_t numberOfProducts( ) const { return( m_products.size( ) ); }     /**< Returns the number of products in the **m_products** member. */
+        LUPI_HOST_DEVICE Product const *product( std::size_t a_index ) const { return( m_products[a_index] ); }
         LUPI_HOST_DEVICE int productMultiplicity(         int a_index ) const ;
         LUPI_HOST_DEVICE int productMultiplicityViaIntid( int a_intid ) const ;
         LUPI_HOST_DEVICE int productMultiplicities( int a_index ) const {
@@ -1429,11 +1499,11 @@ class Reaction {
 #ifdef MCGIDI_USE_OUTPUT_CHANNEL
         LUPI_HOST_DEVICE OutputChannel const *outputChannel( ) const { return( m_outputChannel ); }              /**< Returns the value of the **m_outputChannel**. */
 #endif
-        LUPI_HOST_DEVICE Vector<int> associatedOrphanProductIndices( ) const { return( m_associatedOrphanProductIndices ); } /**< Returns the value of the **m_associatedOrphanProductIndicex** member. */
+        LUPI_HOST_DEVICE Vector<std::size_t> associatedOrphanProductIndices( ) const { return( m_associatedOrphanProductIndices ); } /**< Returns the value of the **m_associatedOrphanProductIndicex** member. */
         LUPI_HOST void addOrphanProductToProductList( std::vector<Product *> &a_associatedOrphanProducts ) const ;
         LUPI_HOST_DEVICE void addOrphanProductToProductList( Vector<Product *> &a_associatedOrphanProducts ) const ;
         LUPI_HOST_DEVICE void addOrphanProductToProductList( Vector<Reaction *> &a_orphanProducts ) ;
-        LUPI_HOST void setOrphanProductData( std::vector<int> const &a_associatedOrphanProductIndcies,
+        LUPI_HOST void setOrphanProductData( std::vector<std::size_t> const &a_associatedOrphanProductIndcies,
                 std::vector<Product *> const &a_associatedOrphanProducts );
 
         LUPI_HOST void setUserParticleIndex( int a_particleIndex, int a_userParticleIndex );
@@ -1483,6 +1553,8 @@ class Protare {
         int m_userNeutronIndex;                             /**< The neutron particle index defined by the user. */
         int m_photonIndex;                                  /**< The photon particle index from the user's pops database. */
         int m_userPhotonIndex;                              /**< The photon particle index defined by the user. */
+        int m_electronIndex;
+        int m_userElectronIndex;
 
         String m_evaluation;                                /**< The evaluation string for the Protare. */
         GIDI::Frame m_projectileFrame;                      /**< The frame the projectile data are given in. */
@@ -1504,7 +1576,7 @@ class Protare {
         LUPI_HOST Protare( ProtareType a_protareType, GIDI::Protare const &a_protare, Transporting::MC const &a_settings, PoPI::Database const &a_pops );
         virtual LUPI_HOST_DEVICE ~Protare( );
 
-        LUPI_HOST_DEVICE ProtareType protareType( ) const { return( m_protareType ); }                               /**< Returns the value of the **m_protareType** member. */    
+        LUPI_HOST_DEVICE_INLINE ProtareType protareType( ) const { return( m_protareType ); }                               /**< Returns the value of the **m_protareType** member. */    
 
         LUPI_HOST_DEVICE String const &projectileID( ) const { return( m_projectileID ); }                       /**< Returns the value of the **m_projectileID** member. */
         LUPI_HOST_DEVICE int projectileIntid( ) const { return( m_projectileIntid ); }                           /**< Returns the value of the **m_projectileIntid** member. */
@@ -1522,6 +1594,8 @@ class Protare {
 
         LUPI_HOST_DEVICE int photonIndex( ) const { return( m_photonIndex ); }                                   /**< Returns the value of the **m_photonIndex** member. */
         LUPI_HOST_DEVICE int userPhotonIndex( ) const { return( m_userPhotonIndex ); }                           /**< Returns the value of the **m_userPhotonIndex** member. */
+        LUPI_HOST_DEVICE int electronIndex( ) const { return( m_electronIndex ); }                                   /**< Returns the value of the **m_electronIndex** member. */
+        LUPI_HOST_DEVICE int userElectronIndex( ) const { return( m_userElectronIndex ); }                           /**< Returns the value of the **m_userElectronIndex** member. */
         LUPI_HOST_DEVICE String evaluation( ) const { return( m_evaluation ); }                                  /**< Returns the value of the **m_evaluation** member. */
         LUPI_HOST GIDI::Frame projectileFrame( ) const { return( m_projectileFrame ); }                          /**< Returns the value of the **m_projectileFrame** member. */
 
@@ -1533,9 +1607,9 @@ class Protare {
 
         LUPI_HOST_DEVICE bool isTNSL_ProtareSingle( ) const { return( m_isTNSL_ProtareSingle ); }                /**< Returns the value of the **m_isTNSL_ProtareSingle** member. */
         MCGIDI_VIRTUAL_FUNCTION LUPI_HOST_DEVICE std::size_t numberOfProtares( ) const MCGIDI_TRUE_VIRTUAL;                            /**< Returns the number of protares contained in *this*. */
-        MCGIDI_VIRTUAL_FUNCTION LUPI_HOST_DEVICE ProtareSingle const *protare( std::size_t a_index ) const MCGIDI_TRUE_VIRTUAL;        /**< Returns the **a_index** - 1 Protare contained in *this*. */
-        MCGIDI_VIRTUAL_FUNCTION LUPI_HOST_DEVICE ProtareSingle       *protare( std::size_t a_index )       MCGIDI_TRUE_VIRTUAL;        /**< Returns the **a_index** - 1 Protare contained in *this*. */
-        MCGIDI_VIRTUAL_FUNCTION LUPI_HOST_DEVICE ProtareSingle const *protareWithReaction( int a_index ) const MCGIDI_TRUE_VIRTUAL;              /**< Returns the *ProtareSingle* that contains the (*a_index* - 1) reaction. */
+        MCGIDI_VIRTUAL_FUNCTION LUPI_HOST_DEVICE_INLINE ProtareSingle const *protare( std::size_t a_index ) const MCGIDI_TRUE_VIRTUAL;        /**< Returns the **a_index** - 1 Protare contained in *this*. */
+        MCGIDI_VIRTUAL_FUNCTION LUPI_HOST_DEVICE_INLINE ProtareSingle       *protare( std::size_t a_index )       MCGIDI_TRUE_VIRTUAL;        /**< Returns the **a_index** - 1 Protare contained in *this*. */
+        MCGIDI_VIRTUAL_FUNCTION LUPI_HOST_DEVICE ProtareSingle const *protareWithReaction( std::size_t a_index ) const MCGIDI_TRUE_VIRTUAL;              /**< Returns the *ProtareSingle* that contains the (*a_index* - 1) reaction. */
 
         MCGIDI_VIRTUAL_FUNCTION LUPI_HOST_DEVICE double minimumEnergy( ) const MCGIDI_TRUE_VIRTUAL;                                              /**< Returns the minimum cross section domain. */
         MCGIDI_VIRTUAL_FUNCTION LUPI_HOST_DEVICE double maximumEnergy( ) const MCGIDI_TRUE_VIRTUAL ;                                             /**< Returns the maximum cross section domain. */
@@ -1545,9 +1619,9 @@ class Protare {
         MCGIDI_VIRTUAL_FUNCTION LUPI_HOST Vector<double> const &projectileMultiGroupBoundariesCollapsed( ) const MCGIDI_TRUE_VIRTUAL;
 
         MCGIDI_VIRTUAL_FUNCTION LUPI_HOST_DEVICE std::size_t numberOfReactions( ) const MCGIDI_TRUE_VIRTUAL;
-        MCGIDI_VIRTUAL_FUNCTION LUPI_HOST_DEVICE Reaction const *reaction( int a_index ) const MCGIDI_TRUE_VIRTUAL;
+        MCGIDI_VIRTUAL_FUNCTION LUPI_HOST_DEVICE Reaction const *reaction( std::size_t a_index ) const MCGIDI_TRUE_VIRTUAL;
         MCGIDI_VIRTUAL_FUNCTION LUPI_HOST_DEVICE std::size_t numberOfOrphanProducts( ) const MCGIDI_TRUE_VIRTUAL;
-        MCGIDI_VIRTUAL_FUNCTION LUPI_HOST_DEVICE Reaction const *orphanProduct( int a_index ) const MCGIDI_TRUE_VIRTUAL;
+        MCGIDI_VIRTUAL_FUNCTION LUPI_HOST_DEVICE Reaction const *orphanProduct( std::size_t a_index ) const MCGIDI_TRUE_VIRTUAL;
 
         MCGIDI_VIRTUAL_FUNCTION LUPI_HOST_DEVICE bool hasFission( ) const MCGIDI_TRUE_VIRTUAL;
 
@@ -1557,29 +1631,33 @@ class Protare {
         MCGIDI_VIRTUAL_FUNCTION LUPI_HOST_DEVICE bool hasURR_probabilityTables( ) const MCGIDI_TRUE_VIRTUAL;
         MCGIDI_VIRTUAL_FUNCTION LUPI_HOST_DEVICE double URR_domainMin( ) const MCGIDI_TRUE_VIRTUAL;
         MCGIDI_VIRTUAL_FUNCTION LUPI_HOST_DEVICE double URR_domainMax( ) const MCGIDI_TRUE_VIRTUAL;
-        MCGIDI_VIRTUAL_FUNCTION LUPI_HOST_DEVICE bool reactionHasURR_probabilityTables( int a_index ) const MCGIDI_TRUE_VIRTUAL ;
+        MCGIDI_VIRTUAL_FUNCTION LUPI_HOST_DEVICE bool reactionHasURR_probabilityTables( std::size_t a_index ) const MCGIDI_TRUE_VIRTUAL ;
 
         MCGIDI_VIRTUAL_FUNCTION LUPI_HOST_DEVICE double threshold( std::size_t a_index ) const MCGIDI_TRUE_VIRTUAL;
 
-        MCGIDI_VIRTUAL_FUNCTION LUPI_HOST_DEVICE double crossSection(                              URR_protareInfos const &a_URR_protareInfos,
-                int a_hashIndex, double a_temperature, double a_energy, bool a_sampling = false ) const MCGIDI_TRUE_VIRTUAL;
-        MCGIDI_VIRTUAL_FUNCTION LUPI_HOST_DEVICE void crossSectionVector( double a_temperature, double a_userFactor, int a_numberAllocated,
-                double *a_crossSectionVector ) const MCGIDI_TRUE_VIRTUAL;
-        MCGIDI_VIRTUAL_FUNCTION LUPI_HOST_DEVICE double reactionCrossSection( int a_reactionIndex, URR_protareInfos const &a_URR_protareInfos, int a_hashIndex,
+        MCGIDI_VIRTUAL_FUNCTION LUPI_HOST_DEVICE_INLINE double crossSection(                              URR_protareInfos const &a_URR_protareInfos,
+                std::size_t a_hashIndex, double a_temperature, double a_energy, bool a_sampling = false ) const MCGIDI_TRUE_VIRTUAL;
+        MCGIDI_VIRTUAL_FUNCTION LUPI_HOST_DEVICE void crossSectionVector( double a_temperature, double a_userFactor, 
+                std::size_t a_numberAllocated, double *a_crossSectionVector, bool a_sampling = false ) const MCGIDI_TRUE_VIRTUAL;
+        MCGIDI_VIRTUAL_FUNCTION LUPI_HOST_DEVICE void crossSectionVector( double a_temperature, double a_userFactor, 
+                std::size_t a_numberAllocated, float *a_crossSectionVector, bool a_sampling = false ) const MCGIDI_TRUE_VIRTUAL;
+        MCGIDI_VIRTUAL_FUNCTION LUPI_HOST_DEVICE double reactionCrossSection( std::size_t a_reactionIndex, 
+                URR_protareInfos const &a_URR_protareInfos, std::size_t a_hashIndex,
                 double a_temperature, double a_energy, bool a_sampling = false ) const MCGIDI_TRUE_VIRTUAL;
-        MCGIDI_VIRTUAL_FUNCTION LUPI_HOST_DEVICE double reactionCrossSection( int a_reactionIndex, URR_protareInfos const &a_URR_protareInfos,
+        MCGIDI_VIRTUAL_FUNCTION LUPI_HOST_DEVICE double reactionCrossSection( std::size_t a_reactionIndex, URR_protareInfos const &a_URR_protareInfos,
                 double a_temperature, double a_energy ) const MCGIDI_TRUE_VIRTUAL;
         template <typename RNG>
-        inline MCGIDI_VIRTUAL_FUNCTION LUPI_HOST_DEVICE int sampleReaction( Sampling::Input &a_input, 
-                URR_protareInfos const &a_URR_protareInfos, int a_hashIndex, double a_crossSection, RNG && a_rng) const MCGIDI_TRUE_VIRTUAL;
+        inline MCGIDI_VIRTUAL_FUNCTION LUPI_HOST_DEVICE std::size_t sampleReaction( Sampling::Input &a_input, 
+                URR_protareInfos const &a_URR_protareInfos, std::size_t a_hashIndex, double a_crossSection, RNG && a_rng) const MCGIDI_TRUE_VIRTUAL;
 
-        MCGIDI_VIRTUAL_FUNCTION LUPI_HOST_DEVICE double depositionEnergy(   int a_hashIndex, double a_temperature, double a_energy ) const MCGIDI_TRUE_VIRTUAL;
-        MCGIDI_VIRTUAL_FUNCTION LUPI_HOST_DEVICE double depositionMomentum( int a_hashIndex, double a_temperature, double a_energy ) const MCGIDI_TRUE_VIRTUAL;
-        MCGIDI_VIRTUAL_FUNCTION LUPI_HOST_DEVICE double productionEnergy(   int a_hashIndex, double a_temperature, double a_energy ) const MCGIDI_TRUE_VIRTUAL;
-        MCGIDI_VIRTUAL_FUNCTION LUPI_HOST_DEVICE double gain(               int a_hashIndex, double a_temperature, double a_energy, int a_particleIndex ) const MCGIDI_TRUE_VIRTUAL;
-        MCGIDI_VIRTUAL_FUNCTION LUPI_HOST_DEVICE double gainViaIntid(       int a_hashIndex, double a_temperature, double a_energy, int a_particleIntid ) const MCGIDI_TRUE_VIRTUAL;
+        MCGIDI_VIRTUAL_FUNCTION LUPI_HOST_DEVICE double depositionEnergy(   std::size_t a_hashIndex, double a_temperature, double a_energy ) const MCGIDI_TRUE_VIRTUAL;
+        MCGIDI_VIRTUAL_FUNCTION LUPI_HOST_DEVICE double depositionMomentum( std::size_t a_hashIndex, double a_temperature, double a_energy ) const MCGIDI_TRUE_VIRTUAL;
+        MCGIDI_VIRTUAL_FUNCTION LUPI_HOST_DEVICE double productionEnergy(   std::size_t a_hashIndex, double a_temperature, double a_energy ) const MCGIDI_TRUE_VIRTUAL;
+        MCGIDI_VIRTUAL_FUNCTION LUPI_HOST_DEVICE double gain(               std::size_t a_hashIndex, double a_temperature, double a_energy, int a_particleIndex ) const MCGIDI_TRUE_VIRTUAL;
+        MCGIDI_VIRTUAL_FUNCTION LUPI_HOST_DEVICE double gainViaIntid(       std::size_t a_hashIndex, double a_temperature, double a_energy, int a_particleIntid ) const MCGIDI_TRUE_VIRTUAL;
 
         MCGIDI_VIRTUAL_FUNCTION LUPI_HOST_DEVICE Vector<double> const &upscatterModelAGroupVelocities( ) const MCGIDI_TRUE_VIRTUAL;
+        MCGIDI_VIRTUAL_FUNCTION LUPI_HOST_DEVICE ThickTargetBremsstrahlung const thickTargetBremsstrahlung() const MCGIDI_TRUE_VIRTUAL;
 
         LUPI_HOST_DEVICE void serialize( LUPI::DataBuffer &a_buffer, LUPI::DataBuffer::Mode a_mode );
         LUPI_HOST_DEVICE void serialize2( LUPI::DataBuffer &a_buffer, LUPI::DataBuffer::Mode a_mode );
@@ -1612,9 +1690,10 @@ class ProtareSingle : public Protare {
         bool m_upscatterModelASupported;                                            /**< If **true**, upscatter model A plus can be used for this protare. */
         Vector<double> m_projectileMultiGroupBoundaries;                            /**< The multi-group boundaries for the projectile. Only used if m_crossSectionLookupMode and/or m_other1dDataLookupMode is multiGroup. */
         Vector<double> m_projectileMultiGroupBoundariesCollapsed;                   /**< The collased, multi-group boundaries for the projectile. Only used if m_crossSectionLookupMode and/or m_other1dDataLookupMode is multiGroup. */ 
-        Vector<double> m_upscatterModelAGroupEnergies;                            /**< The speed of the projectile at each multi-group boundary. Need by upscatter model A. */
+        Vector<double> m_upscatterModelAGroupEnergies;                              /**< The speed of the projectile at each multi-group boundary. Need by upscatter model A. */
         Vector<double> m_upscatterModelAGroupVelocities;                            /**< The speed of the projectile at each multi-group boundary. Need by upscatter model A. */
         Vector<double> m_upscatterModelACrossSection;                               /**< The multi-group cross section to use for upscatter model A plus. */
+        MultiGroupHash m_multiGroupHash;                                            /**< For upscatter model A with multi-group cross section data, this is the multi-group hash needed to lookup to cross section for the adjusted projectile energy. */
 
         Vector<Reaction *> m_reactions;                                             /**< The list of reactions. */
         Vector<Reaction *> m_orphanProducts;                                        /**< The list of orphan products. */
@@ -1630,17 +1709,19 @@ class ProtareSingle : public Protare {
         LUPI_HOST void setupNuclideGammaBranchStateInfos( SetupInfo &a_setupInfo, GIDI::ProtareSingle const &a_protare,
                 bool a_makePhotonEmissionProbabilitiesOne, bool a_zeroNuclearLevelEnergyWidth );
         LUPI_HOST_DEVICE void setUpscatterModelASupported( bool a_upscatterModelASupported ) { m_upscatterModelASupported = a_upscatterModelASupported; }   /**< Sets the value of *m_upscatterModelASupported* to *a_upscatterModelASupported*. */
+        
+        ThickTargetBremsstrahlung m_thickTargetBremsstrahlung; // holds ttb component data
 
     public:
         LUPI_HOST_DEVICE ProtareSingle( );
         LUPI_HOST ProtareSingle( LUPI::StatusMessageReporting &a_smr, GIDI::ProtareSingle const &a_protare, PoPI::Database const &a_pops, Transporting::MC &a_settings, 
                 GIDI::Transporting::Particles const &a_particles, DomainHash const &a_domainHash, GIDI::Styles::TemperatureInfos const &a_temperatureInfos,
-                std::set<int> const &a_reactionsToExclude, int a_reactionsToExcludeOffset = 0, bool a_allowFixedGrid = true );
+                GIDI::ExcludeReactionsSet const &a_reactionsToExclude, std::size_t a_reactionsToExcludeOffset = 0, bool a_allowFixedGrid = true );
         LUPI_HOST_DEVICE ~ProtareSingle( );
 
-        LUPI_HOST_DEVICE bool isPhotoAtomic( ) const { return( m_isPhotoAtomic ); }
-        LUPI_HOST_DEVICE bool continuousEnergy( ) const { return( m_continuousEnergy ); }
-        LUPI_HOST_DEVICE bool fixedGrid( ) const { return( m_fixedGrid ); }
+        LUPI_HOST_DEVICE_INLINE bool isPhotoAtomic( ) const { return( m_isPhotoAtomic ); }
+        LUPI_HOST_DEVICE_INLINE bool continuousEnergy( ) const { return( m_continuousEnergy ); }
+        LUPI_HOST_DEVICE_INLINE bool fixedGrid( ) const { return( m_fixedGrid ); }
         LUPI_HOST_DEVICE HeatedCrossSectionsContinuousEnergy const &heatedCrossSections( ) const { return( m_heatedCrossSections ); }  /**< Returns a reference to the **m_heatedCrossSections** member. */
         LUPI_HOST_DEVICE HeatedCrossSectionsContinuousEnergy &heatedCrossSections( ) { return( m_heatedCrossSections ); }              /**< Returns a reference to the **m_heatedCrossSections** member. */
         LUPI_HOST_DEVICE HeatedCrossSectionsMultiGroup const &heatedMultigroupCrossSections( ) const { return( m_heatedMultigroupCrossSections ); } /**< Returns a reference to the **m_heatedMultigroupCrossSections** member. */
@@ -1665,9 +1746,9 @@ class ProtareSingle : public Protare {
 // The rest are virtual methods defined in the Protare class.
 
         LUPI_HOST_DEVICE std::size_t numberOfProtares( ) const { return( 1 ); }                        /**< Returns the number of protares contained in *this*. */
-        LUPI_HOST_DEVICE ProtareSingle const *protare( std::size_t a_index ) const ;
-        LUPI_HOST_DEVICE ProtareSingle       *protare( std::size_t a_index );
-        LUPI_HOST_DEVICE ProtareSingle const *protareWithReaction( int a_index ) const ;
+        LUPI_HOST_DEVICE_INLINE ProtareSingle const *protare( std::size_t a_index ) const ;
+        LUPI_HOST_DEVICE_INLINE ProtareSingle       *protare( std::size_t a_index );
+        LUPI_HOST_DEVICE ProtareSingle const *protareWithReaction( std::size_t a_index ) const ;
 
         LUPI_HOST_DEVICE double minimumEnergy( ) const { 
             if( m_continuousEnergy ) return( m_heatedCrossSections.minimumEnergy( ) );
@@ -1683,48 +1764,55 @@ class ProtareSingle : public Protare {
                                                                                                             /**< Returns the value of the **m_projectileMultiGroupBoundariesCollapsed** member. */
 
         LUPI_HOST_DEVICE std::size_t numberOfReactions( ) const { return( m_reactions.size( ) ); }                       /**< Returns the number of reactions of *this*. */
-        LUPI_HOST_DEVICE Reaction const *reaction( int a_index ) const { return( m_reactions[a_index] ); }               /**< Returns the (a_index-1)^th reaction of *this*. */
+        LUPI_HOST_DEVICE Reaction const *reaction( std::size_t a_index ) const { return( m_reactions[a_index] ); }               /**< Returns the (a_index-1)^th reaction of *this*. */
         LUPI_HOST_DEVICE std::size_t numberOfOrphanProducts( ) const { return( m_orphanProducts.size( ) ); }             /**< Returns the number of orphan products of *this*. */
-        LUPI_HOST_DEVICE Reaction const *orphanProduct( int a_index ) const { return( m_orphanProducts[a_index] ); }     /**< Returns the (a_index-1)^th orphan product of *this*. */
+        LUPI_HOST_DEVICE Reaction const *orphanProduct( std::size_t a_index ) const { return( m_orphanProducts[a_index] ); }     /**< Returns the (a_index-1)^th orphan product of *this*. */
 
         LUPI_HOST_DEVICE bool hasFission( ) const ;
         LUPI_HOST_DEVICE String interaction( ) const { return( m_interaction ); }
         LUPI_HOST_DEVICE bool hasIncoherentDoppler( ) const ;
 
         LUPI_HOST_DEVICE int URR_index( ) const { return( m_URR_index ); }
-        LUPI_HOST_DEVICE void URR_index( int a_URR_index ) { m_URR_index = a_URR_index; }
+        LUPI_HOST_DEVICE void setURR_index( int a_URR_index ) { m_URR_index = a_URR_index; }
         LUPI_HOST_DEVICE bool inURR( double a_energy ) const ;
         LUPI_HOST_DEVICE bool hasURR_probabilityTables( ) const { return( m_hasURR_probabilityTables ); }
         LUPI_HOST_DEVICE double URR_domainMin( ) const { return( m_URR_domainMin ); }
         LUPI_HOST_DEVICE double URR_domainMax( ) const { return( m_URR_domainMax ); }
-        LUPI_HOST_DEVICE bool reactionHasURR_probabilityTables( int a_index ) const { return( m_heatedCrossSections.reactionHasURR_probabilityTables( a_index ) ); }
+        LUPI_HOST_DEVICE bool reactionHasURR_probabilityTables( std::size_t a_index ) const { return( m_heatedCrossSections.reactionHasURR_probabilityTables( a_index ) ); }
 
         LUPI_HOST_DEVICE double threshold( std::size_t a_index ) const {
             if( m_continuousEnergy ) return( m_heatedCrossSections.threshold( a_index ) );
             return( m_heatedMultigroupCrossSections.threshold( a_index ) ); }                                       /**< Returns the threshold for the reaction at index *a_index*. */
 
-        LUPI_HOST_DEVICE double crossSection(                              URR_protareInfos const &a_URR_protareInfos, int a_hashIndex, double a_temperature, double a_energy, bool a_sampling = false ) const ;
-        LUPI_HOST_DEVICE void crossSectionVector( double a_temperature, double a_userFactor, int a_numberAllocated, double *a_crossSectionVector ) const ;
-        LUPI_HOST_DEVICE double reactionCrossSection( int a_reactionIndex, URR_protareInfos const &a_URR_protareInfos, int a_hashIndex, double a_temperature, double a_energy, bool a_sampling = false ) const ;
-        LUPI_HOST_DEVICE double reactionCrossSection( int a_reactionIndex, URR_protareInfos const &a_URR_protareInfos,                  double a_temperature, double a_energy ) const ;
+        LUPI_HOST_DEVICE_INLINE double crossSection(                              URR_protareInfos const &a_URR_protareInfos, 
+                std::size_t a_hashIndex, double a_temperature, double a_energy, bool a_sampling = false ) const ;
+        LUPI_HOST_DEVICE void crossSectionVector( double a_temperature, double a_userFactor, std::size_t a_numberAllocated, 
+                double *a_crossSectionVector, bool a_sampling = false ) const ;
+        LUPI_HOST_DEVICE void crossSectionVector( double a_temperature, double a_userFactor, std::size_t a_numberAllocated, 
+                float *a_crossSectionVector, bool a_sampling = false ) const ;
+        LUPI_HOST_DEVICE double reactionCrossSection( std::size_t a_reactionIndex, URR_protareInfos const &a_URR_protareInfos, 
+                std::size_t a_hashIndex, double a_temperature, double a_energy, bool a_sampling = false ) const ;
+        LUPI_HOST_DEVICE double reactionCrossSection( std::size_t a_reactionIndex, URR_protareInfos const &a_URR_protareInfos,                  double a_temperature, double a_energy ) const ;
 
         template <typename RNG>
         inline LUPI_HOST_DEVICE bool sampleTargetBetaForUpscatterModelA( Sampling::Input &a_input, RNG && a_rng ) const ;
         template <typename RNG>
-        inline LUPI_HOST_DEVICE int sampleReaction( Sampling::Input &a_input, URR_protareInfos const &a_URR_protareInfos, 
-                int a_hashIndex, double a_crossSection, RNG && a_rng  ) const ;
+        inline LUPI_HOST_DEVICE std::size_t sampleReaction( Sampling::Input &a_input, URR_protareInfos const &a_URR_protareInfos, 
+                std::size_t a_hashIndex, double a_crossSection, RNG && a_rng  ) const ;
 
-        LUPI_HOST_DEVICE double depositionEnergy(   int a_hashIndex, double a_temperature, double a_energy ) const ;
-        LUPI_HOST_DEVICE double depositionMomentum( int a_hashIndex, double a_temperature, double a_energy ) const ;
-        LUPI_HOST_DEVICE double productionEnergy(   int a_hashIndex, double a_temperature, double a_energy ) const ;
-        LUPI_HOST_DEVICE double gain(               int a_hashIndex, double a_temperature, double a_energy, int a_particleIndex ) const ;
-        LUPI_HOST_DEVICE double gainViaIntid(       int a_hashIndex, double a_temperature, double a_energy, int a_particleIntid ) const ;
+        LUPI_HOST_DEVICE double depositionEnergy(   std::size_t a_hashIndex, double a_temperature, double a_energy ) const ;
+        LUPI_HOST_DEVICE double depositionMomentum( std::size_t a_hashIndex, double a_temperature, double a_energy ) const ;
+        LUPI_HOST_DEVICE double productionEnergy(   std::size_t a_hashIndex, double a_temperature, double a_energy ) const ;
+        LUPI_HOST_DEVICE double gain(               std::size_t a_hashIndex, double a_temperature, double a_energy, int a_particleIndex ) const ;
+        LUPI_HOST_DEVICE double gainViaIntid(       std::size_t a_hashIndex, double a_temperature, double a_energy, int a_particleIntid ) const ;
 
         LUPI_HOST_DEVICE bool upscatterModelASupported( ) const { return( m_upscatterModelASupported ); } /**< Returns the value of the **m_upscatterModelASupported** member. */
         LUPI_HOST_DEVICE Vector<double> const &upscatterModelAGroupEnergies( ) const { return( m_upscatterModelAGroupEnergies ); }   /**< Returns a reference to the **m_upscatterModelAGroupEnergies** member. */
         LUPI_HOST_DEVICE Vector<double> const &upscatterModelAGroupVelocities( ) const { return( m_upscatterModelAGroupVelocities ); }   /**< Returns a reference to the **m_upscatterModelAGroupVelocities** member. */
         LUPI_HOST_DEVICE Vector<double> const &upscatterModelACrossSection( ) const { return( m_upscatterModelACrossSection ); } 
                                                                                                             /**< Returns the value of the **m_upscatterModelACrossSection**. */
+
+        LUPI_HOST_DEVICE ThickTargetBremsstrahlung const thickTargetBremsstrahlung( ) const { return( m_thickTargetBremsstrahlung ); }
 
         LUPI_HOST_DEVICE void serialize2( LUPI::DataBuffer &a_buffer, LUPI::DataBuffer::Mode a_mode );
         LUPI_HOST_DEVICE long sizeOf2( ) const { return sizeof(*this); }
@@ -1748,7 +1836,7 @@ class ProtareComposite : public Protare {
         LUPI_HOST_DEVICE ProtareComposite( );
         LUPI_HOST ProtareComposite( LUPI::StatusMessageReporting &a_smr, GIDI::ProtareComposite const &a_protare, PoPI::Database const &a_pops, Transporting::MC &a_settings, 
                 GIDI::Transporting::Particles const &a_particles, DomainHash const &a_domainHash, GIDI::Styles::TemperatureInfos const &a_temperatureInfos,
-                std::set<int> const &a_reactionsToExclude, int a_reactionsToExcludeOffset = 0, bool a_allowFixedGrid = true );
+                GIDI::ExcludeReactionsSet const &a_reactionsToExclude, std::size_t a_reactionsToExcludeOffset = 0, bool a_allowFixedGrid = true );
         LUPI_HOST_DEVICE ~ProtareComposite( );
 
         Vector<ProtareSingle *> protares( ) const { return( m_protares ); }       /**< Returns the value of the **m_protares** member. */
@@ -1760,7 +1848,7 @@ class ProtareComposite : public Protare {
         LUPI_HOST_DEVICE std::size_t numberOfProtares( ) const { return( m_protares.size( ) ); }     /**< Returns the number of protares contained in *this*. */
         LUPI_HOST_DEVICE ProtareSingle const *protare( std::size_t a_index ) const ;
         LUPI_HOST_DEVICE ProtareSingle       *protare( std::size_t a_index );
-        LUPI_HOST_DEVICE ProtareSingle const *protareWithReaction( int a_index ) const ;
+        LUPI_HOST_DEVICE ProtareSingle const *protareWithReaction( std::size_t a_index ) const ;
 
         LUPI_HOST_DEVICE double minimumEnergy( ) const { return( m_minimumEnergy ); }     /**< Returns the value of the **m_minimumEnergy** member. */
         LUPI_HOST_DEVICE double maximumEnergy( ) const { return( m_maximumEnergy ); }     /**< Returns the value of the **m_maximumEnergy** member. */
@@ -1773,10 +1861,10 @@ class ProtareComposite : public Protare {
 
         LUPI_HOST_DEVICE std::size_t numberOfReactions( ) const { return( m_numberOfReactions ); }
                                                                             /**< Returns the value of the **m_numberOfReactions** member. */
-        LUPI_HOST_DEVICE Reaction const *reaction( int a_index ) const ;
+        LUPI_HOST_DEVICE Reaction const *reaction( std::size_t a_index ) const ;
         LUPI_HOST_DEVICE std::size_t numberOfOrphanProducts( ) const { return( m_numberOfOrphanProducts ); }
                                                                             /**< Returns the value of the **m_numberOfOrphanProducts** member. */
-        LUPI_HOST_DEVICE Reaction const *orphanProduct( int a_index ) const ;
+        LUPI_HOST_DEVICE Reaction const *orphanProduct( std::size_t a_index ) const ;
 
         LUPI_HOST_DEVICE bool hasFission( ) const ;
         LUPI_HOST_DEVICE bool hasIncoherentDoppler( ) const ;
@@ -1785,23 +1873,28 @@ class ProtareComposite : public Protare {
         LUPI_HOST_DEVICE bool hasURR_probabilityTables( ) const ;
         LUPI_HOST_DEVICE double URR_domainMin( ) const ;
         LUPI_HOST_DEVICE double URR_domainMax( ) const ;
-        LUPI_HOST_DEVICE bool reactionHasURR_probabilityTables( int a_index ) const ;
+        LUPI_HOST_DEVICE bool reactionHasURR_probabilityTables( std::size_t a_index ) const ;
 
         LUPI_HOST_DEVICE double threshold( std::size_t a_index ) const ;
 
-        LUPI_HOST_DEVICE double crossSection(                              URR_protareInfos const &a_URR_protareInfos, int a_hashIndex, double a_temperature, double a_energy, bool a_sampling = false ) const ;
-        LUPI_HOST_DEVICE void crossSectionVector( double a_temperature, double a_userFactor, int a_numberAllocated, double *a_crossSectionVector ) const ;
-        LUPI_HOST_DEVICE double reactionCrossSection( int a_reactionIndex, URR_protareInfos const &a_URR_protareInfos, int a_hashIndex, double a_temperature, double a_energy, bool a_sampling = false ) const ;
-        LUPI_HOST_DEVICE double reactionCrossSection( int a_reactionIndex, URR_protareInfos const &a_URR_protareInfos,                  double a_temperature, double a_energy ) const ;
+        LUPI_HOST_DEVICE double crossSection(                              URR_protareInfos const &a_URR_protareInfos, 
+                std::size_t a_hashIndex, double a_temperature, double a_energy, bool a_sampling = false ) const ;
+        LUPI_HOST_DEVICE void crossSectionVector( double a_temperature, double a_userFactor, std::size_t a_numberAllocated, 
+                double *a_crossSectionVector, bool a_sampling = false ) const ;
+        LUPI_HOST_DEVICE void crossSectionVector( double a_temperature, double a_userFactor, std::size_t a_numberAllocated, 
+                float *a_crossSectionVector, bool a_sampling = false ) const ;
+        LUPI_HOST_DEVICE double reactionCrossSection( std::size_t a_reactionIndex, URR_protareInfos const &a_URR_protareInfos, 
+                std::size_t a_hashIndex, double a_temperature, double a_energy, bool a_sampling = false ) const ;
+        LUPI_HOST_DEVICE double reactionCrossSection( std::size_t a_reactionIndex, URR_protareInfos const &a_URR_protareInfos,                  double a_temperature, double a_energy ) const ;
         template <typename RNG>
-        inline LUPI_HOST_DEVICE int sampleReaction( Sampling::Input &a_input, URR_protareInfos const &a_URR_protareInfos, 
-                int a_hashIndex, double a_crossSection, RNG && a_rng ) const ;
+        inline LUPI_HOST_DEVICE std::size_t sampleReaction( Sampling::Input &a_input, URR_protareInfos const &a_URR_protareInfos, 
+                std::size_t a_hashIndex, double a_crossSection, RNG && a_rng ) const ;
 
-        LUPI_HOST_DEVICE double depositionEnergy(   int a_hashIndex, double a_temperature, double a_energy ) const ;
-        LUPI_HOST_DEVICE double depositionMomentum( int a_hashIndex, double a_temperature, double a_energy ) const ;
-        LUPI_HOST_DEVICE double productionEnergy(   int a_hashIndex, double a_temperature, double a_energy ) const ;
-        LUPI_HOST_DEVICE double gain(               int a_hashIndex, double a_temperature, double a_energy, int a_particleIndex ) const ;
-        LUPI_HOST_DEVICE double gainViaIntid(       int a_hashIndex, double a_temperature, double a_energy, int a_particleIntid ) const ;
+        LUPI_HOST_DEVICE double depositionEnergy(   std::size_t a_hashIndex, double a_temperature, double a_energy ) const ;
+        LUPI_HOST_DEVICE double depositionMomentum( std::size_t a_hashIndex, double a_temperature, double a_energy ) const ;
+        LUPI_HOST_DEVICE double productionEnergy(   std::size_t a_hashIndex, double a_temperature, double a_energy ) const ;
+        LUPI_HOST_DEVICE double gain(               std::size_t a_hashIndex, double a_temperature, double a_energy, int a_particleIndex ) const ;
+        LUPI_HOST_DEVICE double gainViaIntid(       std::size_t a_hashIndex, double a_temperature, double a_energy, int a_particleIntid ) const ;
 
         LUPI_HOST_DEVICE Vector<double> const &upscatterModelAGroupVelocities( ) const { return( m_protares[0]->upscatterModelAGroupVelocities( ) ); }
                                                                             /**< Returns a reference to the **m_upscatterModelAGroupVelocities** member. */
@@ -1829,7 +1922,7 @@ class ProtareTNSL : public Protare {
         LUPI_HOST_DEVICE ProtareTNSL( );
         LUPI_HOST ProtareTNSL( LUPI::StatusMessageReporting &a_smr, GIDI::ProtareTNSL const &a_protare, PoPI::Database const &a_pops, Transporting::MC &a_settings, 
                 GIDI::Transporting::Particles const &a_particles, DomainHash const &a_domainHash, GIDI::Styles::TemperatureInfos const &a_temperatureInfos,
-                std::set<int> const &a_reactionsToExclude, int a_reactionsToExcludeOffset = 0, bool a_allowFixedGrid = true );
+                GIDI::ExcludeReactionsSet const &a_reactionsToExclude, std::size_t a_reactionsToExcludeOffset = 0, bool a_allowFixedGrid = true );
         LUPI_HOST_DEVICE ~ProtareTNSL( );
 
         LUPI_HOST_DEVICE ProtareSingle const *protareWithElastic( ) const { return( m_protareWithElastic ); }        /**< Returns the **m_protareWithElastic** member. */
@@ -1846,7 +1939,7 @@ class ProtareTNSL : public Protare {
         LUPI_HOST_DEVICE std::size_t numberOfProtares( ) const { return( 2 ); }  /**< Always Returns 2. */
         LUPI_HOST_DEVICE ProtareSingle const *protare( std::size_t a_index ) const ;
         LUPI_HOST_DEVICE ProtareSingle       *protare( std::size_t a_index );
-        LUPI_HOST_DEVICE ProtareSingle const *protareWithReaction( int a_index ) const ;
+        LUPI_HOST_DEVICE ProtareSingle const *protareWithReaction( std::size_t a_index ) const ;
 
         LUPI_HOST_DEVICE double minimumEnergy( ) const { return( m_protareWithElastic->minimumEnergy( ) ); }   /**< Returns the minimum cross section domain. */
         LUPI_HOST_DEVICE double maximumEnergy( ) const { return( m_protareWithElastic->maximumEnergy( ) ); }   /**< Returns the maximum cross section domain. */
@@ -1858,10 +1951,10 @@ class ProtareTNSL : public Protare {
                                                                             /**< Returns the value of the **m_projectileMultiGroupBoundariesCollapsed** member. */
 
         LUPI_HOST_DEVICE std::size_t numberOfReactions( ) const { return( m_TNSL->numberOfReactions( ) + m_protareWithElastic->numberOfReactions( ) ); }
-        LUPI_HOST_DEVICE Reaction const *reaction( int a_index ) const ;
+        LUPI_HOST_DEVICE Reaction const *reaction( std::size_t a_index ) const ;
         LUPI_HOST_DEVICE std::size_t numberOfOrphanProducts( ) const { return( m_protareWithElastic->numberOfOrphanProducts( ) ); }
                                                                             /**< Returns the number of orphan products in the normal ProtareSingle. */
-        LUPI_HOST_DEVICE Reaction const *orphanProduct( int a_index ) const { return( m_protareWithElastic->orphanProduct( a_index ) ); }
+        LUPI_HOST_DEVICE Reaction const *orphanProduct( std::size_t a_index ) const { return( m_protareWithElastic->orphanProduct( a_index ) ); }
                                                                             /**< Returns the (a_index - 1 )^th orphan product in the normal ProtareSingle. */
 
         LUPI_HOST_DEVICE bool hasFission( ) const { return( m_protareWithElastic->hasFission( ) ); }    /* Returns the normal ProtareSingle's hasFission value. */
@@ -1871,23 +1964,28 @@ class ProtareTNSL : public Protare {
         LUPI_HOST_DEVICE bool hasURR_probabilityTables( ) const { return( m_protareWithElastic->hasURR_probabilityTables( ) ); }
         LUPI_HOST_DEVICE double URR_domainMin( ) const { return( m_protareWithElastic->URR_domainMin( ) ); }
         LUPI_HOST_DEVICE double URR_domainMax( ) const { return( m_protareWithElastic->URR_domainMax( ) ); }
-        LUPI_HOST_DEVICE bool reactionHasURR_probabilityTables( int a_index ) const ;
+        LUPI_HOST_DEVICE bool reactionHasURR_probabilityTables( std::size_t a_index ) const ;
 
         LUPI_HOST_DEVICE double threshold( std::size_t a_index ) const ;
 
-        LUPI_HOST_DEVICE double crossSection(                              URR_protareInfos const &a_URR_protareInfos, int a_hashIndex, double a_temperature, double a_energy, bool a_sampling = false ) const ;
-        LUPI_HOST_DEVICE void crossSectionVector( double a_temperature, double a_userFactor, int a_numberAllocated, double *a_crossSectionVector ) const ;
-        LUPI_HOST_DEVICE double reactionCrossSection( int a_reactionIndex, URR_protareInfos const &a_URR_protareInfos, int a_hashIndex, double a_temperature, double a_energy, bool a_sampling = false ) const ;
-        LUPI_HOST_DEVICE double reactionCrossSection( int a_reactionIndex, URR_protareInfos const &a_URR_protareInfos,                  double a_temperature, double a_energy ) const ;
+        LUPI_HOST_DEVICE double crossSection(                              URR_protareInfos const &a_URR_protareInfos, 
+                std::size_t a_hashIndex, double a_temperature, double a_energy, bool a_sampling = false ) const ;
+        LUPI_HOST_DEVICE void crossSectionVector( double a_temperature, double a_userFactor, std::size_t a_numberAllocated, 
+                double *a_crossSectionVector, bool a_sampling = false ) const ;
+        LUPI_HOST_DEVICE void crossSectionVector( double a_temperature, double a_userFactor, std::size_t a_numberAllocated, 
+                float *a_crossSectionVector, bool a_sampling = false ) const ;
+        LUPI_HOST_DEVICE double reactionCrossSection( std::size_t a_reactionIndex, URR_protareInfos const &a_URR_protareInfos, 
+                std::size_t a_hashIndex, double a_temperature, double a_energy, bool a_sampling = false ) const ;
+        LUPI_HOST_DEVICE double reactionCrossSection( std::size_t a_reactionIndex, URR_protareInfos const &a_URR_protareInfos,                  double a_temperature, double a_energy ) const ;
         template <typename RNG>
-        inline LUPI_HOST_DEVICE int sampleReaction( Sampling::Input &a_input, URR_protareInfos const &a_URR_protareInfos, 
-                int a_hashIndex, double a_crossSection, RNG && a_rng ) const ;
+        inline LUPI_HOST_DEVICE std::size_t sampleReaction( Sampling::Input &a_input, URR_protareInfos const &a_URR_protareInfos, 
+                std::size_t a_hashIndex, double a_crossSection, RNG && a_rng ) const ;
 
-        LUPI_HOST_DEVICE double depositionEnergy(   int a_hashIndex, double a_temperature, double a_energy ) const ;
-        LUPI_HOST_DEVICE double depositionMomentum( int a_hashIndex, double a_temperature, double a_energy ) const ;
-        LUPI_HOST_DEVICE double productionEnergy(   int a_hashIndex, double a_temperature, double a_energy ) const ;
-        LUPI_HOST_DEVICE double gain(               int a_hashIndex, double a_temperature, double a_energy, int a_particleIndex ) const ;
-        LUPI_HOST_DEVICE double gainViaIntid(       int a_hashIndex, double a_temperature, double a_energy, int a_particleIntid ) const ;
+        LUPI_HOST_DEVICE double depositionEnergy(   std::size_t a_hashIndex, double a_temperature, double a_energy ) const ;
+        LUPI_HOST_DEVICE double depositionMomentum( std::size_t a_hashIndex, double a_temperature, double a_energy ) const ;
+        LUPI_HOST_DEVICE double productionEnergy(   std::size_t a_hashIndex, double a_temperature, double a_energy ) const ;
+        LUPI_HOST_DEVICE double gain(               std::size_t a_hashIndex, double a_temperature, double a_energy, int a_particleIndex ) const ;
+        LUPI_HOST_DEVICE double gainViaIntid(       std::size_t a_hashIndex, double a_temperature, double a_energy, int a_particleIntid ) const ;
 
         LUPI_HOST_DEVICE Vector<double> const &upscatterModelAGroupVelocities( ) const { return( m_protareWithElastic->upscatterModelAGroupVelocities( ) ); }
                                                                             /**< Returns a reference to the **m_upscatterModelAGroupVelocities** member. */
@@ -1902,8 +2000,8 @@ class ProtareTNSL : public Protare {
 ============================================================
 */
 LUPI_HOST Protare *protareFromGIDIProtare( LUPI::StatusMessageReporting &a_smr, GIDI::Protare const &a_protare, PoPI::Database const &a_pops, Transporting::MC &a_settings, GIDI::Transporting::Particles const &a_particles,
-                DomainHash const &a_domainHash, GIDI::Styles::TemperatureInfos const &a_temperatureInfos, std::set<int> const &a_reactionsToExclude,
-                int a_reactionsToExcludeOffset = 0, bool a_allowFixedGrid = true );
+                DomainHash const &a_domainHash, GIDI::Styles::TemperatureInfos const &a_temperatureInfos, GIDI::ExcludeReactionsSet const &a_reactionsToExclude,
+                std::size_t a_reactionsToExcludeOffset = 0, bool a_allowFixedGrid = true );
 LUPI_HOST Vector<double> GIDI_VectorDoublesToMCGIDI_VectorDoubles( GIDI::Vector a_vector );
 LUPI_HOST void addVectorItemsToSet( Vector<int> const &a_from, std::set<int> &a_to );
 
@@ -1922,6 +2020,7 @@ LUPI_HOST_DEVICE ACE_URR_probabilityTables *serializeACE_URR_probabilityTables( 
 
 LUPI_HOST_DEVICE Distributions::Distribution *serializeDistribution( LUPI::DataBuffer &a_buffer, LUPI::DataBuffer::Mode a_mode, 
                 Distributions::Distribution *a_distribution );
+LUPI_HOST_DEVICE Distributions::Distribution *deleteDistribution( Distributions::Distribution *a_distribution );
 
 LUPI_HOST std::vector<double> vectorToSTD_vector( Vector<double> a_input );
 LUPI_HOST std::vector<double> vectorToSTD_vector( Vector<float> a_input );

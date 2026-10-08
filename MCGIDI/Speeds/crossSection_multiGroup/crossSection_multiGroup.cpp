@@ -44,7 +44,7 @@ void main2( int argc, char **argv ) {
     std::string mapFilename( "../../../GIDI/Test/all3T.map" );
     PoPI::Database pops( "../../../TestData/PoPs/pops.xml" );
     GIDI::Map::Map map( mapFilename, pops );
-    std::set<int> reactionsToExclude;
+    GIDI::ExcludeReactionsSet reactionsToExclude;
     LUPI::StatusMessageReporting smr1;
     clock_t time0, time1;
     long numberOfSamples = 10 * 1000 * 1000, sampleTemperatures = 0, sampleEnergies;

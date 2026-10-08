@@ -242,7 +242,7 @@ std::vector<std::string> splitXLinkString( std::string const &a_XLink ) {
 
     if( start < end ) {
         std::string element = a_XLink.substr( start, end - start );
-        elements.push_back( element );
+        elements.push_back( std::move( element ) );
     }   
     
     return( elements );
@@ -268,6 +268,29 @@ bool stringToInt( std::string const &a_string, int &a_value ) {
     if( ( value < INT_MIN ) || ( value > INT_MAX ) ) return( false );
 
     a_value = static_cast<int>( value );
+    return( true );
+}
+
+/* *********************************************************************************************************//**
+ * Converts a string to an integer. All characteros of the string must be valid int characters except for the trailing 0.
+ *
+ * @param a_string              [in]        The string to convert to an int.
+ * @param a_value               [in]        The converted int value.
+ *
+ * @return                                  true if successful and false otherwise.
+  ***********************************************************************************************************/
+
+bool stringToSize_t( std::string const &a_string, std::size_t &a_value ) {
+
+    char const *digits = a_string.c_str( );
+    char *nonDigit;
+    long value = strtol( digits, &nonDigit, 10 );
+
+    if( digits == nonDigit ) return( false );
+    if( *nonDigit != 0 ) return( false );
+    if( ( value < 0 ) || ( value > LONG_MAX ) ) return( false );
+
+    a_value = static_cast<std::size_t>( value );
     return( true );
 }
 

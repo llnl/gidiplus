@@ -39,6 +39,39 @@ static std::string protonFakeAlias( "h1" );
  */
 
 /* *********************************************************************************************************//**
+ * Constructor that parses an atomic subshell configuration node.
+ *
+ * @param a_node            [in]    The **HAPI::Node** to be parsed.
+ * @param a_parent          [in]    The parent chemical element.
+ ***********************************************************************************************************/
+
+AtomicConfiguration::AtomicConfiguration( HAPI::Node const &a_node, LUPI_maybeUnused ChemicalElement *a_parent ) :
+        m_subshell( a_node.attribute_as_string( PoPI_subshellChars ) ),
+        m_electronNumber( a_node.attribute_as_double( PoPI_electronNumberChars ) ),
+        m_bindingEnergy_eV( 0.0 ) {
+
+    HAPI::Node bindingEnergy = a_node.child( PoPI_bindingEnergyChars );
+    if( bindingEnergy.empty( ) ) throw Exception( "AtomicConfiguration: missing 'bindingEnergy' node." );
+
+    HAPI::Node valueNode = bindingEnergy.child( PoPI_doubleChars );
+    if( valueNode.empty( ) ) valueNode = bindingEnergy.first_child( );
+    if( valueNode.empty( ) ) throw Exception( "AtomicConfiguration: missing bindingEnergy value node." );
+
+    double const value = valueNode.attribute_as_double( "value" );
+    std::string const unit = valueNode.attribute_as_string( "unit" );
+
+    if( ( unit == "" ) || ( unit == "eV" ) ) {
+        m_bindingEnergy_eV = value; }
+    else if( unit == "keV" ) {
+        m_bindingEnergy_eV = value * 1e3; }
+    else if( unit == "MeV" ) {
+        m_bindingEnergy_eV = value * 1e6; }
+    else {
+        throw Exception( "AtomicConfiguration: unsupported bindingEnergy unit '" + unit + "'." );
+    }
+}
+
+/* *********************************************************************************************************//**
  * Constructor that parses an **HAPI** instance to create a **GNDS** chemicalElement node.
  *
  * @param a_node            [in]    The **HAPI::Node** to be parsed.
@@ -50,10 +83,19 @@ ChemicalElement::ChemicalElement( HAPI::Node const &a_node, Database *a_DB, LUPI
         SymbolBase( a_node, Particle_class::chemicalElement ),
         m_Z( a_node.attribute( PoPI_Z_Chars ).as_int( ) ),
         m_name( a_node.attribute( PoPI_nameChars ).value( ) ),
-        m_isotopes( PoPI_isotopesChars ) {
+        m_isotopes( PoPI_isotopesChars ),
+        m_atomicConfigurations( PoPI_configurationsChars ) {
 
     addToSymbols( a_DB );
     m_isotopes.appendFromParentNode( a_node.child( PoPI_isotopesChars ), a_DB, this );
+
+    HAPI::Node atomic = a_node.child( PoPI_atomicChars );
+    if( !atomic.empty( ) ) {
+        HAPI::Node configurations = atomic.child( PoPI_configurationsChars );
+        if( !configurations.empty( ) ) {
+            m_atomicConfigurations.appendFromParentNode2( configurations, this );
+        }
+    }
 }
 
 /* *********************************************************************************************************//**
@@ -964,7 +1006,7 @@ std::string chemicalElementInfoFromZ( int a_Z, bool a_wantSymbol, bool a_asNucle
 
     if( a_wantSymbol && a_asNucleus ) {
         char c1[3];
-        c1[0] = tolower( info.c_str( )[0] );
+        c1[0] = static_cast<char>( tolower( info.c_str( )[0] ) );
         c1[1] = 0;
         c1[2] = 0;
         if( info.size( ) > 1 ) c1[1] = info.c_str( )[1];
@@ -1069,7 +1111,7 @@ ParseIdInfo::ParseIdInfo( std::string const &a_id ) :
     std::string symbolCap;
     if( symbol.size( ) > 0 ) {
         char firstChar[2];
-        firstChar[0] = std::toupper( symbol[0] );
+        firstChar[0] = static_cast<char>( std::toupper( symbol[0] ) );
         firstChar[1] = 0;
         std::string firstStringChar( firstChar );
         symbolCap = firstStringChar + symbol.substr( 1 );

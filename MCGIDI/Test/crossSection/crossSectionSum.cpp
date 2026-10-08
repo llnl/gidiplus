@@ -27,7 +27,7 @@ int main( int argc, char **argv ) {
     std::string targetID = "O16";
     GIDI::Protare *protare;
     GIDI::Transporting::Particles particles;
-    std::set<int> reactionsToExclude;
+    GIDI::ExcludeReactionsSet reactionsToExclude;
     LUPI::StatusMessageReporting smr1;
 
     std::cerr << "    " << __FILE__;
@@ -67,7 +67,7 @@ int main( int argc, char **argv ) {
     for( double temperature = 1e-8; temperature < 2e-3; temperature *= 10.1 ) {
         std::cout << "temperature = " << temperature << std::endl;
         for( double energy = 1e-12; energy < 100; energy *= 1.2 ) {
-            int hashIndex = domainHash.index( energy );
+            std::size_t hashIndex = domainHash.index( energy );
             int numberOfNonZeroReactionCrossSections = 0;
 
             double crossSection = MCProtare->crossSection( URR_protare_infos, hashIndex, temperature, energy );

@@ -72,8 +72,8 @@ void main2( int argc, char **argv ) {
     writeInfo.print( );
 
     std::cout << std::endl;
-    auto isotopicAbundances = targetInfo.isotopicAbundances( );
-    auto chemicalElements = isotopicAbundances.chemicalElements( );
+    auto const &isotopicAbundances = targetInfo.isotopicAbundances( );
+    auto const &chemicalElements = isotopicAbundances.chemicalElements( );
     for( auto iterChemicalElement = chemicalElements.begin( ); iterChemicalElement != chemicalElements.end( ); ++iterChemicalElement ) {
         auto const *chemicalElement = dynamic_cast<GIDI::TargetInfo::ChemicalElement *>( *iterChemicalElement );
         std::cout << "Chemical element " << chemicalElement->symbol( ) << std::endl;

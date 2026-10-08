@@ -28,7 +28,7 @@ namespace PoPI {
 Alias::Alias( HAPI::Node const &a_node, Database *a_DB, Particle_class a_class ) :
         IDBase( a_node, a_class ),
         m_pid( a_node.attribute( PoPI_pidChars ).value( ) ),
-        m_pidIndex( -1 ) {
+        m_pidIndex( SIZE_MAX ) {
 
     if( supportedNucleusAliases.find( ID( ) ) != supportedNucleusAliases.end( ) ) {
         ParseIdInfo idInfo( supportedNucleusAliases[ID( )] );

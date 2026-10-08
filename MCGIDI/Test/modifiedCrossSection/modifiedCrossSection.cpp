@@ -44,7 +44,7 @@ void main2( int argc, char **argv ) {
     argvOptions argv_options( __FILE__, description );
     ParseTestOptions parseTestOptions( argv_options, argc, argv );
     GIDI::Transporting::Particles particles;
-    std::set<int> reactionsToExclude;
+    GIDI::ExcludeReactionsSet reactionsToExclude;
     double offset, slope, domainMin, domainMax;
     bool inputPresent = false;
     LUPI::StatusMessageReporting smr1;

@@ -39,7 +39,7 @@ int main( int argc, char **argv ) {
     int reactionIndex = 1;
     unsigned long long rngState = 1;
     char *message;
-    std::set<int> reactionsToExclude;
+    GIDI::ExcludeReactionsSet reactionsToExclude;
     LUPI::StatusMessageReporting smr1;
 
     std::cerr << "    " << __FILE__;

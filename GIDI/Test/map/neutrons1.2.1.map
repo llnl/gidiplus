@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<map library="neutrons2.1" format="2.1" checksum="4521c47658a7897d00bf11e6f717c6f0a13854b6" algorithm="sha1">
+  <protare projectile="n" target="H1" evaluation="ENDF/BVII.1" path="neutrons/n-001_H_001.xml" interaction="nuclear" checksum="f449b9392d32770405e995211bebc36cec853bab"/>
+  <protare projectile="n" target="O16" evaluation="ENDF/BVII.1" path="neutrons/n-008_O_016.xml" interaction="nuclear" checksum="3983dfe699ccb997793e9711207123f6c54316e7"/>
+  <protare projectile="n" target="O17" evaluation="ENDF/BVII.1" path="neutrons/n-008_O_017.xml" interaction="nuclear" checksum="8bd4c41c97a8d2e8c53ae3827b6d3962ad439118"/>
+  <protare projectile="n" target="Ar36" evaluation="ENDF/BVII.1" path="neutrons/n-018_Ar_036.xml" interaction="nuclear" checksum="197804af63b22e601d16cf80af025c63835a8303"/>
+  <protare projectile="n" target="Ti49" evaluation="ENDF/BVII.1" path="neutrons/n-022_Ti_049.xml" interaction="nuclear" checksum="0fd20877c95e87b5bf0a203d9eeea2290a0870e9"/>
+  <protare projectile="n" target="Ni61" evaluation="ENDF/BVII.1" path="neutrons/n-028_Ni_061.xml" interaction="nuclear" checksum="0932d7287e307bcbc6aeb3835e3f9d04f8f1e37d"/>
+  <protare projectile="n" target="As74" evaluation="ENDF/BVII.1" path="neutrons/n-033_As_074.xml" interaction="nuclear" checksum="65c8e5f341eb626ac20eb243bd98133d891ababf"/>
+  <protare projectile="n" target="Br79" evaluation="ENDF/BVII.1" path="neutrons/n-035_Br_079.xml" interaction="nuclear" checksum="f68304c01ebb0d47948428ab313a449f582a3fc5"/>
+  <protare projectile="n" target="Y89" evaluation="ENDF/BVII.1" path="neutrons/n-039_Y_089.xml" interaction="nuclear" checksum="809b4540e5400b6740eb2e975bb026e77805313d"/>
+  <protare projectile="n" target="Mo98" evaluation="ENDF/BVII.1" path="neutrons/n-042_Mo_098.xml" interaction="nuclear" checksum="6ec0afa9c7594ebc9300a43df9123e9165c39cca"/>
+  <protare projectile="n" target="Pd105" evaluation="ENDF/BVII.1" path="neutrons/n-046_Pd_105.xml" interaction="nuclear" checksum="676c35180eec933b062b97962c67b2ef7a30f42d"/>
+  <protare projectile="n" target="In113" evaluation="ENDF/BVII.1" path="neutrons/n-049_In_113.xml" interaction="nuclear" checksum="a761138bf1a99cfea216f7219477b2fa0e590848"/>
+  <protare projectile="n" target="Sb124" evaluation="ENDF/BVII.1" path="neutrons/n-051_Sb_124.xml" interaction="nuclear" checksum="3bd2d5e9341c802bb4800ff220177fed38fc572e"/>
+  <protare projectile="n" target="I135" evaluation="ENDF/BVII.1" path="neutrons/n-053_I_135.xml" interaction="nuclear" checksum="98af02da8c46aaa22673abf9e276a118636f323a"/>
+  <protare projectile="n" target="Ba140" evaluation="ENDF/BVII.1" path="neutrons/n-056_Ba_140.xml" interaction="nuclear" checksum="d6ec80cb874903ce36f56a791059223a8c4d73b2"/>
+  <protare projectile="n" target="Nd145" evaluation="ENDF/BVII.1" path="neutrons/n-060_Nd_145.xml" interaction="nuclear" checksum="bcbf3b2f3884a32a39bb9832296dde852a662be8"/>
+  <protare projectile="n" target="Sm154" evaluation="ENDF/BVII.1" path="neutrons/n-062_Sm_154.xml" interaction="nuclear" checksum="8377dd571fdf38f12874c6182c7391ff303e9c58"/>
+  <protare projectile="n" target="Dy156" evaluation="ENDF/BVII.1" path="neutrons/n-066_Dy_156.xml" interaction="nuclear" checksum="e03849bb6eaf7b7f796ad2c77c119ada2a61860b"/>
+  <protare projectile="n" target="Lu175" evaluation="ENDF/BVII.1" path="neutrons/n-071_Lu_175.xml" interaction="nuclear" checksum="9953f7a1bd64d10399e0678db48b21410f6cbca4"/>
+  <protare projectile="n" target="Ta181" evaluation="ENDF/BVII.1" path="neutrons/n-073_Ta_181.xml" interaction="nuclear" checksum="03a3090ed5495122cd9ad494622348ab5360477c"/>
+  <protare projectile="n" target="Hg204" evaluation="ENDF/BVII.1" path="neutrons/n-080_Hg_204.xml" interaction="nuclear" checksum="eff2b50a8728b0ed5211c7b29fda654b7fde01a4"/>
+  <protare projectile="n" target="Th230" evaluation="ENDF/BVII.1" path="neutrons/n-090_Th_230.xml" interaction="nuclear" checksum="abe28ce19bf06408d6a8b172ad0589ac8a99cb7d"/>
+  <protare projectile="n" target="U234" evaluation="ENDF/BVII.1" path="neutrons/n-092_U_234.xml" interaction="nuclear" checksum="7cabcb543d8b943f7eb1b1e3a95e764fc8d64dc6"/>
+  <protare projectile="n" target="U236" evaluation="ENDF/BVII.1" path="neutrons/n-092_U_236.xml" interaction="nuclear" checksum="7d39dd6e20560e00135099cacc47bd00f677403f"/>
+  <protare projectile="n" target="U238" evaluation="ENDF/BVII.1" path="neutrons/n-092_U_238.xml" interaction="nuclear" checksum="dc53258cf311db563508a20a6b2082a8f5751891"/>
+  <protare projectile="n" target="U239" evaluation="ENDF/BVII.1" path="neutrons/n-092_U_239.xml" interaction="nuclear" checksum="e4a82437d80d779c61aca70ca86957421bb4af3d"/>
+  <protare projectile="n" target="Pu242" evaluation="ENDF/BVII.1" path="neutrons/n-094_Pu_242.xml" interaction="nuclear" checksum="644563f661a55ad12f862e323bc72a85f397615e"/>
+  <protare projectile="n" target="Am244" evaluation="ENDF/BVII.1" path="neutrons/n-095_Am_244.xml" interaction="nuclear" checksum="671ce02fe801215fa74548a867debbdd47a85405"/>
+  <protare projectile="n" target="Cm247" evaluation="ENDF/BVII.1" path="neutrons/n-096_Cm_247.xml" interaction="nuclear" checksum="c87ec1fd442476641ab34cbfde0fb93a093feb49"/>
+  <protare projectile="n" target="Fm255" evaluation="ENDF/BVII.1" path="neutrons/n-100_Fm_255.xml" interaction="nuclear" checksum="5fe1141cfb7dc75ed84264534ff2755d08317328"/></map>

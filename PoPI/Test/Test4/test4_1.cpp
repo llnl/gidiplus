@@ -42,8 +42,8 @@ int main( LUPI_maybeUnused int argc, LUPI_maybeUnused char **argv ) {
 void printInfo( PoPI::Database &database, char const *ID ) {
 
     PoPI::IDBase const &particle = database.get<PoPI::IDBase>( ID );
-    int final = database.final( particle.index( ) );
-    int final2 = database.final( particle.index( ), true );
+    auto final = database.final( particle.index( ) );
+    auto final2 = database.final( particle.index( ), true );
 
     std::cout << std::endl;
     std::cout << ID << "  final = " << database.final( particle.index( ) ) << "  final2 = " << final2 << std::endl;

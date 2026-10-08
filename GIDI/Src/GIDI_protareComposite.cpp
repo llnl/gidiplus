@@ -345,6 +345,18 @@ Styles::TemperatureInfos ProtareComposite::temperatures( ) const {
 }
 
 /* *********************************************************************************************************//**
+ * This method returns a list of pointers, with each pointer being a **Suite** to a list of **Transportable**
+ * instances.
+ *
+ * @return                  A std::vector of GIDI::Suite const pointers.
+ ***********************************************************************************************************/
+
+std::vector<GIDI::Suite const *> ProtareComposite::listOfTransportableSuites( ) const {
+
+    return( m_protares[0]->listOfTransportableSuites( ) );     // FIXME: This should be a loop over each protare and a that each protare has the same list as the others.
+}
+
+/* *********************************************************************************************************//**
  * Returns the number of reactions for all Protares contained in *this*.
  *  
  * @return              The total number of reactions.
@@ -479,7 +491,7 @@ Reaction const *ProtareComposite::orphanProduct( std::size_t a_index ) const {
  *
  ***********************************************************************************************************/
     
-void ProtareComposite::updateReactionIndices( LUPI_maybeUnused int a_offset ) const {
+void ProtareComposite::updateReactionIndices( LUPI_maybeUnused std::size_t a_offset ) const {
 
     std::size_t reactionOffset = 0;
 
@@ -699,7 +711,7 @@ Vector ProtareComposite::multiGroupFissionGammaMultiplicity( LUPI::StatusMessage
 
 Matrix ProtareComposite::multiGroupProductMatrix( LUPI::StatusMessageReporting &a_smr, Transporting::MG const &a_settings, 
                 Styles::TemperatureInfo const &a_temperatureInfo, Transporting::Particles const &a_particles, 
-                std::string const &a_productID, int a_order, ExcludeReactionsSet const &a_reactionsToExclude ) const {
+                std::string const &a_productID, std::size_t a_order, ExcludeReactionsSet const &a_reactionsToExclude ) const {
 
     Matrix matrix( 0, 0 );
     ExcludeReactionsSet excludeReactionsSet( a_reactionsToExclude );
@@ -727,7 +739,7 @@ Matrix ProtareComposite::multiGroupProductMatrix( LUPI::StatusMessageReporting &
  ***********************************************************************************************************/
 
 Matrix ProtareComposite::multiGroupFissionMatrix( LUPI::StatusMessageReporting &a_smr, Transporting::MG const &a_settings, 
-                Styles::TemperatureInfo const &a_temperatureInfo, Transporting::Particles const &a_particles, int a_order,
+                Styles::TemperatureInfo const &a_temperatureInfo, Transporting::Particles const &a_particles, std::size_t a_order,
                 ExcludeReactionsSet const &a_reactionsToExclude ) const {
 
     Matrix matrix( 0, 0 );
@@ -758,7 +770,7 @@ Matrix ProtareComposite::multiGroupFissionMatrix( LUPI::StatusMessageReporting &
  ***********************************************************************************************************/
 
 Vector ProtareComposite::multiGroupTransportCorrection( LUPI::StatusMessageReporting &a_smr, Transporting::MG const &a_settings, 
-                Styles::TemperatureInfo const &a_temperatureInfo, Transporting::Particles const &a_particles, int a_order, 
+                Styles::TemperatureInfo const &a_temperatureInfo, Transporting::Particles const &a_particles, std::size_t a_order, 
                 TransportCorrectionType a_transportCorrectionType, double a_temperature, ExcludeReactionsSet const &a_reactionsToExclude ) const {
 
     Vector vector;

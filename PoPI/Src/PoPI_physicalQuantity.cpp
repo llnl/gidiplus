@@ -23,6 +23,24 @@ namespace PoPI {
  */
 
 /* *********************************************************************************************************//**
+ * @param a_class                   [in]    The class of the physical quantity.
+ * @param a_tag                     [in]    The tag (i.e., moniker) for ths physical quantity.
+ * @param a_label                   [in]    The label for the physical quantity.
+ * @param a_valueString             [in]    The string value for the physical quantity.
+ * @param a_unit                    [in]    The units of the value.
+ ***********************************************************************************************************/
+
+PhysicalQuantity::PhysicalQuantity( PQ_class a_class, std::string const &a_tag, std::string const &a_label, 
+                std::string const &a_valueString, std::string const &a_unit ) :
+        m_class( a_class ),
+        m_tag( a_tag ),
+        m_label( a_label ),
+        m_valueString( a_valueString ),
+        m_unit( a_unit ) {
+
+}
+
+/* *********************************************************************************************************//**
  * @param a_node                    [in]    The **HAPI::Node** node to be parsed.
  * @param a_class                   [in]    The class of the physical quantity.
  ***********************************************************************************************************/
@@ -63,6 +81,19 @@ void PhysicalQuantity::toXMLList( std::vector<std::string> &a_XMLList, std::stri
 /*! \class PQ_double
  * The physical quantity class representing a double.
  */
+
+/* *********************************************************************************************************//**
+ * @param a_label                   [in]    The label for the physical quantity.
+ * @param a_value                   [in]    The value for the physical quantity.
+ * @param a_unit                    [in]    The units of the value.
+ ***********************************************************************************************************/
+
+PQ_double::PQ_double( std::string const &a_label, double a_value, std::string const &a_unit ) :
+        PhysicalQuantity( PQ_class::Double, "double", a_label, "", a_unit ),
+        m_value( a_value ) {
+
+    m_valueString = valueToString( );
+}
 
 /* *********************************************************************************************************//**
  * @param a_node                    [in]    The **HAPI::Node** node to be parsed.

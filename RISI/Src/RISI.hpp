@@ -19,6 +19,14 @@ namespace GIDI {
 
 namespace RISI {
 
+enum class ReactionTypes {
+    All,
+    AllButScatter,
+    NeutronEmitting,
+    NeutronAbsorbing,
+    FissionOnly
+};
+
 class Projectile;
 
 class Reaction {
@@ -30,16 +38,19 @@ class Reaction {
         std::vector<std::string> m_intermediates;           /**< The list of intermediates products for the reaction. */
         std::string m_process;                              /**< The process for the reaction. */
         std::string m_reactionLabel;                        /**< The label of the reaction. */
-        std::string m_convarianceFlag;                      /**< A flag indicating if covariance data are present for the reaction. */
+        std::string m_covarianceFlag;                       /**< A flag indicating if covariance data are present for the reaction. */
 
     public:
         Reaction( double a_effectiveThreshold, std::vector<std::string> const &a_products, std::vector<int> const &a_multiplicities, 
                 std::vector<std::string> const &a_intermediates, std::string const &a_process, std::string const &reactionLabel,
-                std::string const &convarianceFlag );
+                std::string const &covarianceFlag );
 
         bool isFission( ) const;
+        bool isSumOfRemainingOutputChannels( ) const;
         int multiplicity( std::string const &a_productId ) const;
-        void products( double a_energyMax, std::set<std::string> &a_products ) const ;
+        void products( double a_energyMax, std::set<std::string> &a_products, std::string const &a_targetId,
+                       ReactionTypes a_reactionType = ReactionTypes::All,
+                       bool a_includeSumOfRemainingOutputChannels = false ) const ;
         void printAsRIS_file( int a_labelWidth ) const ;
 };
 
@@ -74,7 +85,8 @@ class Protare {
         void setAddingReactions( ) { m_addMode = 2; }       /**< Tells **add** method to call the **addReaction** method. */
         void add( std::vector<std::string> const &a_elements );
 
-        void products( Projectile const *a_projectile, int a_level, int a_maxLevel, double a_energyMax, std::map<std::string, int> &a_products ) const ;
+        void products( Projectile const *a_projectile, int a_level, int a_maxLevel, double a_energyMax, std::map<std::string, int> &a_products,
+                ReactionTypes a_reactionType = ReactionTypes::All, bool a_includeSumOfRemainingOutputChannels = false ) const ;
         void printAsRIS_file( ) const ;
 };
 
@@ -93,7 +105,8 @@ class Target {
         void add( Protare *a_protare );
         bool fissionPresent( ) const;
         std::vector<Reaction *> const &reactions( ) const { return( m_protares[0]->reactions( ) ); }
-        void products( Projectile const *a_projectile, int a_level, int a_maxLevel, double a_energyMax, std::map<std::string, int> &a_products ) const ;
+        void products( Projectile const *a_projectile, int a_level, int a_maxLevel, double a_energyMax, std::map<std::string, int> &a_products,
+                ReactionTypes a_reactionType = ReactionTypes::All, bool a_includeSumOfRemainingOutputChannels = false ) const ;
         void print( std::string const &a_indent = "" ) const ;
         void printAsRIS_file( ) const ;
 };
@@ -113,7 +126,8 @@ class Projectile {
         void add( Protare *a_protare );
         bool fissionPresent( std::vector<std::string> targetIds ) const;
         std::vector<std::string> targetIds( ) const ;
-        void products( std::string const &a_target, int a_level, int a_maxLevel, double a_energyMax, std::map<std::string, int> &a_products ) const ;
+        void products( std::string const &a_target, int a_level, int a_maxLevel, double a_energyMax, std::map<std::string, int> &a_products,
+                ReactionTypes a_reactionType = ReactionTypes::All, bool a_includeSumOfRemainingOutputChannels = false ) const ;
         std::vector<std::string> filterProducts( std::vector<std::string> const &a_productIds ) const ;
         Target const *target( std::string const &a_targetName ) const;
         void print( std::string const &a_indent = "" ) const ;
@@ -134,7 +148,8 @@ class Projectiles {
         std::vector<std::string> projectileIds( ) const ;
         Projectile const *projectile( std::string const &a_projectile ) const ;
         std::vector<std::string> products( std::string const &a_projectile, std::vector<std::string> const &a_seedTargets, int a_maxLevel, 
-                double a_energyMax, bool a_onlyIncludeTargets = true ) const ;
+                double a_energyMax, bool a_onlyIncludeTargets = true, ReactionTypes a_reactionType = ReactionTypes::All,
+                bool a_includeSumOfRemainingOutputChannels = false ) const ;
         void print( std::string const &a_indent = "" ) const ;
         void printAsRIS_file( ) const ;
 };

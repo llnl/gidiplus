@@ -70,7 +70,7 @@ void main2( int argc, char **argv ) {
     double initialEnergy = 1e-1;
     long bins[nBins+1];
     double time = 0.0;
-    std::set<int> reactionsToExclude;
+    GIDI::ExcludeReactionsSet reactionsToExclude;
     LUPI::StatusMessageReporting smr1;
     unsigned long long rngState = 1;
 

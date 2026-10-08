@@ -1,0 +1,10 @@
+/.../GIDI/Test/Data/MG_MC/neutrons/n-008_O_016.xml
+Number of transportables = 1
+Transportables at index 0
+    Transportable "He4" with group id "LLNL_gid_71 of length 64".
+    Transportable "He3" with group id "LLNL_gid_71 of length 64".
+    Transportable "H2" with group id "LLNL_gid_71 of length 64".
+    Transportable "H3" with group id "LLNL_gid_71 of length 64".
+    Transportable "H1" with group id "LLNL_gid_71 of length 64".
+    Transportable "photon" with group id "LLNL_gid_70 of length 41".
+    Transportable "n" with group id "LLNL_gid_4 of length 88".

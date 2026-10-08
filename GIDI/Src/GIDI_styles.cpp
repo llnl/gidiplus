@@ -86,10 +86,10 @@ std::vector< std::vector< Base const * > > Suite::chains( bool a_ends ) const {
             if( !found ) {
                 std::vector< Base const * > item;
                 item.push_back( head );
-                chains2.push_back( item );
+                chains2.push_back( std::move( item ) );
             }
         }
-        chains1 = chains2;
+        chains1 = std::move( chains2 );
     }
 
     return( chains1 );
@@ -105,28 +105,28 @@ void Suite::updateChainEnds( ) {
     m_preProcessingChainEnds.clear( );
 
     auto chains1 = chains( true );
-    for( auto iter = chains1.begin( ); iter != chains1.end( ); ++iter ) m_chainEnds.push_back( (*iter)[0] );
+    for( auto const &chain : chains1 ) m_chainEnds.push_back( chain[0] );
 
     chains1 = chains( false );
     std::vector<Base const *> preProcessingChains;
-    for( auto iter = chains1.begin( ); iter != chains1.end( ); ++iter ) {
-        auto moniker = (*iter)[0]->moniker( );
+    for( auto const &chain : chains1 ) {
+        auto moniker = chain[0]->moniker( );
         if( ( moniker == GIDI_evaluatedStyleChars ) || ( moniker == GIDI_crossSectionReconstructedStyleChars )
                 || ( moniker == GIDI_realizationChars ) ) {
-            preProcessingChains.push_back( (*iter)[0] );
+            preProcessingChains.push_back( chain[0] );
         }
     }
 
-    for( auto iter1 = preProcessingChains.begin( ); iter1 != preProcessingChains.end( ); ++iter1 ) {
+    for( auto const &chain1 : preProcessingChains ) {
         bool found = false;
-        for( auto iter2 = preProcessingChains.begin( ); iter2 != preProcessingChains.end( ); ++iter2 ) {
-            if( (*iter2)->isStyleInDerivedForm( *iter1 ) ) {
+        for( auto const &chain2 : preProcessingChains ) {
+            if( chain2->isStyleInDerivedForm( chain1 ) ) {
                 found = true;
                 break;
             }
         }
         if( !found ) {
-            m_preProcessingChainEnds.push_back( *iter1 );
+            m_preProcessingChainEnds.push_back( chain1 );
         }
     }
 }

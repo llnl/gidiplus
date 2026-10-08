@@ -41,7 +41,7 @@ void main2( int argc, char **argv ) {
     long numberOfSamples = -1;
     PoPI::Database pops( "../../../TestData/PoPs/pops.xml" );
     GIDI::Transporting::Particles particles;
-    std::set<int> reactionsToExclude;
+    GIDI::ExcludeReactionsSet reactionsToExclude;
     LUPI::StatusMessageReporting smr1;
     unsigned long long rngState = 1;
     MCGIDI::URR_protareInfos URR_protare_infos;

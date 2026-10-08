@@ -22,6 +22,22 @@ namespace RISI {
 
 static void readRIS2( std::string const &a_basePath, std::string const &a_fileName, Projectiles &a_projectiles, std::string const &a_energyUnit );
 
+namespace {
+
+/* isScatter: return true for elastic and inelastic scattering reactions. */
+bool isScatter( std::string const &a_target, Reaction const &a_reaction ) {
+    auto end = a_target.find('_');
+    if (end == std::string::npos) end = a_target.size();
+
+    for( auto productIter = a_reaction.m_products.begin( ); productIter != a_reaction.m_products.end( ); ++productIter ) {
+        if( productIter->substr(0, end) == a_target.substr(0, end) ) return true;
+    }
+
+    return false;
+}
+
+}
+
 /*! \class Reaction
  * Class to store a reaction for a reaction information summary **RIS**.
  */
@@ -36,14 +52,14 @@ static void readRIS2( std::string const &a_basePath, std::string const &a_fileNa
 
 Reaction::Reaction( double a_effectiveThreshold, std::vector<std::string> const &a_products, std::vector<int> const &a_multiplicities,
                 std::vector<std::string> const &a_intermediates, std::string const &a_process, std::string const &reactionLabel,
-                std::string const &convarianceFlag ) :
+                std::string const &covarianceFlag ) :
         m_effectiveThreshold( a_effectiveThreshold ),
         m_products( a_products ),
         m_multiplicities( a_multiplicities ),
         m_intermediates( a_intermediates ),
         m_process( a_process ),
         m_reactionLabel( reactionLabel ),
-        m_convarianceFlag( convarianceFlag ) {
+        m_covarianceFlag( covarianceFlag ) {
 
 }
 
@@ -58,6 +74,20 @@ bool Reaction::isFission( ) const {
     std::string processLower = m_process;
     std::transform(processLower.begin(), processLower.end(), processLower.begin(), ::tolower);
     return processLower.find("fission") != std::string::npos;
+}
+
+/* *********************************************************************************************************//**
+ * Returns true if the reaction label contains 'sumOfRemainingOutputChannels' (case-insensitive).
+ # FIXME: need more robust way to identify sumOfRemaining, perhaps add a 'process'?
+ *
+ * @return True if this is a sumOfRemainingOutputChannels reaction, false otherwise.
+ ***********************************************************************************************************/
+
+bool Reaction::isSumOfRemainingOutputChannels( ) const {
+
+    std::string reactionLower = m_reactionLabel;
+    std::transform(reactionLower.begin(), reactionLower.end(), reactionLower.begin(), ::tolower);
+    return reactionLower.find("sumofremainingoutputchannels") != std::string::npos;
 }
 
 /* *********************************************************************************************************//**
@@ -90,9 +120,18 @@ int Reaction::multiplicity( std::string const &a_productId ) const {
  * @param  a_products           [in]    The list to add additional products to.
  ***********************************************************************************************************/
 
-void Reaction::products( double a_energyMax, std::set<std::string> &a_products ) const {
+void Reaction::products( double a_energyMax, std::set<std::string> &a_products, std::string const &a_targetId, ReactionTypes a_reactionType,
+                         bool a_includeSumOfRemainingOutputChannels ) const {
 
     if( m_effectiveThreshold >= a_energyMax ) return;
+
+    if( ( a_reactionType == ReactionTypes::AllButScatter ) && isScatter( a_targetId, *this ) ) return;
+
+    int neutronMultiplicity = multiplicity( "n" );  // energy-dependent multiplicity returns -1
+    if( ( a_reactionType == ReactionTypes::NeutronEmitting ) && ( neutronMultiplicity == 0 ) ) return;
+    if( ( a_reactionType == ReactionTypes::NeutronAbsorbing ) && ( neutronMultiplicity != 0 ) ) return;
+    if( ( a_reactionType == ReactionTypes::FissionOnly ) && !isFission( ) ) return;
+    if( isSumOfRemainingOutputChannels() && !a_includeSumOfRemainingOutputChannels ) return;
 
     for( auto productIter = m_products.begin( ); productIter != m_products.end( ); ++productIter ) a_products.insert( *productIter );
 }
@@ -136,7 +175,7 @@ void Reaction::printAsRIS_file( int a_labelWidth ) const {
             << " : " << std::left << std::setw( 10 ) << intermediates 
             << " : " << std::left << std::setw( 9 ) << m_process 
             << " : " << std::left << std::setw( a_labelWidth ) << m_reactionLabel 
-            << " : " << m_convarianceFlag << std::endl;
+            << " : " << m_covarianceFlag << std::endl;
 }
 
 /*! \class Protare
@@ -196,7 +235,7 @@ void Protare::Oops( LUPI_maybeUnused std::vector<std::string> const &a_elements 
 void Protare::addAlias( std::vector<std::string> const &a_elements ) {
 
     std::pair<std::string, std::string> keyName = { a_elements[0], a_elements[1] };
-    m_aliases.push_back( keyName );
+    m_aliases.push_back( std::move( keyName ) );
 }
 
 /* *********************************************************************************************************//**
@@ -270,14 +309,28 @@ void Protare::add( std::vector<std::string> const &a_elements ) {
  * @param  a_products           [in]    The list to add additional products to.
  ***********************************************************************************************************/
 
-void Protare::products( Projectile const *a_projectile, int a_level, int a_maxLevel, double a_energyMax, std::map<std::string, int> &a_products ) const {
+void Protare::products( Projectile const *a_projectile, int a_level, int a_maxLevel, double a_energyMax, std::map<std::string, int> &a_products,
+                ReactionTypes a_reactionType, bool a_includeSumOfRemainingOutputChannels ) const {
 
     std::set<std::string> productSet;
-    for( auto reactionIter = m_reactions.begin( ); reactionIter != m_reactions.end( ); ++reactionIter )
-        (*reactionIter)->products( a_energyMax, productSet );
+    for( auto reactionIter = m_reactions.begin( ); reactionIter != m_reactions.end( ); ++reactionIter ) {
+        (*reactionIter)->products( a_energyMax, productSet, m_target, a_reactionType, a_includeSumOfRemainingOutputChannels );
+
+        if( ( a_reactionType == ReactionTypes::All ) || ( a_reactionType == ReactionTypes::NeutronEmitting ) ) {
+            // also include scattering between ground and metastable states:
+            for( auto aliasPair = m_aliases.begin( ); aliasPair != m_aliases.end( ); ++aliasPair ) {
+                for( auto intermediateIter = (*reactionIter)->m_intermediates.begin( ); intermediateIter != (*reactionIter)->m_intermediates.end( ); ++intermediateIter ) {
+                    if( *intermediateIter == aliasPair->second ) {
+                        productSet.insert( aliasPair->first );
+                        break;
+                    }
+                }
+            }
+        }
+    }
 
     for( auto productIter = productSet.begin( ); productIter != productSet.end( ); ++productIter ) {
-        a_projectile->products( *productIter, a_level, a_maxLevel, a_energyMax, a_products );
+        a_projectile->products( *productIter, a_level, a_maxLevel, a_energyMax, a_products, a_reactionType, a_includeSumOfRemainingOutputChannels );
     }
 }
 
@@ -350,9 +403,10 @@ bool Target::fissionPresent( ) const {
  * @param  a_products           [in]    The list to add additional products to.
  ***********************************************************************************************************/
 
-void Target::products( Projectile const *a_projectile, int a_level, int a_maxLevel, double a_energyMax, std::map<std::string, int> &a_products ) const {
+void Target::products( Projectile const *a_projectile, int a_level, int a_maxLevel, double a_energyMax, std::map<std::string, int> &a_products,
+                ReactionTypes a_reactionType, bool a_includeSumOfRemainingOutputChannels ) const {
 
-    m_protares[0]->products( a_projectile, a_level, a_maxLevel, a_energyMax, a_products );
+    m_protares[0]->products( a_projectile, a_level, a_maxLevel, a_energyMax, a_products, a_reactionType, a_includeSumOfRemainingOutputChannels );
 }
 
 /* *********************************************************************************************************//**
@@ -462,33 +516,41 @@ std::vector<std::string> Projectile::targetIds( ) const {
 }
 
 /* *********************************************************************************************************//**
- * Populate std::map with product id: max multiplicity for that product that can be created from the given target.
+ * Populate std::map with product id: minimum reaction steps for creating that product from the given target.
  *
  * @param  a_target             [in]    Target particle id.
  * @param  a_level              [in]    The current recursive level.
  * @param  a_maxLevel           [in]    The maximum recursive level requested by the user.
  * @param  a_energyMax          [in]    Only reactions with effective thresholds less than this value are processed.
- * @param  a_products           [in]    The map to be populated with (product: max multiplicity) pairs.
+ * @param  a_products           [in]    The map to be populated with (product: min steps) pairs.
  ***********************************************************************************************************/
 
-void Projectile::products( std::string const &a_target, int a_level, int a_maxLevel, double a_energyMax, std::map<std::string, int> &a_products ) const {
+void Projectile::products( std::string const &a_target, int a_level, int a_maxLevel, double a_energyMax, std::map<std::string, int> &a_products,
+                ReactionTypes a_reactionType, bool a_includeSumOfRemainingOutputChannels ) const {
 
-    auto productIter = a_products.find( a_target );
-    if( productIter != a_products.end( ) ) {
-        if( a_level < (*productIter).second ) {
-            // found a way to make the product in fewer reaction steps
-            a_products[a_target] = a_level;
+    // FIXME assumes neutron projectile:
+    bool includeCurrentTarget = ( a_level != 0 ) || ( a_reactionType == ReactionTypes::All ) ||
+                                ( a_reactionType == ReactionTypes::NeutronEmitting );
+
+    if( includeCurrentTarget ) {
+        auto productIter = a_products.find( a_target );
+        if( productIter != a_products.end( ) ) {
+            if( a_level < (*productIter).second ) {
+                // found a way to make the product in fewer reaction steps
+                a_products[a_target] = a_level;
+            } else {
+                return;
+            }
         } else {
-            return;
+            a_products[a_target] = a_level;         // Adds a_target to a_products.
         }
-    } else {
-        a_products[a_target] = a_level;             // Adds a_target to a_products.
     }
 
     if( a_level >= a_maxLevel ) return;
 
     auto targetIter = m_targets.find( a_target );
-    if( targetIter != m_targets.end( ) ) (*targetIter).second->products( this, a_level + 1, a_maxLevel, a_energyMax, a_products );
+    if( targetIter != m_targets.end( ) ) (*targetIter).second->products( this, a_level + 1, a_maxLevel, a_energyMax, a_products,
+                                                                         a_reactionType, a_includeSumOfRemainingOutputChannels );
 }
 
 /* *********************************************************************************************************//**
@@ -619,14 +681,15 @@ Projectile const *Projectiles::projectile( std::string const &a_projectile ) con
  ***********************************************************************************************************/
 
 std::vector<std::string> Projectiles::products( std::string const &a_projectile, std::vector<std::string> const &a_seedTargets, int a_maxLevel, 
-                    double a_energyMax, bool a_onlyIncludeTargets ) const {
+                    double a_energyMax, bool a_onlyIncludeTargets, ReactionTypes a_reactionType, bool a_includeSumOfRemainingOutputChannels ) const {
 
     std::map<std::string, int> productMap;
 
     auto projectile = m_projectiles.find( a_projectile );
     if( projectile != m_projectiles.end( ) ) {
         for( auto targetIter = a_seedTargets.begin( ); targetIter != a_seedTargets.end( ); ++targetIter )
-            (*projectile).second->products( (*targetIter), 0, a_maxLevel, a_energyMax, productMap );
+            (*projectile).second->products( (*targetIter), 0, a_maxLevel, a_energyMax, productMap, a_reactionType,
+                                            a_includeSumOfRemainingOutputChannels );
     }
 
     std::vector<std::string> productList;
@@ -681,6 +744,7 @@ static void readRIS2( std::string const &a_basePath, std::string const &a_fileNa
     if( fileName[0] != '/' ) {                // Only works on Unix like systems.
         fileName = a_basePath + "/" + fileName;
     }
+    fileName = LUPI::FileInfo::realPath( fileName );
 
     std::ifstream inputFile;
     inputFile.open( fileName );

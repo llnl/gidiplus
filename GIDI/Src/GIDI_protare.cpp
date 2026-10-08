@@ -162,6 +162,10 @@ ProtareSingle::ProtareSingle( PoPI::Database const &a_pops, std::string const &a
         m_evaluation( a_evaluation ),
         m_interaction( a_interaction ),
         m_projectileFrame( Frame::lab ),
+        m_projectileEnergyMin( 0.0 ),
+        m_projectileEnergyMax( 0.0 ),
+        m_isTNSL_ProtareSingle( false ),
+        m_isPhotoAtomic( false ),
         m_decayPositronium( false ),
         m_thresholdFactor( 0.0 ),
         m_nuclearPlusCoulombInterferenceOnlyReaction( nullptr ),
@@ -246,7 +250,7 @@ ProtareSingle::ProtareSingle( Construction::Settings const &a_construction, std:
  ***********************************************************************************************************/
 
 ProtareSingle::ProtareSingle( Construction::Settings const &a_construction, HAPI::Node const &a_node, PoPI::Database const &a_pops,
-                ParticleSubstitution const &a_particleSubstitution, std::vector<std::string> const &a_libraries, 
+                ParticleSubstitution const &a_particleSubstitution, std::vector<std::string> const &a_libraries,
                 LUPI_maybeUnused std::string const &a_interaction, bool a_targetRequiredInGlobalPoPs, bool a_requiredInPoPs ) :
         Protare( ),
         m_doc( nullptr ),
@@ -254,6 +258,7 @@ ProtareSingle::ProtareSingle( Construction::Settings const &a_construction, HAPI
         m_numberOfLazyParsingHelperForms( 0 ),
         m_numberOfLazyParsingHelperFormsReplaced( 0 ),
         m_libraries( a_libraries ),
+        m_decayPositronium( a_construction.decayPositronium( ) ),
         m_pointwiseAverageProductEnergy( GIDI_averageEnergyChars, GIDI_labelChars ) {
 
     SetupInfo setupInfo( this );
@@ -303,6 +308,9 @@ void ProtareSingle::initialize( ) {
 
     m_photoAtomicIncoherentDoppler.setAncestor( this );
     m_photoAtomicIncoherentDoppler.setMoniker( GIDI_LLNL_photoAtomicIncoherentDoppler_Chars );
+
+    m_thickTargetBremsstrahlung.setAncestor( this );
+    m_thickTargetBremsstrahlung.setMoniker( GIDI_LLNL_thickTargetBremsstrahlung_Chars );
 
     m_pointwiseAverageProductEnergy.setAncestor( this );
     m_GRIN_continuumGammas = nullptr;
@@ -477,6 +485,9 @@ void ProtareSingle::initialize( Construction::Settings const &a_construction, HA
                     }
                 }
             }
+            else if( label == GIDI_LLNL_thickTargetBremsstrahlung_Chars ) {
+                m_thickTargetBremsstrahlung.parse( a_construction, child1, a_setupInfo, nullptr );
+            }
             else if( label == GIDI_LLNL_pointwiseAverageProductEnergies ) {
                 m_pointwiseAverageProductEnergy.parse( a_construction, child1.child( GIDI_averageEnergyChars ), a_setupInfo, a_pops, 
                         m_internalPoPs, parseAverageEnergySuite, &m_styles ); }
@@ -567,7 +578,7 @@ Reaction const *ProtareSingle::reactionToMultiGroup( Transporting::MG const &a_s
     Reaction const *reaction1 = m_reactions.get<Reaction>( a_index );
 
     if( !reaction1->active( ) ) return( nullptr );
-    if( a_reactionsToExclude.find( static_cast<int>( a_index ) ) != a_reactionsToExclude.end( ) ) return( nullptr );
+    if( a_reactionsToExclude.find( a_index ) != a_reactionsToExclude.end( ) ) return( nullptr );
 
     return( checkIf_nuclearPlusCoulombInterferenceWanted( a_settings, reaction1 ) );
 }
@@ -740,6 +751,35 @@ Styles::TemperatureInfos ProtareSingle::temperatures( ) const {
 }
 
 /* *********************************************************************************************************//**
+ * This method returns a list of pointers, with each pointer being a **Suite** to a list of **Transportable**
+ * instances.
+ *
+ * @return                  A std::vector of GIDI::Suite const pointers.
+ ***********************************************************************************************************/
+
+std::vector<GIDI::Suite const *> ProtareSingle::listOfTransportableSuites( ) const {
+
+    std::vector<GIDI::Suite const *> listOfTransportables;
+
+    for( std::size_t i1 = 0; i1 < m_styles.size( ); ++i1 ) {
+        Styles::Base const *style1 = m_styles.get<Styles::Base>( i1 );
+
+        if( style1->moniker( ) == GIDI_heatedMultiGroupStyleChars ) {
+            Styles::HeatedMultiGroup const *style2 = static_cast<Styles::HeatedMultiGroup const *>( style1 );
+            Suite const &transportables = style2->transportables( );
+            listOfTransportables.push_back( &transportables); }
+        else if( style1->moniker( ) == GIDI_multiGroupStyleChars ) {
+            Styles::MultiGroup const *style2 = static_cast<Styles::MultiGroup const *>( style1 );
+            listOfTransportables.push_back( &(style2->transportables( )) );
+        }
+
+        if( listOfTransportables.size( ) > 0 ) break;           // This is a kludge for now as need to check if others are the same or difference.
+    }
+
+    return( listOfTransportables );
+}
+
+/* *********************************************************************************************************//**
  * FOR INTERNAL USE ONLY.
  *
  * Determines if the temperature of lhs is less than that of rhs, or not.
@@ -795,7 +835,7 @@ std::size_t ProtareSingle::numberOfInactiveReactions( ) const {
  *
  ***********************************************************************************************************/
 
-void ProtareSingle::updateReactionIndices( int a_offset ) const {
+void ProtareSingle::updateReactionIndices( std::size_t a_offset ) const {
 
     for( std::size_t i1 = 0; i1 < m_reactions.size( ); ++i1 ) {
         Reaction const *reaction1 = m_reactions.get<Reaction>( i1 + a_offset );
@@ -1100,7 +1140,7 @@ Vector ProtareSingle::multiGroupQ( LUPI::StatusMessageReporting &a_smr, Transpor
 
 Matrix ProtareSingle::multiGroupProductMatrix( LUPI::StatusMessageReporting &a_smr, Transporting::MG const &a_settings, 
                 Styles::TemperatureInfo const &a_temperatureInfo, Transporting::Particles const &a_particles, 
-                std::string const &a_productID, int a_order, ExcludeReactionsSet const &a_reactionsToExclude ) const {
+                std::string const &a_productID, std::size_t a_order, ExcludeReactionsSet const &a_reactionsToExclude ) const {
 
     Matrix matrix( 0, 0 );
 
@@ -1141,7 +1181,7 @@ Matrix ProtareSingle::multiGroupProductMatrix( LUPI::StatusMessageReporting &a_s
  ***********************************************************************************************************/
 
 Matrix ProtareSingle::multiGroupFissionMatrix( LUPI::StatusMessageReporting &a_smr, Transporting::MG const &a_settings, 
-                Styles::TemperatureInfo const &a_temperatureInfo, Transporting::Particles const &a_particles, int a_order,
+                Styles::TemperatureInfo const &a_temperatureInfo, Transporting::Particles const &a_particles, std::size_t a_order,
                 LUPI_maybeUnused ExcludeReactionsSet const &a_reactionsToExclude ) const {
 
     Matrix matrix( 0, 0 );
@@ -1173,7 +1213,7 @@ Matrix ProtareSingle::multiGroupFissionMatrix( LUPI::StatusMessageReporting &a_s
  ***********************************************************************************************************/
 
 Vector ProtareSingle::multiGroupTransportCorrection( LUPI::StatusMessageReporting &a_smr, Transporting::MG const &a_settings, 
-                Styles::TemperatureInfo const &a_temperatureInfo, Transporting::Particles const &a_particles, int a_order, 
+                Styles::TemperatureInfo const &a_temperatureInfo, Transporting::Particles const &a_particles, std::size_t a_order, 
                 TransportCorrectionType a_transportCorrectionType, double a_temperature, LUPI_maybeUnused ExcludeReactionsSet const &a_reactionsToExclude ) const {
 
     if( a_transportCorrectionType == TransportCorrectionType::None ) return( Vector( 0 ) );

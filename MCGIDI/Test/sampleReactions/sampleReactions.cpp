@@ -44,7 +44,7 @@ void main2( int argc, char **argv ) {
     char *endChar;
     long numberOfSamples = -1;
     unsigned long long rngState = 1;
-    std::set<int> reactionsToExclude;
+    GIDI::ExcludeReactionsSet reactionsToExclude;
     LUPI::StatusMessageReporting smr1;
     GIDI::Construction::PhotoMode photo_mode = GIDI::Construction::PhotoMode::nuclearOnly;
     argvOption2 *option;
@@ -110,11 +110,11 @@ void main2( int argc, char **argv ) {
     protares[0] = MCProtare;
     MCGIDI::URR_protareInfos URR_protare_infos( protares );
 
-    int numberOfReactions = (int) MCProtare->numberOfReactions( );
+    std::size_t numberOfReactions = MCProtare->numberOfReactions( );
 
     if( argv_options.find( "--showReactions" )->present( ) ) {
         std::cout << "List of reactions:" << std::endl;
-        for( std::size_t reactionIndex = 0; reactionIndex < MCProtare->numberOfReactions( ); ++reactionIndex ) {
+        for( std::size_t reactionIndex = 0; reactionIndex < numberOfReactions; ++reactionIndex ) {
             MCGIDI::Reaction const *reaction = MCProtare->reaction( reactionIndex );
 
             std::cout << LUPI::Misc::argumentsToString( "    %5d ", reactionIndex ) << reaction->label( ).c_str( ) << std::endl;
@@ -135,7 +135,7 @@ void main2( int argc, char **argv ) {
 
     if( argv_options.find( "--showReactions" )->present( ) ) {
         std::cout << "       ";
-        for( std::size_t reactionIndex = 0; reactionIndex < MCProtare->numberOfReactions( ); ++reactionIndex ) {
+        for( std::size_t reactionIndex = 0; reactionIndex < numberOfReactions; ++reactionIndex ) {
             std::cout << LUPI::Misc::argumentsToString( " %8d ", reactionIndex );
         }
         std::cout << std::endl;
@@ -144,7 +144,7 @@ void main2( int argc, char **argv ) {
     MCGIDI::Sampling::Input input( true, MCGIDI::Sampling::Upscatter::Model::none );
 
     for( double energy = energyMin; energy <= energyMax; energy *= 1.2 ) {
-        int hashIndex = domainHash.index( energy );
+        std::size_t hashIndex = domainHash.index( energy );
 
         double crossSection = MCProtare->crossSection( URR_protare_infos, hashIndex, temperature, energy );
         std::cout << "energy = " << energy << " " << "cross section = " << doubleToString2( "%13.6e", crossSection ) << std::endl;
@@ -154,7 +154,7 @@ void main2( int argc, char **argv ) {
 
         std::vector<double> reactionCrossSections( numberOfReactions );
         std::cout << "      ";
-        for( int i1 = 0; i1 < numberOfReactions; ++i1 ) {
+        for( std::size_t i1 = 0; i1 < numberOfReactions; ++i1 ) {
             double reactionCrossSection = MCProtare->reactionCrossSection( i1, URR_protare_infos, hashIndex, temperature, energy );
             std::cout << LUPI::Misc::argumentsToString( " %9.6f", reactionCrossSection / crossSection );
         }
@@ -162,21 +162,21 @@ void main2( int argc, char **argv ) {
 
         std::vector<long> counts( numberOfReactions + 1, 0 );
         for( long i1 = 0; i1 < numberOfSamples; ++i1 ) {
-            int reactionIndex = MCProtare->sampleReaction( input, URR_protare_infos, hashIndex, crossSection,
+            std::size_t reactionIndex = MCProtare->sampleReaction( input, URR_protare_infos, hashIndex, crossSection,
                     [&]() -> double { return float64RNG64( &rngState ); } );
             if( reactionIndex > numberOfReactions ) reactionIndex = numberOfReactions;
             ++counts[reactionIndex];
         }
 
         std::cout << "      ";
-        for( int i1 = 0; i1 < numberOfReactions; ++i1 ) {
-            double ratio = counts[i1];
-            std::cout << LUPI::Misc::argumentsToString( " %9.6f", ratio / numberOfSamples );
+        for( std::size_t i1 = 0; i1 < numberOfReactions; ++i1 ) {
+            double ratio = static_cast<double>( counts[i1] );
+            std::cout << LUPI::Misc::argumentsToString( " %9.6f", ratio / static_cast<double>( numberOfSamples ) );
         }
         std::cout << std::endl;
 
         std::cout << "      ";
-        for( int i1 = 0; i1 < numberOfReactions; ++i1 ) {
+        for( std::size_t i1 = 0; i1 < numberOfReactions; ++i1 ) {
             std::cout << LUPI::Misc::argumentsToString( " %9ld", counts[i1] );
         }
         std::cout << std::endl;

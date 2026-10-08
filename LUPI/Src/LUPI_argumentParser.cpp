@@ -96,6 +96,25 @@ std::string const &ArgumentBase::value( std::size_t a_index ) const {
 }
 
 /* *********************************************************************************************************//**
+ * Returns the last value for this argument or the **a_default** if no value is present.
+ * This should only be used for optional arguments.
+ *
+ * @param a_default             [in]    The default value to return if no value present.
+ *
+ * @return                              Returns the std::string of the last value entered or **a_default** if no value present.
+ ***********************************************************************************************************/
+
+std::string ArgumentBase::valueWithDefault( std::string const &a_default ) const {
+
+    if( ( m_argumentType == ArgumentType::True ) || ( m_argumentType == ArgumentType::False ) || ( m_argumentType == ArgumentType::Count ) )
+        throw Exception( "Argument type for " + name( ) + " does not support calling default() method." );
+
+    if( m_values.size( ) == 0 ) return( a_default );
+
+    return( m_values.back( ) );
+}
+
+/* *********************************************************************************************************//**
  * Add *a_name* as an optional name for *this*.
  *
  * @param a_name            [in]    The name to add.
@@ -134,7 +153,7 @@ int ArgumentBase::parse( ArgumentParser const &a_argumentParser, int a_index, in
         if( m_argumentType == ArgumentType::Positional ) {
             if( maximumNeeded1 < 0 ) maximumNeeded1 = a_argc; }
         else {
-            if( ( maximumNeeded1 < counts( ) ) && ( maximumNeeded1 > -1 ) )
+            if( ( maximumNeeded1 < static_cast<int>( counts( ) ) ) && ( maximumNeeded1 > -1 ) )
                 throw std::runtime_error( "ERROR 1220 in ArgumentBase::parse: too many values for optional argument " + name( ) + " entered." );
             maximumNeeded1 = 1;
         }
@@ -200,7 +219,7 @@ std::string ArgumentBase::usage( bool a_requiredOption ) const {
  * @return                          The value of *a_index* + 1.
  ***********************************************************************************************************/
 
-void ArgumentBase::printStatus( std::string a_indent ) const {
+void ArgumentBase::printStatus( std::string const &a_indent ) const {
 
     std::string name1 = name( );
     if( name1.size( ) < 32 ) name1.resize( 32, ' ' );
@@ -258,6 +277,17 @@ OptionBoolean::OptionBoolean( ArgumentType a_argumentType, std::string const &a_
 
 OptionBoolean::~OptionBoolean( ) {
 
+}
+
+/* *********************************************************************************************************//**
+ * Returns **true** if the state of the option is **true** and **false** otherwise.
+ *
+ * @return                              Returns a bool.
+ ***********************************************************************************************************/
+
+bool OptionBoolean::isTrue( ) const {
+
+    return( counts() == 0 ? m_default : !m_default );
 }
 
 /* *********************************************************************************************************//**
@@ -647,7 +677,7 @@ void ArgumentParser::parse( int a_argc, char **a_argv, bool a_printArguments ) {
         }
     }
     for( auto argumentIterator2 = m_arguments.begin( ); argumentIterator2 != m_arguments.end( ); ++argumentIterator2 ) {
-        if( (*argumentIterator2)->counts( ) < (*argumentIterator2)->minimumNeeded( ) ) {
+        if( static_cast<int>( (*argumentIterator2)->counts( ) ) < (*argumentIterator2)->minimumNeeded( ) ) {
             std::string msg( "arguments for" );
 
             if( (*argumentIterator2)->isOptionalArgument( ) ) msg = "number of option";
@@ -760,7 +790,7 @@ void ArgumentParser::usage( ) const {
  * @return                          The value of *a_index* + 1.
  ***********************************************************************************************************/
 
-void ArgumentParser::printStatus( std::string a_indent ) const {
+void ArgumentParser::printStatus( std::string const &a_indent ) const {
 
     for( auto argumentIterator = m_arguments.begin( ); argumentIterator != m_arguments.end( ); ++argumentIterator ) {
         (*argumentIterator)->printStatus( a_indent );

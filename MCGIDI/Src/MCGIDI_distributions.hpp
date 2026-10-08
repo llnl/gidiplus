@@ -16,9 +16,13 @@ namespace MCGIDI {
 
 namespace Distributions {
 
-enum class Type { none, unspecified, angularTwoBody, KalbachMann, uncorrelated, branching3d, energyAngularMC, angularEnergyMC, 
-        coherentPhotoAtomicScattering, incoherentPhotoAtomicScattering, incoherentPhotoAtomicScatteringElectron, incoherentBoundToFreePhotoAtomicScattering, pairProductionGamma,
-        coherentElasticTNSL, incoherentElasticTNSL };
+enum class Type {
+        none, unspecified, angularTwoBody, KalbachMann, uncorrelated, branching3d, energyAngularMC, angularEnergyMC,
+        coherentPhotoAtomicScattering, incoherentPhotoAtomicScattering, incoherentBoundToFreePhotoAtomicScattering, pairProductionGamma,
+        coherentElasticTNSL, incoherentElasticTNSL,
+        incoherentPhotoAtomicScatteringElectron, incoherentBoundToFreePhotoAtomicScatteringElectron,
+        pairProductionElectron, photoelectricElectron
+};
 
 /*
 ============================================================
@@ -65,6 +69,8 @@ class Distribution {
 */
 class AngularTwoBody : public Distribution {
 
+    friend Probabilities::Recoil2d;
+
     private:
         double m_residualMass;                                          /**< The mass of the second product (often the  residual). */
         double m_Q;                                                     /**< FIX ME. */
@@ -73,6 +79,7 @@ class AngularTwoBody : public Distribution {
         Probabilities::ProbabilityBase2d_d1 *m_angular;                 /**< The 2d angular probability. */
         Sampling::Upscatter::ModelDBRC_data *m_modelDBRC_data;          /**< The cross section and other data needed for neutron elastic upscatter model DBRC. */
 
+        LUPI_HOST Probabilities::ProbabilityBase2d_d1 *stealAngular( );
         template <typename RNG>
         LUPI_HOST_DEVICE bool upscatterModelB( double a_kineticLab, Sampling::Input &a_input, RNG && a_rng ) const ;
 
@@ -302,6 +309,26 @@ class IncoherentPhotoAtomicScattering : public Distribution {
 };
 
 /*
+============================================================
+========== IncoherentPhotoAtomicScatteringElectron =========
+============================================================
+*/
+class IncoherentPhotoAtomicScatteringElectron : public Distribution {
+
+    public:
+        LUPI_HOST_DEVICE IncoherentPhotoAtomicScatteringElectron( );
+        LUPI_HOST IncoherentPhotoAtomicScatteringElectron( SetupInfo &a_setupInfo );
+        LUPI_HOST_DEVICE ~IncoherentPhotoAtomicScatteringElectron( );
+
+        template <typename RNG>
+        LUPI_HOST_DEVICE void sample( double a_energy, Sampling::Input &a_input, RNG && a_rng ) const ;
+        template <typename RNG>
+        LUPI_HOST_DEVICE double angleBiasing( Reaction const *a_reaction, double a_temperature, double a_energy_in, double a_mu_lab,
+                RNG && a_rng, double &a_energy_out ) const ;
+        LUPI_HOST_DEVICE void serialize( LUPI::DataBuffer &a_buffer, LUPI::DataBuffer::Mode a_mode );
+};
+
+/*
 =======================================================================
 ============== IncoherentBoundToFreePhotoAtomicScattering =============
 =======================================================================
@@ -333,15 +360,18 @@ class IncoherentBoundToFreePhotoAtomicScattering : public Distribution {
 
 /*
 ============================================================
-========== IncoherentPhotoAtomicScatteringElectron =========
+========== IncoherentBoundToFreePhotoAtomicScatteringElectron =========
 ============================================================
 */
-class IncoherentPhotoAtomicScatteringElectron : public Distribution {
+class IncoherentBoundToFreePhotoAtomicScatteringElectron : public Distribution {
+
+    private:
+        double m_bindingEnergy;
 
     public:
-        LUPI_HOST_DEVICE IncoherentPhotoAtomicScatteringElectron( );
-        LUPI_HOST IncoherentPhotoAtomicScatteringElectron( SetupInfo &a_setupInfo );
-        LUPI_HOST_DEVICE ~IncoherentPhotoAtomicScatteringElectron( );
+        LUPI_HOST_DEVICE IncoherentBoundToFreePhotoAtomicScatteringElectron( );
+        LUPI_HOST IncoherentBoundToFreePhotoAtomicScatteringElectron( SetupInfo &a_setupInfo );
+        LUPI_HOST_DEVICE ~IncoherentBoundToFreePhotoAtomicScatteringElectron( );
 
         template <typename RNG>
         LUPI_HOST_DEVICE void sample( double a_energy, Sampling::Input &a_input, RNG && a_rng ) const ;
@@ -350,6 +380,7 @@ class IncoherentPhotoAtomicScatteringElectron : public Distribution {
                 RNG && a_rng, double &a_energy_out ) const ;
         LUPI_HOST_DEVICE void serialize( LUPI::DataBuffer &a_buffer, LUPI::DataBuffer::Mode a_mode );
 };
+
 
 /*
 ============================================================
@@ -370,6 +401,53 @@ class PairProductionGamma : public Distribution {
         LUPI_HOST_DEVICE void sample( double a_X, Sampling::Input &a_input, RNG && a_rng ) const ;
         template <typename RNG>
         LUPI_HOST_DEVICE double angleBiasing( Reaction const *a_reaction, double a_temperature, double a_energy_in, double a_mu_lab, 
+                RNG && a_rng, double &a_energy_out ) const ;
+        LUPI_HOST_DEVICE void serialize( LUPI::DataBuffer &a_buffer, LUPI::DataBuffer::Mode a_mode );
+};
+
+/*
+============================================================
+========== PairProductionElectron =========
+============================================================
+*/
+class PairProductionElectron : public Distribution {
+
+    private:
+        int m_Z;
+        double m_screeningRadius;
+
+    public:
+        LUPI_HOST_DEVICE PairProductionElectron( );
+        LUPI_HOST PairProductionElectron( SetupInfo &a_setupInfo );
+        LUPI_HOST_DEVICE ~PairProductionElectron( );
+
+        template <typename RNG>
+        LUPI_HOST_DEVICE void sample( double a_energy, Sampling::Input &a_input, RNG && a_rng ) const ;
+        template <typename RNG>
+        LUPI_HOST_DEVICE double angleBiasing( Reaction const *a_reaction, double a_temperature, double a_energy_in, double a_mu_lab,
+                RNG && a_rng, double &a_energy_out ) const ;
+        LUPI_HOST_DEVICE void serialize( LUPI::DataBuffer &a_buffer, LUPI::DataBuffer::Mode a_mode );
+};
+
+/*
+============================================================
+========== PhotoelectricElectron =========
+============================================================
+*/
+class PhotoelectricElectron : public Distribution {
+
+    private:
+        double m_bindingEnergy;
+
+    public:
+        LUPI_HOST_DEVICE PhotoelectricElectron( );
+        LUPI_HOST PhotoelectricElectron( SetupInfo &a_setupInfo );
+        LUPI_HOST_DEVICE ~PhotoelectricElectron( );
+
+        template <typename RNG>
+        LUPI_HOST_DEVICE void sample( double a_energy, Sampling::Input &a_input, RNG && a_rng ) const ;
+        template <typename RNG>
+        LUPI_HOST_DEVICE double angleBiasing( Reaction const *a_reaction, double a_temperature, double a_energy_in, double a_mu_lab,
                 RNG && a_rng, double &a_energy_out ) const ;
         LUPI_HOST_DEVICE void serialize( LUPI::DataBuffer &a_buffer, LUPI::DataBuffer::Mode a_mode );
 };
@@ -416,7 +494,7 @@ class IncoherentElasticTNSL : public Distribution {
         LUPI_HOST_DEVICE IncoherentElasticTNSL( );
         LUPI_HOST IncoherentElasticTNSL( GIDI::DoubleDifferentialCrossSection::n_ThermalNeutronScatteringLaw::IncoherentElastic const *a_incoherentElasticTNSL, 
                 SetupInfo &a_setupInfo );
-        LUPI_HOST_DEVICE ~IncoherentElasticTNSL( ) {}
+        LUPI_HOST_DEVICE ~IncoherentElasticTNSL( );
 
         template <typename RNG>
         LUPI_HOST_DEVICE void sample( double a_energy, Sampling::Input &a_input, RNG && a_rng ) const ;

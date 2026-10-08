@@ -17,7 +17,7 @@
 #include "GIDI.hpp"
 #include "GIDI_testUtilities.hpp"
 
-static int verbose = 0;
+static std::size_t verbose = 0;
 static int nth = 1;
 static int countDown = 1;
 

@@ -86,8 +86,8 @@ void crossSectionInfo( GIDI::Protare *protare, GIDI::Styles::TemperatureInfo tem
                         GIDI::Transporting::Fluxes_from_bdfls const &fluxes_from_bdfls ) {
 
     LUPI::StatusMessageReporting smr1;
-    int offset = 4;
-    int prefixLength = outputChannelStringMaximumLength( protare );
+    std::size_t offset = 4;
+    std::size_t prefixLength = outputChannelStringMaximumLength( protare );
     if( prefixLength < 32 ) prefixLength = 32;
 
     GIDI::Transporting::MG settings( protare->projectile( ).ID( ), GIDI::Transporting::Mode::multiGroup, GIDI::Transporting::DelayedNeutrons::off );

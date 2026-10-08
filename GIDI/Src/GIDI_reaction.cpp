@@ -29,6 +29,8 @@ Reaction::Reaction( int a_ENDF_MT, std::string const &a_fissionGenre ) :
         m_twoBodyThreshold( 0.0 ),
         m_isPairProduction( false ),
         m_isPhotoAtomicIncoherentScattering( false ),
+        m_isPhotoAtomicIncoherentDopplerScattering( false ),
+        m_isPhotoelectric( false ),
         m_RutherfordScatteringPresent( false ),
         m_onlyRutherfordScatteringPresent( false ),
         m_nuclearPlusInterferencePresent( false ),
@@ -60,6 +62,7 @@ Reaction::Reaction( int a_ENDF_MT, std::string const &a_fissionGenre ) :
 Reaction::Reaction( Construction::Settings const &a_construction, HAPI::Node const &a_node, SetupInfo &a_setupInfo, PoPI::Database const &a_pops, 
                 PoPI::Database const &a_internalPoPs, Protare const &a_protare, Styles::Suite const *a_styles ) :
         Form( a_node, a_setupInfo, FormType::reaction ),
+        m_reactionIndex( 0 ),
         m_active( true ),
         m_ENDF_MT( a_node.attribute_as_int( GIDI_ENDF_MT_Chars ) ),
         m_ENDL_C( 0 ),
@@ -70,6 +73,8 @@ Reaction::Reaction( Construction::Settings const &a_construction, HAPI::Node con
         m_twoBodyThreshold( 0.0 ),
         m_isPairProduction( false ),
         m_isPhotoAtomicIncoherentScattering( false ),
+        m_isPhotoAtomicIncoherentDopplerScattering( false ),
+        m_isPhotoelectric( false ),
         m_RutherfordScatteringPresent( false ),
         m_onlyRutherfordScatteringPresent( false ),
         m_nuclearPlusInterferencePresent( false ),
@@ -86,6 +91,13 @@ Reaction::Reaction( Construction::Settings const &a_construction, HAPI::Node con
     m_isPhotoAtomicIncoherentScattering = false;
     if( m_doubleDifferentialCrossSection.size( ) > 0 )
         m_isPhotoAtomicIncoherentScattering = m_doubleDifferentialCrossSection.get<Form>( 0 )->type( ) == FormType::incoherentPhotonScattering;
+    if( m_ENDF_MT >= 534 && m_ENDF_MT <= 572 ) {
+        m_isPhotoelectric = true;
+    }
+    if( m_ENDF_MT >= 1534 && m_ENDF_MT <= 1572 ) {
+        m_isPhotoAtomicIncoherentDopplerScattering = true;
+    }
+    
 
     m_doubleDifferentialCrossSection.setAncestor( this );
     m_crossSection.setAncestor( this );
@@ -166,6 +178,46 @@ Reaction::Reaction( Construction::Settings const &a_construction, HAPI::Node con
 Reaction::~Reaction( ) {
 
     if( m_outputChannel != nullptr ) delete m_outputChannel;
+}
+
+/* *********************************************************************************************************//**
+ * Returns the domain minimum for this reaction as determined by the lowest cross section point.
+ *
+ * @return          A double representing the minimum of the domain.
+ ***********************************************************************************************************/
+
+double Reaction::domainMin( ) const {
+
+    for( std::size_t index = 0; index < m_crossSection.size( ); ++index ) {
+        Functions::FunctionForm const *function = m_crossSection.get<Functions::FunctionForm const>( index );
+        try {
+            return( function->domainMin( ) ); }
+        catch (...) {
+            continue;
+        }
+    }
+
+    throw Exception( "GIDI::Reaction::domainMin could not be determined." );
+}
+
+/* *********************************************************************************************************//**
+ * Returns the domain maximum for this reaction as determined by the lowest cross section point.
+ *
+ * @return          A double representing the maximum of the domain.
+ ***********************************************************************************************************/
+
+double Reaction::domainMax( ) const {
+
+    for( std::size_t index = 0; index < m_crossSection.size( ); ++index ) {
+        Functions::FunctionForm const *function = m_crossSection.get<Functions::FunctionForm const>( index );
+        try {
+            return( function->domainMax( ) ); }
+        catch (...) {
+            continue;
+        }
+    }
+
+    throw Exception( "GIDI::Reaction::domainMax could not be determined." );
 }
 
 /* *********************************************************************************************************//**
@@ -393,7 +445,8 @@ Vector Reaction::multiGroupQ( LUPI::StatusMessageReporting &a_smr, Transporting:
  ***********************************************************************************************************/
 
 Matrix Reaction::multiGroupProductMatrix( LUPI::StatusMessageReporting &a_smr, Transporting::MG const &a_settings, 
-                Styles::TemperatureInfo const &a_temperatureInfo, Transporting::Particles const &a_particles, std::string const &a_productID, int a_order ) const {
+                Styles::TemperatureInfo const &a_temperatureInfo, Transporting::Particles const &a_particles, std::string const &a_productID, 
+                std::size_t a_order ) const {
 
     Matrix matrix( 0, 0 );
 
@@ -408,7 +461,7 @@ Matrix Reaction::multiGroupProductMatrix( LUPI::StatusMessageReporting &a_smr, T
                 Matrix matrix2( productionCrossSection.size( ), productionCrossSection.size( ) );
 
                 for( std::size_t i1 = 0; i1 < productionCrossSection.size( ); ++i1 ) {
-                    matrix2.set( i1, multiGroupIndexFromEnergy, productionCrossSection[i1] );
+                    matrix2.set( i1, static_cast<std::size_t>( multiGroupIndexFromEnergy ), productionCrossSection[i1] );
                 }
                 matrix += matrix2;
             }
@@ -433,7 +486,7 @@ Matrix Reaction::multiGroupProductMatrix( LUPI::StatusMessageReporting &a_smr, T
  ***********************************************************************************************************/
 
 Matrix Reaction::multiGroupFissionMatrix( LUPI::StatusMessageReporting &a_smr, Transporting::MG const &a_settings, 
-                Styles::TemperatureInfo const &a_temperatureInfo, Transporting::Particles const &a_particles, int a_order ) const {
+                Styles::TemperatureInfo const &a_temperatureInfo, Transporting::Particles const &a_particles, std::size_t a_order ) const {
 
     Matrix matrix( 0, 0 );
 
@@ -690,7 +743,7 @@ void Reaction::continuousEnergyProductData( Transporting::Settings const &a_sett
  ***********************************************************************************************************/
 
 void Reaction::mapContinuousEnergyProductData( Transporting::Settings const &a_settings, std::string const &a_particleID, 
-                std::vector<double> const &a_energies, int a_offset, std::vector<double> &a_productEnergies, std::vector<double> &a_productMomenta, 
+                std::vector<double> const &a_energies, std::size_t a_offset, std::vector<double> &a_productEnergies, std::vector<double> &a_productMomenta, 
                 std::vector<double> &a_productGains, bool a_ignoreIncompleteParticles ) const {
 
 //    if( ENDF_MT( ) == 516 ) return;             // FIXME, may be something wrong with the way FUDGE converts ENDF to GNDS.

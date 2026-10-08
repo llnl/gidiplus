@@ -68,13 +68,13 @@ void main2( int argc, char **argv ) {
     GIDI::Transporting::Particles particles;
 
     MCGIDI::DomainHash domainHash( 4000, 1e-8, 10 );
-    std::set<int> reactionsToExclude;
+    GIDI::ExcludeReactionsSet reactionsToExclude;
     LUPI::StatusMessageReporting smr1;
     MCGIDI::Protare *MCProtare = MCGIDI::protareFromGIDIProtare( smr1, *protare, pops, settings, particles, domainHash, temperatures, reactionsToExclude );
 
-    MCProtare->setUserParticleIndex( pops[PoPI::IDs::neutron], 0 );
-    MCProtare->setUserParticleIndex( pops["H2"], 10 );
-    MCProtare->setUserParticleIndex( pops[PoPI::IDs::photon], 11 );
+    MCProtare->setUserParticleIndex( static_cast<int>( pops[PoPI::IDs::neutron] ), 0 );
+    MCProtare->setUserParticleIndex( static_cast<int>( pops["H2"] ), 10 );
+    MCProtare->setUserParticleIndex( static_cast<int>( pops[PoPI::IDs::photon] ), 11 );
 
     for( std::size_t reactionIndex = 0; reactionIndex < MCProtare->numberOfReactions( ); ++reactionIndex ) {
         MCGIDI::Reaction const *reaction = MCProtare->reaction( reactionIndex );

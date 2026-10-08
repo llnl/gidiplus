@@ -52,7 +52,7 @@ void main2( int argc, char **argv ) {
 
     PoPI::Database pops;
     unsigned long long rngState = 1;
-    std::set<int> reactionsToExclude;
+    GIDI::ExcludeReactionsSet reactionsToExclude;
     GIDI::Transporting::Particles particles;
     double temperature_keV_K = 2.582e-5;
     LUPI::StatusMessageReporting smr1;
@@ -87,7 +87,7 @@ void main2( int argc, char **argv ) {
     std::string productID = argv_options.find( "--oid" )->zeroOrOneOption( argv, protare->projectile( ).ID( ) );
     long numberOfSamples = argv_options.find( "-n" )->asLong( argv, -1 );
     if( numberOfSamples < 0 ) numberOfSamples *= -1000000;
-    long numberOfBins = argv_options.find( "--numberOfBins" )->asLong( argv, 1000 );
+    std::size_t numberOfBins = static_cast<std::size_t>( argv_options.find( "--numberOfBins" )->asLong( argv, 1000 ) );
 
     GIDI::Styles::TemperatureInfos temperatures = protare->temperatures( );
     std::string label( temperatures[0].griddedCrossSection( ) );
@@ -109,25 +109,25 @@ void main2( int argc, char **argv ) {
     MCGIDI::DomainHash domainHash( 4000, 1e-8, 10 );
     MCGIDI::Protare *MCProtare = MCGIDI::protareFromGIDIProtare( smr1, *protare, pops, MC, particles, domainHash, temperatures, reactionsToExclude );
 
-    int productIndex = pops[productID];
+    int productIndex = static_cast<int>( pops[productID] );
 
     double energy_in = argv_options.asDouble( argv, 0 );
     double mu_lab = argv_options.asDouble( argv, 1 );
     if( mu_lab < -1.0 ) throw "mu_lab must be greater than or equal to -1.0";
     if( mu_lab > 1.0 ) throw "mu_lab must be less than or equal to 1.0";
 
-    int reactionIndex = argv_options.find( "-r" )->asLong( argv, 0 );
-    if( reactionIndex >= static_cast<int>( MCProtare->numberOfReactions( ) ) ) throw "Invalid reaction index.";
+    long reactionIndex = argv_options.find( "-r" )->asLong( argv, 0 );
+    if( reactionIndex >= static_cast<long>( MCProtare->numberOfReactions( ) ) ) throw "Invalid reaction index.";
     if( reactionIndex < 0 ) {
         std::cout << "List of reaction indices, thresholds and labels are:" << std::endl;
-        for( reactionIndex = 0; reactionIndex < static_cast<int>( MCProtare->numberOfReactions( ) ); ++reactionIndex ) {
-            MCGIDI::Reaction const *reaction = MCProtare->reaction( reactionIndex );
+        for( std::size_t reactionIndex1 = 0; reactionIndex1 < MCProtare->numberOfReactions( ); ++reactionIndex1 ) {
+            MCGIDI::Reaction const *reaction = MCProtare->reaction( reactionIndex1 );
 
-            std::cout << std::setw( 4 ) << reactionIndex << "  " << doubleToString( "%14.6e", reaction->crossSectionThreshold( ) ) << "  " << reaction->label( ).c_str( ) << std::endl;
+            std::cout << std::setw( 4 ) << reactionIndex1 << "  " << doubleToString( "%14.6e", reaction->crossSectionThreshold( ) ) << "  " << reaction->label( ).c_str( ) << std::endl;
         } }
     else {
 
-        MCGIDI::Reaction const *reaction = MCProtare->reaction( reactionIndex );
+        MCGIDI::Reaction const *reaction = MCProtare->reaction( static_cast<std::size_t>( reactionIndex ) );
 
         double energy_out = 1, weight;
         weight = reaction->angleBiasing( productIndex, temperature_keV_K, energy_in, mu_lab, energy_out, 

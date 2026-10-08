@@ -66,6 +66,8 @@ void main2( int argc, char **argv ) {
 
     std::cout << std::endl;
 
+    std::cout << "GNDS format = " << map->formatVersion( ).format( ) << std::endl;
+
     std::cout << "library = " << map->library( ) << std::endl;
 
     std::cout << "isProtareAvailable( PoPI::IDs::neutron, H1 ) " << map->isProtareAvailable( PoPI::IDs::neutron, "H1" ) << std::endl;

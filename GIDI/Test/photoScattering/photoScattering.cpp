@@ -177,15 +177,19 @@ void readProtare( ParseTestOptions &a_parseTestOptions, GIDI::Construction::Phot
     protare->productIDs( ids, particles, true );
     printIDs( "Product IDs (transportable) : ", ids );
 
-    for( int order = 0; order < protare->maximumLegendreOrder( smr1, settings, temperatures[0], PoPI::IDs::photon ); ++order ) {
+    int intMaxOrder = protare->maximumLegendreOrder( smr1, settings, temperatures[0], PoPI::IDs::photon );
+    if( intMaxOrder > -1 ) {
+        std::size_t maxOrder = static_cast<std::size_t>( intMaxOrder );
+        for( std::size_t order = 0; order < maxOrder; ++order ) {
 
-        std::cout << "Data for Legendre order " << order << std::endl;
+            std::cout << "Data for Legendre order " << order << std::endl;
 
-        vector = protare->multiGroupTransportCorrection( smr1, settings, temperatures[0], particles, order, GIDI::TransportCorrectionType::Pendlebury, 0.0 );
-        printVector( "    Transport correction ::", vector );
+            vector = protare->multiGroupTransportCorrection( smr1, settings, temperatures[0], particles, order, GIDI::TransportCorrectionType::Pendlebury, 0.0 );
+            printVector( "    Transport correction ::", vector );
 
-        GIDI::Matrix matrix = protare->multiGroupProductMatrix( smr1, settings, temperatures[0], particles, PoPI::IDs::photon, order );
-        printMatrix( "    Photon product matrix", -2, matrix );
+            GIDI::Matrix matrix = protare->multiGroupProductMatrix( smr1, settings, temperatures[0], particles, PoPI::IDs::photon, order );
+            printMatrix( "    Photon product matrix", -2, matrix );
+        }
     }
 
 // depositionData

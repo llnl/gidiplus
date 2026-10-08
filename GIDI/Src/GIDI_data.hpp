@@ -72,9 +72,11 @@ class Vector {
         Vector( std::vector<double> const &a_values );
         Vector( std::size_t a_number, double const *a_values );
         Vector( Vector const &a_vector );
+        Vector( Vector &&a_vector ) noexcept;
         ~Vector( );
 
         Vector &operator=( Vector const &a_rhs );
+        Vector &operator=( Vector &&a_rhs ) noexcept;
 
         std::size_t size( ) const { return( m_vector.size( ) ); }                                   /**< Returns a number of elements of *this*. */
         void resize( std::size_t a_number, double a_value = 0.0 ) { m_vector.resize( a_number, a_value ); }                     /**< Resizes *this* to *a_number* elements. For details, see std::vector.resize. */

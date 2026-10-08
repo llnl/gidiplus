@@ -55,7 +55,7 @@ GRIN_continuumGammas::GRIN_continuumGammas( Construction::Settings const &a_cons
     PoPI::Nuclide const &captureResidual = a_pops.get<PoPI::Nuclide>( captureResidualId );
     m_captureResidualId = std::move( captureResidualId );
     m_captureResidualIntid = captureResidual.intid( );
-    m_captureResidualIndex = captureResidual.index( );
+    m_captureResidualIndex = static_cast<int>( captureResidual.index( ) );
     m_captureResidualMass = captureResidual.massValue( "MeV/c**2" );
 }
 

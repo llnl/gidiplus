@@ -51,7 +51,7 @@ void main2( int argc, char **argv ) {
     unsigned long long rngState = 1;
     double energyDomainMax = 20.0;
     std::size_t numberOfFissionSamples = 100 * 1000;
-    std::set<int> reactionsToExclude;
+    GIDI::ExcludeReactionsSet reactionsToExclude;
     LUPI::StatusMessageReporting smr1;
     GIDI::Construction::PhotoMode photo_mode = GIDI::Construction::PhotoMode::nuclearOnly;
 
@@ -137,11 +137,11 @@ void main2( int argc, char **argv ) {
     MCGIDI::DomainHash domainHash( 4000, 1e-8, 10 );
     MCGIDI::Protare *MCProtare = MCGIDI::protareFromGIDIProtare( smr1, *protare, pops, MC, particles, domainHash, temperatures, reactionsToExclude );
 
-    MCProtare->setUserParticleIndex( pops[PoPI::IDs::neutron], 0 );
-    MCProtare->setUserParticleIndex( pops["H2"], 10 );
-    MCProtare->setUserParticleIndex( pops[PoPI::IDs::photon], 11 );
-    MCProtare->setUserParticleIndex( pops[PoPI::IDs::electron], 12 );
-    MCProtare->setUserParticleIndex( pops[PoPI::IDs::FissionProductENDL99120], 13 );
+    MCProtare->setUserParticleIndex( static_cast<int>( pops[PoPI::IDs::neutron] ), 0 );
+    MCProtare->setUserParticleIndex( static_cast<int>( pops["H2"] ), 10 );
+    MCProtare->setUserParticleIndex( static_cast<int>( pops[PoPI::IDs::photon] ), 11 );
+    MCProtare->setUserParticleIndex( static_cast<int>( pops[PoPI::IDs::electron] ), 12 );
+    MCProtare->setUserParticleIndex( static_cast<int>( pops[PoPI::IDs::FissionProductENDL99120] ), 13 );
 
     MCGIDI::Sampling::Input input( true, MCGIDI::Sampling::Upscatter::Model::none );
 
@@ -200,13 +200,13 @@ void main2( int argc, char **argv ) {
                             ++totalFissionNeutrons;
                             if( product.m_delayedNeutronIndex > -1 ) {
                                 ++delayedFissionNeutrons;
-                                ++delayedFissionNeutronIndexCounts[product.m_delayedNeutronIndex];
+                                ++delayedFissionNeutronIndexCounts[static_cast<std::size_t>(product.m_delayedNeutronIndex)];
                             }
                         }
                     }
                 }
 
-                double totalMultiplicity = totalFissionNeutrons / (double) numberOfFissionSamples, delayedMultiplicity = delayedFissionNeutrons / (double) numberOfFissionSamples;
+                double totalMultiplicity = (double) totalFissionNeutrons / (double) numberOfFissionSamples, delayedMultiplicity = (double) delayedFissionNeutrons / (double) numberOfFissionSamples;
                 std::cout << "        energy = " << energy << " total neutrons = " << totalFissionNeutrons << " (" << doubleToString2( "%.4f", totalMultiplicity )
                         << ") delayed neutrons = " << delayedFissionNeutrons << " (" << doubleToString2( "%.3e", delayedMultiplicity ) << ")";
                 if( delayedFissionNeutrons > 0 ) {

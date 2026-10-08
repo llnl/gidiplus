@@ -49,7 +49,7 @@ void main2( int argc, char **argv ) {                        // Useful for detec
     GIDI::Transporting::Particles particles;
     std::vector<std::string> libraries;
     char *endChar;
-    std::set<int> reactionsToExclude;
+    GIDI::ExcludeReactionsSet reactionsToExclude;
     unsigned long long rngState = 1;
     long numberOfDomainSteps = 10;
 
@@ -96,7 +96,7 @@ void main2( int argc, char **argv ) {                        // Useful for detec
     std::cout << "# " << GIDI_protare->realFileName( ) << std::endl;
     std::cout << "# Has URR probability tables = " << MC_protare->hasURR_probabilityTables( ) << std::endl;
     if( MC_protare->hasURR_probabilityTables( ) ) {
-        int numberOfReactions = (int) MC_protare->numberOfReactions( );
+        std::size_t numberOfReactions = MC_protare->numberOfReactions( );
         double domain_min( MC_protare->URR_domainMin( ) );
         double domain_max( MC_protare->URR_domainMax( ) );
         Bins cross_section_bins( 10000, 10.0, 15.0, true );
@@ -118,7 +118,7 @@ void main2( int argc, char **argv ) {                        // Useful for detec
                 energy = domain_min + energyIndex * ( domain_max - domain_min ) / numberOfDomainSteps;
                 if( energyIndex == numberOfDomainSteps ) energy = domain_max;
             }
-            int hashIndex = domainHash.index( energy );
+            std::size_t hashIndex = domainHash.index( energy );
 
             std::cout << "# energy = " << energy << std::endl;
             std::string fileName( "sampleURR_probabilityTables_" );
@@ -160,7 +160,7 @@ void main2( int argc, char **argv ) {                        // Useful for detec
             }
 
             if( reactionType != "t" ) {
-                for( int reaction_index = 0; reaction_index < numberOfReactions; ++reaction_index ) {
+                for( std::size_t reaction_index = 0; reaction_index < numberOfReactions; ++reaction_index ) {
                     if( !MC_protare->reactionHasURR_probabilityTables( reaction_index ) ) continue;
 
                     MCGIDI::Reaction const *reaction = MC_protare->reaction( reaction_index );

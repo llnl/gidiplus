@@ -18,7 +18,7 @@ namespace MCGIDI {
 /* *********************************************************************************************************//**
  ***********************************************************************************************************/
 
-LUPI_HOST SetupInfo::SetupInfo( ProtareSingle &a_protare, GIDI::ProtareSingle const &a_GIDI_protare, PoPI::Database const &a_popsUser, 
+LUPI_HOST SetupInfo::SetupInfo( ProtareSingle &a_protare, GIDI::ProtareSingle const &a_GIDI_protare, PoPI::Database const &a_popsUser,
                 PoPI::Database const &a_pops ) :
         m_protare( a_protare ),
         m_GIDI_protare( a_GIDI_protare ),
@@ -26,7 +26,25 @@ LUPI_HOST SetupInfo::SetupInfo( ProtareSingle &a_protare, GIDI::ProtareSingle co
         m_pops( a_pops ),
         m_neutronIndex( MCGIDI_popsIndex( a_popsUser, PoPI::IDs::neutron ) ),
         m_photonIndex( MCGIDI_popsIndex( a_popsUser, PoPI::IDs::photon ) ),
+        m_electronIndex( MCGIDI_popsIndex( a_popsUser, PoPI::IDs::electron ) ),
+        m_formatVersion( ),
+        m_Q( 0.0 ),
+        m_productMass( 0.0 ),
+        m_twobodyProduct1Mass( 0.0 ),
+        m_twobodyProduct2Mass( 0.0 ),
+        m_twobodyFirstProductDistribution( nullptr ),
+        m_domainMin( 0.0 ),
+        m_domainMax( 0.0 ),
+        m_twoBodyOrder( TwoBodyOrder::notApplicable ),
+        m_isPairProduction( false ),
+        m_isPhotoAtomicIncoherentScattering( false ),
+        m_isPhotoAtomicIncoherentDopplerScattering( false ),
+        m_isPhotoelectric( false ),
+        m_distributionLabel( ),
+        m_reaction( nullptr ),
+        m_reactionType( Transporting::Reaction::Type::Reactions ),
         m_initialStateIndex( -1 ),
+        m_hasFinalStatePhotons( false ),
         m_GRIN_continuumGammas( nullptr ) {
 
 }
@@ -83,7 +101,8 @@ LUPI_HOST int MCGIDI_popsIntid( PoPI::Database const &a_pops, std::string const 
 LUPI_HOST int MCGIDI_popsIndex( PoPI::Database const &a_pops, std::string const &a_id ) {
 
     if( !a_pops.exists( a_id ) ) return( -1 );
-    return( a_pops[a_id] );
+
+    return( static_cast<int>( a_pops[a_id] ) );
 }
 
 /* *********************************************************************************************************//**
@@ -129,7 +148,6 @@ LUPI_HOST_DEVICE double particleKineticEnergy( double a_mass_unitOfEnergy, doubl
 
     return( a_mass_unitOfEnergy * ( 1.0 / sqrt( 1.0 - a_particleBeta * a_particleBeta ) - 1.0 ) );
 }
-
 
 /* *********************************************************************************************************//**
  * This function is like particleKineticEnergy except that *a_particleBeta2* is beta squared (i.e., (v/c)^2).
@@ -284,6 +302,15 @@ LUPI_HOST_DEVICE int distributionTypeToInt( Distributions::Type a_type ) {
     case Distributions::Type::incoherentBoundToFreePhotoAtomicScattering :
         distributionType = 14;
         break;
+    case Distributions::Type::incoherentBoundToFreePhotoAtomicScatteringElectron :
+        distributionType = 15;
+        break;
+    case Distributions::Type::pairProductionElectron :
+        distributionType = 16;
+        break;
+    case Distributions::Type::photoelectricElectron :
+        distributionType = 17;
+        break;
     }
 
     return( distributionType );
@@ -346,6 +373,15 @@ LUPI_HOST_DEVICE Distributions::Type intToDistributionType( int a_type ) {
         break;
     case 14 :
         type = Distributions::Type::incoherentBoundToFreePhotoAtomicScattering;
+        break;
+    case 15 :
+        type = Distributions::Type::incoherentBoundToFreePhotoAtomicScatteringElectron;
+        break;
+    case 16 :
+        type = Distributions::Type::pairProductionElectron;
+        break;
+    case 17 :
+        type = Distributions::Type::photoelectricElectron;
         break;
     default:
         LUPI_THROW( "intToDistributionType: unsupported distribution type." );
@@ -454,7 +490,6 @@ LUPI_HOST_DEVICE void serializeQs( LUPI::DataBuffer &a_buffer, LUPI::DataBuffer:
         a_Qs[vectorIndex] = serializeFunction1d_d1( a_buffer, a_mode, a_Qs[vectorIndex] );
     }
 }
-
 
 /* *********************************************************************************************************//**
  * 

@@ -11,14 +11,14 @@
 
 #include "GIDI_testUtilities.hpp"
 
-static int m1rows = 4, m1columns = 5;
+static std::size_t m1rows = 4, m1columns = 5;
 
 /*
 =========================================================
 */
 int main( int argc, char **argv ) {
 
-    int row, column;
+    std::size_t row, column;
     GIDI::Matrix m1( m1rows, m1columns );
 
     printCodeArguments( __FILE__, argc, argv );
@@ -30,7 +30,7 @@ int main( int argc, char **argv ) {
 
     for( row = 0; row < m1rows; ++row ) {
         for( column = 0; column < m1columns; ++column ) {
-            m1.set( row, column, row * m1columns + column );
+            m1.set( row, column, static_cast<double>( row * m1columns + column ) );
 //            m1[row][column] = row * m1columns + column;
         }
     }

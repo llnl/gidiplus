@@ -1,4 +1,5 @@
 
+GNDS format = 2.0
 library = all
 isProtareAvailable( PoPI::IDs::neutron, H1 ) 1
 isProtareAvailable( PoPI::IDs::neutron, H2 ) 0

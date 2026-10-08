@@ -21,9 +21,9 @@ static char const *description = "Loops over temperature and energy, printing th
 
 void main2( int argc, char **argv );
 void energyLoop( GIDI::Protare *a_protare, PoPI::Database &a_pops, GIDI::Transporting::Particles &a_particles, MCGIDI::DomainHash &a_domainHash, 
-                MCGIDI::Transporting::MC &a_MC, GIDI::Styles::TemperatureInfos a_temperatures, std::set<int> &a_reactionsToExclude,
+                MCGIDI::Transporting::MC &a_MC, GIDI::Styles::TemperatureInfos a_temperatures, GIDI::ExcludeReactionsSet &a_reactionsToExclude,
                 MCGIDI::URR_protareInfos &a_URR_protare_infos, bool a_printPairDiff );
-void checkIntidGain( MCGIDI::Protare *MCProtare, int a_hashIndex, double a_temperature, double a_energy, int a_index, int a_intid );
+void checkIntidGain( MCGIDI::Protare *MCProtare, std::size_t a_hashIndex, double a_temperature, double a_energy, int a_index, int a_intid );
 /*
 =========================================================
 */
@@ -48,7 +48,7 @@ void main2( int argc, char **argv ) {
     PoPI::Database pops( "../../../TestData/PoPs/pops.xml" );
     GIDI::Protare *protare;
     GIDI::Transporting::Particles particles;
-    std::set<int> reactionsToExclude;
+    GIDI::ExcludeReactionsSet reactionsToExclude;
     LUPI::StatusMessageReporting smr1;
 
     std::cerr << "    " << __FILE__;
@@ -132,11 +132,11 @@ void main2( int argc, char **argv ) {
 =========================================================
 */
 void energyLoop( GIDI::Protare *a_protare, PoPI::Database &a_pops, GIDI::Transporting::Particles &a_particles, MCGIDI::DomainHash &a_domainHash, 
-                MCGIDI::Transporting::MC &a_MC, GIDI::Styles::TemperatureInfos a_temperatures, std::set<int> &a_reactionsToExclude,
+                MCGIDI::Transporting::MC &a_MC, GIDI::Styles::TemperatureInfos a_temperatures, GIDI::ExcludeReactionsSet &a_reactionsToExclude,
                 MCGIDI::URR_protareInfos &a_URR_protare_infos, bool a_printPairDiff ) {
 
     LUPI::StatusMessageReporting smr1;
-    int photonIndex = a_pops[PoPI::IDs::photon];
+    int photonIndex = static_cast<int>( a_pops[PoPI::IDs::photon] );
     MCGIDI::Protare *MCProtare = MCGIDI::protareFromGIDIProtare( smr1, *a_protare, a_pops, a_MC, a_particles, a_domainHash, a_temperatures, a_reactionsToExclude );
     double temperature = 1e-8;
 
@@ -151,7 +151,7 @@ void energyLoop( GIDI::Protare *a_protare, PoPI::Database &a_pops, GIDI::Transpo
     if( a_particles.hasParticle( PoPI::IDs::photon ) ) std::cout << "        photon gain";
     std::cout << std::endl;
     for( double energy = 1e-1; energy < 45.0; energy *= 1.4 ) {
-        int hashIndex = a_domainHash.index( energy );
+        std::size_t hashIndex = a_domainHash.index( energy );
         double crossSection = MCProtare->crossSection( a_URR_protare_infos, hashIndex, temperature, energy );
         double depositionEnergy = MCProtare->depositionEnergy( hashIndex, temperature, energy );
 
@@ -175,7 +175,7 @@ void energyLoop( GIDI::Protare *a_protare, PoPI::Database &a_pops, GIDI::Transpo
 /*
 =========================================================
 */
-void checkIntidGain( MCGIDI::Protare *MCProtare, int a_hashIndex, double a_temperature, double a_energy, int a_index, int a_intid ) {
+void checkIntidGain( MCGIDI::Protare *MCProtare, std::size_t a_hashIndex, double a_temperature, double a_energy, int a_index, int a_intid ) {
 
     double gainIndex = MCProtare->gain( a_hashIndex, a_temperature, a_energy, a_index );
     double gainIntid = MCProtare->gainViaIntid( a_hashIndex, a_temperature, a_energy, a_intid );

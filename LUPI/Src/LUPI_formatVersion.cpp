@@ -114,6 +114,17 @@ bool FormatVersion::supported( ) const {
     if( m_format == GNDS_formatVersion_2_0Chars ) return( true );
     if( m_format == GNDS_formatVersion_2_0_LLNL_4Chars ) return( true );
     if( m_format == GNDS_formatVersion_2_1Chars ) return( true );
+    if( m_format == GNDS_formatVersion_2_2Chars )
+    {
+        static bool warningPrinted = false;
+
+        if( !warningPrinted )
+        {
+            std::cout << "\n*** WARNING: encountered experimental GNDS format version 2.2 ***\n\n";
+            warningPrinted = true;
+        }
+        return( true );
+    }
 
     return( false );
 }

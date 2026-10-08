@@ -31,8 +31,10 @@ XYs1d::XYs1d( ) :
         Function1dForm( GIDI_XYs1dChars, FormType::XYs1d, Axes(), ptwXY_interpolationLinLin, 0, 0.0 ) {
 
     double dummy[2];
+    LUPI::StatusMessageReporting smr;
 
-    m_ptwXY = ptwXY_create2( nullptr, interpolation( ), 0, 0, 0, dummy, 0 );
+    m_ptwXY = ptwXY_create2( smr.smr( ), interpolation( ), 0, 0, 0, dummy, 0 );
+    if( m_ptwXY == nullptr ) throw Exception( smr.constructMessage( "XYs1d::XYs1d", -1, true ) );
 }
 
 /* *********************************************************************************************************//**
@@ -50,7 +52,9 @@ XYs1d::XYs1d( Axes const &a_axes, ptwXY_interpolation a_interpolation, int a_ind
 
     double dummy[2];
 
-    m_ptwXY = ptwXY_create2( nullptr, a_interpolation, 0, 0, 0, dummy, 0 );
+    LUPI::StatusMessageReporting smr;
+    m_ptwXY = ptwXY_create2( smr.smr( ), a_interpolation, 0, 0, 0, dummy, 0 );
+    if( m_ptwXY == nullptr ) throw Exception( smr.constructMessage( "XYs1d::XYs1d", -1, true ) );
 }
 
 /* *********************************************************************************************************//**
@@ -68,8 +72,10 @@ XYs1d::XYs1d( Axes const &a_axes, ptwXY_interpolation a_interpolation, std::vect
         Function1dForm( GIDI_XYs1dChars, FormType::XYs1d, a_axes, a_interpolation, a_index, a_outerDomainValue ) {
 
     int64_t length = static_cast<int64_t>( a_values.size( ) ) / 2;
+    LUPI::StatusMessageReporting smr;
 
-    m_ptwXY = ptwXY_create2( nullptr, a_interpolation, length, 0, length, a_values.data( ), 0 );
+    m_ptwXY = ptwXY_create2( smr.smr( ), a_interpolation, length, 0, length, a_values.data( ), 0 );
+    if( m_ptwXY == nullptr ) throw Exception( smr.constructMessage( "XYs1d::XYs1d", -1, true ) );
 }
 
 /* *********************************************************************************************************//**
@@ -91,8 +97,10 @@ XYs1d::XYs1d( Axes const &a_axes, ptwXY_interpolation a_interpolation, std::vect
 
     if( a_xs.size( ) != a_ys.size( ) ) throw Exception( "XYs1d::XYs1d: xs and ys not the same size" );
     int64_t length = static_cast<int64_t>( a_xs.size( ) );
+    LUPI::StatusMessageReporting smr;
 
-    m_ptwXY = ptwXY_createFrom_Xs_Ys2( nullptr, a_interpolation, length, 0, length, a_xs.data( ), a_ys.data( ), 0 );
+    m_ptwXY = ptwXY_createFrom_Xs_Ys2( smr.smr( ), a_interpolation, length, 0, length, a_xs.data( ), a_ys.data( ), 0 );
+    if( m_ptwXY == nullptr ) throw Exception( smr.constructMessage( "XYs1d::XYs1d", -1, true ) );
 }
 
 /* *********************************************************************************************************//**
@@ -126,14 +134,15 @@ XYs1d::XYs1d( Construction::Settings const &a_construction, HAPI::Node const &a_
 
     HAPI::Node values = a_node.child( GIDI_valuesChars );
     nf_Buffer<double> vals;
+    LUPI::StatusMessageReporting smr;
     parseValuesOfDoubles( a_construction, values, a_setupInfo, vals );
 
-    int primarySize = vals.size() / 2, secondarySize = 0;
+    int primarySize = static_cast<int>( vals.size() / 2 ), secondarySize = 0;
     double *dvals = new double[vals.size()];                  // Not sure we really need a copy here.
     for( size_t idx = 0; idx < vals.size(); idx++ ) dvals[idx] = vals[idx];
-    m_ptwXY = ptwXY_create( NULL, interpolation( ), interpolationString( ).c_str( ), 12, 1e-3, primarySize, secondarySize, primarySize, dvals, 0 );
+    m_ptwXY = ptwXY_create( smr.smr( ), interpolation( ), interpolationString( ).c_str( ), 12, 1e-3, primarySize, secondarySize, primarySize, dvals, 0 );
     delete[] dvals;
-    if( m_ptwXY == nullptr ) throw Exception( "XYs1d::XYs1d: ptwXY_fromString failed" );
+    if( m_ptwXY == nullptr ) throw Exception( smr.constructMessage( "XYs1d::XYs1d", -1, true ) );
 }
 
 /* *********************************************************************************************************//**
@@ -146,8 +155,22 @@ XYs1d::XYs1d( XYs1d const &a_XYs1d ) :
         Function1dForm( a_XYs1d ),
         m_ptwXY( nullptr ) {
 
-    m_ptwXY = ptwXY_clone2( nullptr, a_XYs1d.ptwXY( ) );
-    if( m_ptwXY == nullptr ) throw Exception( "XYs1d::XYs1d:2: ptwXY_clone2 failed" );
+    LUPI::StatusMessageReporting smr;
+    m_ptwXY = ptwXY_clone2( smr.smr( ), a_XYs1d.ptwXY( ) );
+    if( m_ptwXY == nullptr ) throw Exception( smr.constructMessage( "XYs1d::XYs1d", -1, true ) );
+}
+
+/* *********************************************************************************************************//**
+ * Move constructor.
+ *
+ * @param a_XYs1d                   [in]    XYs1d to move from.
+ ***********************************************************************************************************/
+
+XYs1d::XYs1d( XYs1d &&a_XYs1d ) noexcept :
+        Function1dForm( std::move( a_XYs1d ) ),
+        m_ptwXY( a_XYs1d.m_ptwXY ) {
+
+    a_XYs1d.m_ptwXY = nullptr;
 }
 
 /* *********************************************************************************************************//**
@@ -173,6 +196,25 @@ XYs1d &XYs1d::operator=( XYs1d const &a_rhs ) {
         LUPI::StatusMessageReporting smr;
         m_ptwXY = ptwXY_clone2( smr.smr( ), a_rhs.ptwXY( ) );
         if( m_ptwXY == nullptr ) throw Exception( smr.constructMessage( "XYs1d::operator=", -1, true ) );
+    }
+
+    return( *this );
+}
+
+/* *********************************************************************************************************//**
+ * Move assignment operator. This method moves the members of *a_rhs* to *this*.
+ *
+ * @param a_rhs                     [in]    Instance whose members are moved to *this*.
+ ***********************************************************************************************************/
+
+XYs1d &XYs1d::operator=( XYs1d &&a_rhs ) noexcept {
+
+    if( this != &a_rhs ) {
+        Function1dForm::operator=( std::move( a_rhs ) );
+
+        ptwXY_free( m_ptwXY );
+        m_ptwXY = a_rhs.m_ptwXY;
+        a_rhs.m_ptwXY = nullptr;
     }
 
     return( *this );
@@ -360,11 +402,11 @@ XYs1d &XYs1d::operator*=( XYs1d const &a_rhs ) {
 
 std::vector<double> XYs1d::xs( ) const {
 
-    int64_t n1 = size( );
+    auto n1 = size( );
     std::vector<double> _xs( n1, 0. );
 
-    for( int64_t i1 = 0; i1 < n1; ++i1 ) {
-        ptwXYPoint const *point = ptwXY_getPointAtIndex_Unsafely( m_ptwXY, i1 );
+    for( std::size_t i1 = 0; i1 < n1; ++i1 ) {
+        ptwXYPoint const *point = ptwXY_getPointAtIndex_Unsafely( m_ptwXY, static_cast<int64_t>( i1 ) );
 
         _xs[i1] = point->x;
     }
@@ -379,11 +421,11 @@ std::vector<double> XYs1d::xs( ) const {
 
 std::vector<double> XYs1d::ys( ) const {
 
-    int64_t n1 = size( );
+    auto n1 = size( );
     std::vector<double> _ys( n1, 0. );
 
-    for( int64_t i1 = 0; i1 < n1; ++i1 ) {
-        ptwXYPoint const *point = ptwXY_getPointAtIndex_Unsafely( m_ptwXY, i1 );
+    for( std::size_t i1 = 0; i1 < n1; ++i1 ) {
+        ptwXYPoint const *point = ptwXY_getPointAtIndex_Unsafely( m_ptwXY, static_cast<int64_t>( i1 ) );
 
         _ys[i1] = point->y;
     }
@@ -400,8 +442,9 @@ std::vector<double> XYs1d::ys( ) const {
 
 std::vector<double> XYs1d::ysMappedToXs( std::vector<double> const &a_xs, std::size_t *a_offset ) const {
 
-    int64_t n1 = size( ), i2, n2 = a_xs.size( );
+    std::size_t n1 = size( ), i2, n2 = a_xs.size( );
     std::vector<double> _ys;
+    LUPI::StatusMessageReporting smr;
 
     *a_offset = 0;
     if( n1 == 0 ) return( _ys );
@@ -411,14 +454,14 @@ std::vector<double> XYs1d::ysMappedToXs( std::vector<double> const &a_xs, std::s
     *a_offset = i2;
     if( i2 == n2 ) return( _ys );
 
-    for( int64_t i1 = 1; i1 < n1; ++i1 ) {
-        ptwXYPoint const *point2 = ptwXY_getPointAtIndex_Unsafely( m_ptwXY, i1 );
+    for( std::size_t i1 = 1; i1 < n1; ++i1 ) {
+        ptwXYPoint const *point2 = ptwXY_getPointAtIndex_Unsafely( m_ptwXY, static_cast<int64_t>( i1 ) );
 
         while( i2 < n2 ) {
             double x = a_xs[i2], y;
             if( x > point2->x ) break;           // Happens because of round off errors. Need to fix.
 
-            ptwXY_interpolatePoint( nullptr, ptwXY_interpolationLinLin, x, &y, point1->x, point1->y, point2->x, point2->y );
+            ptwXY_interpolatePoint( smr.smr( ), ptwXY_interpolationLinLin, x, &y, point1->x, point1->y, point2->x, point2->y );
             _ys.push_back( y );
             ++i2;
             if( x >= point2->x ) break;         // This check can fail hence check above.
@@ -448,7 +491,7 @@ XYs1d XYs1d::domainSlice( double a_domainMin, double a_domainMax, bool a_fill ) 
     ptwXYPoints *ptwXY1 = ptwXY_clone2( smr.smr( ), m_ptwXY );
     if( ptwXY1 == nullptr ) throw Exception( smr.constructMessage( "XYs1d::domainSlice", -1, true ) );
 
-    ptwXYPoints *ptwXYSliced = ptwXY_domainSlice( nullptr, ptwXY1, a_domainMin, a_domainMax, 10, a_fill ? 1 : 0 );
+    ptwXYPoints *ptwXYSliced = ptwXY_domainSlice( smr.smr( ), ptwXY1, a_domainMin, a_domainMax, 10, a_fill ? 1 : 0 );
     ptwXY_free( ptwXY1 );
     if( ptwXYSliced == nullptr ) throw Exception( smr.constructMessage( "XYs1d::domainSlice", -1, true ) );
 
@@ -464,12 +507,14 @@ XYs1d XYs1d::domainSlice( double a_domainMin, double a_domainMax, bool a_fill ) 
 
 XYs1d XYs1d::domainSliceMax( double a_domainMax ) const {
 
-    ptwXYPoints *_ptwXY = ptwXY_clone2( nullptr, m_ptwXY );
-    if( _ptwXY == nullptr ) throw Exception( "domainSliceMax: ptwXY_clone2 failed" );
+    LUPI::StatusMessageReporting smr;
 
-    ptwXYPoints *ptwXYSliced = ptwXY_domainMaxSlice( nullptr, _ptwXY, a_domainMax, 10, 1 );
+    ptwXYPoints *_ptwXY = ptwXY_clone2( smr.smr( ), m_ptwXY );
+    if( _ptwXY == nullptr ) throw Exception( smr.constructMessage( "XYs1d::domainSliceMax", -1, true ) );
+
+    ptwXYPoints *ptwXYSliced = ptwXY_domainMaxSlice( smr.smr( ), _ptwXY, a_domainMax, 10, 1 );
     ptwXY_free( _ptwXY );
-    if( ptwXYSliced == nullptr ) throw Exception( "domainSliceMax: ptwXY_domainMaxSlice failed" );
+    if( ptwXYSliced == nullptr ) throw Exception( smr.constructMessage( "XYs1d::domainSliceMax", -1, true ) );
 
     return( XYs1d( axes( ), ptwXYSliced ) );
 }
@@ -483,18 +528,20 @@ XYs1d XYs1d::domainSliceMax( double a_domainMax ) const {
 
 double XYs1d::evaluate( double a_x1 ) const {
 
-    std::size_t length = ptwXY_length( nullptr, m_ptwXY );
+    LUPI::StatusMessageReporting smr;
+
+    std::size_t length = static_cast<std::size_t>( ptwXY_length( smr.smr( ), m_ptwXY ) );
     if( length == 0 ) throw Exception( "XYs1d::evaluate: XYs1d has no datum." );
 
     ptwXYPoint *point = ptwXY_getPointAtIndex_Unsafely( m_ptwXY, 0 );
     if( point->x >= a_x1 ) return( point->y );
 
-    point = ptwXY_getPointAtIndex_Unsafely( m_ptwXY, length - 1 );
+    point = ptwXY_getPointAtIndex_Unsafely( m_ptwXY, static_cast<int64_t>( length - 1 ) );
     if( point->x <= a_x1 ) return( point->y );
 
     double y;
-    nfu_status status = ptwXY_getValueAtX( nullptr, m_ptwXY, a_x1, &y );
-    if( status != nfu_Okay ) throw Exception( "XYs1d::evaluate: status != nfu_Okay" );
+    nfu_status status = ptwXY_getValueAtX( smr.smr( ), m_ptwXY, a_x1, &y );
+    if( status != nfu_Okay ) throw Exception( smr.constructMessage( "XYs1d::evaluate", -1, true ) );
     return( y );
 }
 
@@ -508,15 +555,15 @@ double XYs1d::evaluate( double a_x1 ) const {
  * @param a_scaleFactor     [in]    A factor applied to each evaluation before it is added to *a_results*.
  ***********************************************************************************************************/
 
-void XYs1d::mapToXsAndAdd( int a_offset, std::vector<double> const &a_Xs, std::vector<double> &a_results, double a_scaleFactor ) const {
+void XYs1d::mapToXsAndAdd( std::size_t a_offset, std::vector<double> const &a_Xs, std::vector<double> &a_results, double a_scaleFactor ) const {
     
     if( a_Xs.size( ) != a_results.size( ) ) throw Exception( "XYs1d::mapToXsAndAdd: a_Xs.size( ) != a_results.size( )" );
-    if( a_offset < 0 ) throw Exception( "XYs1d::mapToXsAndAdd: a_offset < 0." );
 
     LUPI::StatusMessageReporting smr;
     int64_t length = static_cast<int64_t>( a_Xs.size( ) );
 
-    nfu_status status = ptwXY_mapToXsAndAdd( smr.smr( ), m_ptwXY, a_offset, length, a_Xs.data( ), a_results.data( ), a_scaleFactor );
+    nfu_status status = ptwXY_mapToXsAndAdd( smr.smr( ), m_ptwXY, static_cast<int64_t>( a_offset ), length, 
+            a_Xs.data( ), a_results.data( ), a_scaleFactor );
     if( ( status != nfu_Okay ) && ( status != nfu_tooFewPoints ) )
         throw Exception( smr.constructMessage( "XYs1d::mapToXsAndAdd", -1, true ) );
 }
@@ -537,15 +584,16 @@ void XYs1d::mapToXsAndAdd( int a_offset, std::vector<double> const &a_Xs, std::v
 XYs1d *XYs1d::asXYs1d( LUPI_maybeUnused bool a_asLinlin, double a_accuracy, double a_lowerEps, double a_upperEps ) const {
 
     ptwXYPoints *ptwXY2 = nullptr;
+    LUPI::StatusMessageReporting smr;
 
     if( m_ptwXY->interpolation == ptwXY_interpolationFlat ) {
-        ptwXY2 = ptwXY_flatInterpolationToLinear( nullptr, m_ptwXY, a_lowerEps, a_upperEps ); }
+        ptwXY2 = ptwXY_flatInterpolationToLinear( smr.smr( ), m_ptwXY, a_lowerEps, a_upperEps ); }
     else {
-        ptwXY2 = ptwXY_toOtherInterpolation( nullptr, const_cast<ptwXYPoints *>( m_ptwXY ), ptwXY_interpolationLinLin, a_accuracy );
+        ptwXY2 = ptwXY_toOtherInterpolation( smr.smr( ), const_cast<ptwXYPoints *>( m_ptwXY ), ptwXY_interpolationLinLin, a_accuracy );
     }
     
 
-    if( ptwXY2 == nullptr ) return( nullptr );
+    if( ptwXY2 == nullptr ) throw Exception( smr.constructMessage( "XYs1d::asXYs1d", -1, true ) );
 
     return( new XYs1d( axes( ), ptwXY2 ) );
 }
@@ -605,8 +653,9 @@ Xs_pdf_cdf1d XYs1d::toXs_pdf_cdf1d( ) {
     ptwXPoints *ptwX_cdf = ptwXY_runningIntegral( smr.smr( ), m_ptwXY );
     if( ptwX_cdf == nullptr ) throw Exception( smr.constructMessage( "XYs1d::toXs_pdf_cdf1d", -1, true ) );
 
-    std::vector<double> cdf1( ptwX_cdf->length );
-    for( int64_t index = 0; index < ptwX_cdf->length; ++index ) cdf1[index] = ptwX_cdf->points[index];
+    std::size_t length = static_cast<std::size_t>( ptwX_cdf->length );
+    std::vector<double> cdf1( length );
+    for( std::size_t index = 0; index < length; ++index ) cdf1[index] = ptwX_cdf->points[index];
     ptwX_free( ptwX_cdf );
 
     return( Xs_pdf_cdf1d( GIDI::Axes( ), ptwXY_interpolationLinLin, xs1, pdf1, cdf1 ) );
@@ -702,20 +751,23 @@ XYs1d *XYs1d::makeConstantXYs1d( Axes const &a_axes, double a_domainMin, double 
 static void mutualifyDomains( ptwXYPoints const *a_lhs, ptwXYPoints const *a_rhs, ptwXYPoints **a_ptwXY1, ptwXYPoints **a_ptwXY2 ) {
 
     double lowerEps = 1e-12, upperEps = 1e-12;
+    LUPI::StatusMessageReporting smr;
 
-    *a_ptwXY1 = ptwXY_clone2( nullptr, a_lhs );
-    if( *a_ptwXY1 == nullptr ) throw GIDI::Exception( "mutualifyDomains: ptwXY_clone2 failed for a_ptwXY1" );
-
-    *a_ptwXY2 = ptwXY_clone2( nullptr, a_rhs );
-    if( *a_ptwXY2 == nullptr ) {
-        ptwXY_free( *a_ptwXY1 );
-        throw GIDI::Exception( "mutualifyDomains: ptwXY_clone2 failed form a_ptwXY2" );
+    *a_ptwXY1 = ptwXY_clone2( smr.smr( ), a_lhs );
+    if( *a_ptwXY1 == nullptr ) {
+        throw GIDI::Exception( smr.constructMessage( "mutualifyDomains", -1, true ) );
     }
 
-    nfu_status status = ptwXY_mutualifyDomains( nullptr, *a_ptwXY1, lowerEps, upperEps, 1, *a_ptwXY2, lowerEps, upperEps, 1 );
+    *a_ptwXY2 = ptwXY_clone2( smr.smr( ), a_rhs );
+    if( *a_ptwXY2 == nullptr ) {
+        ptwXY_free( *a_ptwXY1 );
+        throw GIDI::Exception( smr.constructMessage( "mutualifyDomains", -1, true ) );
+    }
+
+    nfu_status status = ptwXY_mutualifyDomains( smr.smr( ), *a_ptwXY1, lowerEps, upperEps, 1, *a_ptwXY2, lowerEps, upperEps, 1 );
     if( status != nfu_Okay ) {
         ptwXY_free( *a_ptwXY1 );
         ptwXY_free( *a_ptwXY2 );
-        throw GIDI::Exception( "XYs1d::operator(+|-)=: mutualifyDomains in ptwXY_mutualifyDomains" );
+        throw GIDI::Exception( smr.constructMessage( "mutualifyDomains", -1, true ) );
     }
 }

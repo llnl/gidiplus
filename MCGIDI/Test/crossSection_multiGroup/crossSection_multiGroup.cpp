@@ -12,10 +12,10 @@
 #include <iomanip>
 #include <set>
 
-#include "LUPI.hpp"
-#include "MCGIDI.hpp"
+#include <LUPI.hpp>
+#include <MCGIDI.hpp>
 
-#include "MCGIDI_testUtilities.hpp"
+#include <MCGIDI_testUtilities.hpp>
 
 static char const *description = "Loops over temperature and energy, printing the total cross section. If projectile is a photon, see options *-a* and *-n*.";
 
@@ -28,7 +28,7 @@ int main( int argc, char **argv ) {
     PoPI::Database pops( "../../../TestData/PoPs/pops.xml" );
     GIDI::Protare *protare;
     GIDI::Transporting::Particles particles;
-    std::set<int> reactionsToExclude;
+    GIDI::ExcludeReactionsSet reactionsToExclude;
     GIDI::Construction::PhotoMode photo_mode = GIDI::Construction::PhotoMode::nuclearOnly;
     LUPI::StatusMessageReporting smr1;
 
@@ -106,7 +106,7 @@ int main( int argc, char **argv ) {
     protares[0] = MCProtare;
     MCGIDI::URR_protareInfos URR_protare_infos( protares );
 
-    MCGIDI::MultiGroupHash multiGroupHash( *protare, temperatures[0] );
+    MCGIDI::MultiGroupHash multiGroupHash( *protare, particles );
 
     for( std::size_t i1 = 0; i1 < MCProtare->numberOfReactions( ); ++i1 ) {
         MCGIDI::Reaction const &reaction = *MCProtare->reaction( i1 );
@@ -127,7 +127,7 @@ int main( int argc, char **argv ) {
     for( double temperature = 1e-8; temperature < 2e-3; temperature *= 10.1 ) {
         std::cout << "temperature = " << temperature << std::endl;
         for( double energy = 1e-12; energy < 20; energy *= 1.2 ) {
-            int hashIndex = multiGroupHash.index( energy );
+            std::size_t hashIndex = multiGroupHash.index( energy );
 
             double crossSection = MCProtare->crossSection( URR_protare_infos, hashIndex, temperature, energy );
             std::cout << "    energy = " << std::setw( 16 ) << energy << " index = " << std::setw( 6 ) << hashIndex << "   crossSection = " << crossSection << std::endl;
@@ -151,6 +151,26 @@ int main( int argc, char **argv ) {
             }
         }
     }
+
+#if 0
+    std::size_t vectorSize = projectileMultiGroupBoundaries.size( );
+    double doubleVector[vectorSize];
+    float floatVector[vectorSize];
+
+    for( std::size_t index = 0; index < vectorSize; ++index ) {
+        doubleVector[index] = 0.0;
+        floatVector[index] = 0.0;
+    }
+    MCProtare->crossSectionVector( 0.0, 1.0, vectorSize, doubleVector );
+    MCProtare->crossSectionVector( 0.0, 1.0, vectorSize, floatVector );
+    for( std::size_t index = 0; index < vectorSize; ++index ) {
+        double diff = doubleVector[index] - floatVector[index];
+        double rDiff = 0.0;
+
+        if( doubleVector[index] != 0 ) rDiff = diff / doubleVector[index];
+        printf( "%4lu %23.17e %23.17e %10.3e %10.3e\n", index, doubleVector[index], floatVector[index], diff, rDiff );
+    }
+#endif
 
     delete protare;
 

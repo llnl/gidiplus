@@ -16,7 +16,7 @@ ptwXYCFLAGS = -lnfut_utilities -lptwXY_utilities \
 localCFLAGS = $(CFLAGS) $(ptwXYCFLAGS)
 
 TARGETS = groupTestAll1 integration integrationXY integrationWithWeight_x integrationWithWeight_sqrt_x integration2 runningIntegration \
-	groupTwoFunction groupTwoFunction2 equalProbableBins
+	groupTwoFunction groupTwoFunction2 equalProbableBins groupFourFunctions group4and5Functions
 
 .PHONY: default check clean realclean $(TARGETS)
 
@@ -51,6 +51,12 @@ groupTwoFunction2: groupTwoFunction2.c
 
 equalProbableBins: equalProbableBins.c
 	$(CC) -o equalProbableBins equalProbableBins.c $(localCFLAGS) -lm
+
+groupFourFunctions: groupFourFunctions.c
+	$(CC) -o groupFourFunctions groupFourFunctions.c $(localCFLAGS) -lm
+
+group4and5Functions: group4and5Functions.c
+	$(CC) -o group4and5Functions group4and5Functions.c $(localCFLAGS) -lm
 
 check: default
 	for f in $(TARGETS); do ./$$f $(CHECKOPTIONS); done

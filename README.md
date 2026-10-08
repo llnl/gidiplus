@@ -7,8 +7,8 @@ Monte Carlo transport codes.
 
 # Dependency
 
-**GIDI+** requires the third party library pugixml version 1.13.  If pugixml is not already present in the **GIDI+ Misc**
-directory, download it from https://pugixml.org/2022/11/02/pugixml-1.13-release.html and place it in the 'Misc' folder.
+**GIDI+** requires the third party library pugixml version 1.15.  If pugixml is not already present in the **GIDI+ Misc**
+directory, download it from https://pugixml.org/2025/01/10/pugixml-1.15-release.html and place it in the 'Misc' folder.
 
 # Installation
 

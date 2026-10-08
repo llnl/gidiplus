@@ -23,9 +23,9 @@
 /*
 =========================================================
 */
-std::string fillString( std::string const &a_string, unsigned int a_width, Justification a_justification, bool a_truncate ) {
+std::string fillString( std::string const &a_string, std::size_t a_width, Justification a_justification, bool a_truncate ) {
 
-    unsigned int length = static_cast<unsigned int>( a_string.size( ) );
+    std::size_t length = a_string.size( );
     std::string str;
 
     str.resize( a_width, ' ' );
@@ -37,7 +37,7 @@ std::string fillString( std::string const &a_string, unsigned int a_width, Justi
             str = a_string;
         } }
     else {
-        unsigned int start = a_width - length;                      // Default is right justification.
+        std::size_t start = a_width - length;                      // Default is right justification.
 
         if( a_justification == Justification::center ) {
             start /= 2; }
@@ -52,7 +52,7 @@ std::string fillString( std::string const &a_string, unsigned int a_width, Justi
 /*
 =========================================================
 */
-long asInt( char const *a_chars ) {
+int asInt( char const *a_chars ) {
 
     long value = asLong( a_chars );
 
@@ -77,14 +77,14 @@ long asLong( char const *a_chars ) {
 /*
 =========================================================
 */
-double asDouble( char const *a_chars ) {
+double asDouble( std::string const &a_string ) {
 
     char *end_ptr;
-    double value = strtod( a_chars, &end_ptr );
+    double value = strtod( a_string.c_str( ), &end_ptr );
 
     while( isspace( *end_ptr  ) ) ++end_ptr;
     std::string msg( "ERROR: " );
-    if( *end_ptr != 0 ) throw std::runtime_error( msg + a_chars + " is not a valid integer." );
+    if( *end_ptr != 0 ) throw std::runtime_error( msg + a_string + " is not a valid integer." );
 
     return( value );
 }
@@ -222,7 +222,7 @@ void argvOptions::parseArgv( int argc, char **argv ) {
 
         if( arg == "-h" ) help( );
         if( arg[0] == '-' ) {
-            int index = 0;
+            std::size_t index = 0;
 
             for( ; index < size( ); ++index ) {
                 argvOption &option = m_options[index];
@@ -246,13 +246,13 @@ void argvOptions::parseArgv( int argc, char **argv ) {
 
                 try {
                     ::asDouble( arg.c_str( ) );
-                    m_arguments.push_back( iargc ); }
+                    m_arguments.push_back( static_cast<std::size_t>( iargc ) ); }
                 catch (std::runtime_error const &) {
                     throw std::runtime_error( std::string( "ERROR: invalid option '" ) + arg + "'." );
                 }
             } }
         else {
-            m_arguments.push_back( iargc );
+            m_arguments.push_back( static_cast<std::size_t>( iargc ) );
         }
     }
 
@@ -271,14 +271,14 @@ argvOption *argvOptions::find( std::string const &a_name ) {
 /*
 =========================================================
 */
-long argvOptions::asLong( char **argv, int argumentIndex ) {
+long argvOptions::asLong( char **argv, std::size_t argumentIndex ) {
 
     return( ::asLong( argv[m_arguments[argumentIndex]] ) );
 }
 /*
 =========================================================
 */
-double argvOptions::asDouble( char **argv, int argumentIndex ) {
+double argvOptions::asDouble( char **argv, std::size_t argumentIndex ) {
 
     return( ::asDouble( argv[m_arguments[argumentIndex]] ) );
 }
@@ -307,7 +307,7 @@ void argvOptions::help( ) {
 void argvOptions::print( ) {
 
     std::cout << "Arugment indices:";
-    for( std::vector<int>::iterator iter = m_arguments.begin( ); iter != m_arguments.end( ); ++iter ) std::cout << " " << *iter;
+    for( auto iter = m_arguments.begin( ); iter != m_arguments.end( ); ++iter ) std::cout << " " << *iter;
     std::cout << std::endl;
     for( std::vector<argvOption>::iterator iter = m_options.begin( ); iter != m_options.end( ); ++iter ) iter->print( );
 }
@@ -315,7 +315,7 @@ void argvOptions::print( ) {
 /*
 =========================================================
 */
-int outputChannelStringMaximumLength( GIDI::Protare *protare ) {
+std::size_t outputChannelStringMaximumLength( GIDI::Protare *protare ) {
 
     std::size_t maximumLength = 0;
 
@@ -338,12 +338,12 @@ std::string outputChannelString( GIDI::Reaction *reaction ) {
 /*
 =========================================================
 */
-std::string outputChannelPrefix( int offset, int width, GIDI::Reaction *reaction ) {
+std::string outputChannelPrefix( std::size_t a_offset, std::size_t a_width, GIDI::Reaction *reaction ) {
 
     std::string prefix( outputChannelString( reaction ) );
 
-    prefix.insert( prefix.size( ), width - prefix.size( ), ' ' );
-    prefix.insert( 0, offset, ' ' );
+    prefix.insert( prefix.size( ), a_width - prefix.size( ), ' ' );
+    prefix.insert( 0, a_offset, ' ' );
     return( prefix + ":" );
 }
 /*
@@ -537,7 +537,7 @@ void ParseTestOptions::pops( PoPI::Database &a_pops, std::string const &a_popsFi
         argvOption *pops = m_argvOptions.find( "--pops" );
 
         if( pops->present( ) ) {
-            for( int i1 = 0; i1 < pops->m_counter; ++i1 ) {
+            for( std::size_t i1 = 0; i1 < pops->m_counter; ++i1 ) {
                 a_pops.addFile( m_argv[pops->m_indices[i1]], false );
             } }
         else {
@@ -615,7 +615,7 @@ void ParseTestOptions::particles( GIDI::Transporting::Particles &a_particles ) {
         m_multiGroups.addFile( m_argvOptions.find( "--multiGroupsFile" )->zeroOrOneOption( m_argv, "../groups.xml" ) );
 
         argvOption *option = m_argvOptions.find( "--tracking" );
-        for( int i1 = 0; i1 < option->m_counter; ++i1 ) {
+        for( std::size_t i1 = 0; i1 < option->m_counter; ++i1 ) {
             std::string particleID = m_argv[option->m_indices[i1]];
 
             if( m_particlesAndGIDs.find( particleID ) == m_particlesAndGIDs.end( ) ) throw std::runtime_error( "Tracking particle '" + particleID + "' not supported." );

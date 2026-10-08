@@ -53,10 +53,10 @@ class Bins {
             m_domainMax = a_domainMax;
             m_domainWidth = m_domainMax - m_domainMin;
             m_logDomainFraction = 2.0;
-            if( m_logDomainStep ) m_logDomainFraction = log( pow( m_domainMax / m_domainMin, 1.0 / m_bins.size( ) ) );
+            if( m_logDomainStep ) m_logDomainFraction = log( pow( m_domainMax / m_domainMin, 1.0 / static_cast<double>( m_bins.size( ) ) ) );
         }
 
-        Bins( long a_numberOfBins, double a_domainMin, double a_domainMax, bool a_logDomainStep = false ) :
+        Bins( std::size_t a_numberOfBins, double a_domainMin, double a_domainMax, bool a_logDomainStep = false ) :
                 m_logDomainStep( a_logDomainStep ),
                 m_underFlows( 0 ),
                 m_overFlows( 0 ),
@@ -85,30 +85,31 @@ class Bins {
 
         long accrue( double a_value, double a_weight = 1.0 ) {
 
-            long index;
+            long longIndex;
 
             if( a_value == m_domainMax ) {
-                index = (long) m_bins.size( ) - 1; }
+                longIndex = (long) m_bins.size( ) - 1; }
             else if( m_logDomainStep ) {
-                index = (long) ( log( a_value / m_domainMin ) / m_logDomainFraction ); }
+                longIndex = (long) ( log( a_value / m_domainMin ) / m_logDomainFraction ); }
             else {
-                index = (long) ( ( a_value - m_domainMin ) / m_domainWidth * m_bins.size( ) );
+                longIndex = (long) ( ( a_value - m_domainMin ) / m_domainWidth * static_cast<double>( m_bins.size( ) ) );
             }
 
-            if( index < 0 ) {
+            if( longIndex < 0 ) {
                 ++m_underFlows;
                 m_underFlowWeights += a_weight; }
-            else if( index >= (long) m_bins.size( ) ) {
+            else if( longIndex >= (long) m_bins.size( ) ) {
                 ++m_overFlows;
                 m_overFlowWeights += a_weight; }
             else {
+                std::size_t index = static_cast<std::size_t>( longIndex );
                 ++m_bins[index];
                 m_weightedBins[index] += a_weight;
             }
 
             m_averageValue += a_value;
 
-            return( index );
+            return( longIndex );
         }
 
         long total( bool a_includeOutOfBounds ) {
@@ -133,7 +134,7 @@ class Bins {
 
         double meanX( ) {
 
-            double _total = total( false );
+            double _total = static_cast<double>( total( false ) );
 
             if( _total == 0 ) return( 0.0 );
 
@@ -142,11 +143,11 @@ class Bins {
                 double x1;
 
                 if( m_logDomainStep ) {
-                    x1 = m_domainMin * exp( m_logDomainFraction * ( i1 + 0.5 ) ); }
+                    x1 = m_domainMin * exp( m_logDomainFraction * ( static_cast<double>( i1 ) + 0.5 ) ); }
                 else {
-                    x1 = ( i1 + 0.5 ) / ( (double) m_bins.size( ) ) * m_domainWidth + m_domainMin;
+                    x1 = ( static_cast<double>( i1 ) + 0.5 ) / ( static_cast<double>( m_bins.size( ) ) ) * m_domainWidth + m_domainMin;
                 }
-                mean_x += m_bins[i1] * x1;
+                mean_x += static_cast<double>( m_bins[i1] ) * x1;
             }
 
             return( mean_x / _total );
@@ -156,7 +157,7 @@ class Bins {
 
             double averageValue = 0.0;
             long counts = total( true );
-            if( counts > 0 ) averageValue = m_averageValue / counts;
+            if( counts > 0 ) averageValue = m_averageValue / static_cast<double>( counts );
 
             return( averageValue );
         }
@@ -169,10 +170,10 @@ class Bins {
 
             for( std::size_t i1 = 1; i1 <  edges.size( ); ++i1 ) {
                 if( m_logDomainStep ) {
-                    edges[i1] = m_domainMin * exp( m_logDomainFraction * i1 );
+                    edges[i1] = m_domainMin * exp( m_logDomainFraction * static_cast<double>( i1 ) );
                 }
                 else {
-                    edges[i1] = i1 / ( (double) m_bins.size( ) ) * m_domainWidth + m_domainMin;
+                    edges[i1] = static_cast<double>( i1 ) / static_cast<double>( m_bins.size( ) ) * m_domainWidth + m_domainMin;
                 }
             }
             edges.back( ) = m_domainMax;
@@ -206,21 +207,21 @@ class Bins {
             double offset = a_histogram ? 0.0 : 0.5;
             if( _total == 0 ) _total = 1;
             if( weightedTotal == 0.0 ) weightedTotal = 1.0;
-            double norm = m_domainWidth / ( m_bins.size( ) + 1 );
+            double norm = m_domainWidth / static_cast<double>( m_bins.size( ) + 1 );
             double priorPdf = 0.0, priorFraction = 0.0, priorWeightedPdf = 0.0, priorWeights = 0.0, priorWeightedFraction = 0.0;
             long priorCount = 0;
             for( std::size_t i1 = 0; i1 <  m_bins.size( ); ++i1 ) {
                 double x1;
 
                 if( m_logDomainStep ) {
-                    x1 = m_domainMin * exp( m_logDomainFraction * ( i1 + offset ) );
+                    x1 = m_domainMin * exp( m_logDomainFraction * ( static_cast<double>( i1 ) + offset ) );
                     norm = x1 * ( exp( m_logDomainFraction ) - 1 ); }
                 else {
-                    x1 = ( i1 + offset ) / ( (double) m_bins.size( ) ) * m_domainWidth + m_domainMin;
+                    x1 = ( static_cast<double>( i1 ) + offset ) / ( (double) m_bins.size( ) ) * m_domainWidth + m_domainMin;
                 }
 
                 if( a_histogram ) {
-                    fprintf( a_fOut, "%23.15e  %15.7e  %8ld  %15.7e", x1, priorPdf, priorCount, priorFraction );
+                    fprintf( a_fOut, "%22.14e  %15.7e  %8ld  %15.7e", x1, priorPdf, priorCount, priorFraction );
                     if( a_includeWeights ) {
                         fprintf( a_fOut, "  %15.7e  %15.7e  %15.7e",  priorWeightedPdf, priorWeights, priorWeightedFraction );
                     }
@@ -228,9 +229,9 @@ class Bins {
                 }
 
                 priorCount = m_bins[i1];
-                priorFraction = m_bins[i1] / (double) _total;
+                priorFraction = static_cast<double>( m_bins[i1] ) / static_cast<double>( _total );
                 priorPdf = priorFraction / norm;
-                fprintf( a_fOut, "%23.15e  %15.7e  %8ld  %15.7e", x1, priorPdf, priorCount, priorFraction );
+                fprintf( a_fOut, "%22.14e  %15.7e  %8ld  %15.7e", x1, priorPdf, priorCount, priorFraction );
 
                 if( a_includeWeights ) {
                     priorWeights = m_weightedBins[i1];
@@ -243,14 +244,14 @@ class Bins {
             }
 
             if( a_histogram ) {
-                fprintf( a_fOut, "%23.15e  %15.7e  %8ld  %15.7e", m_domainMax, priorPdf, priorCount, priorFraction );
+                fprintf( a_fOut, "%22.14e  %15.7e  %8ld  %15.7e", m_domainMax, priorPdf, priorCount, priorFraction );
                 if( a_includeWeights ) {
                     fprintf( a_fOut, "  %15.7e  %15.7e  %15.7e",  priorWeightedPdf, priorWeights, priorWeightedFraction );
                 }
                 fprintf( a_fOut, "\n" );
 
                 long zero = 0;
-                fprintf( a_fOut, "%23.15e  %15.7e  %8ld  %15.7e", m_domainMax, 0.0, zero, 0.0 );
+                fprintf( a_fOut, "%22.14e  %15.7e  %8ld  %15.7e", m_domainMax, 0.0, zero, 0.0 );
                 if( a_includeWeights ) {
                     fprintf( a_fOut, "  %15.7e  %15.7e  %15.7e",  0.0, 0.0, 0.0 );
                 }

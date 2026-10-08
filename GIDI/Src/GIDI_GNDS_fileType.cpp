@@ -17,7 +17,7 @@
 #else
     typedef unsigned char XML_Bool;
     typedef char XML_Char;
-    typedef void * XML_Parser;
+    typedef void *XML_Parser;
     typedef void (*XML_StartElementHandler)( void *a_userData, XML_Char const *a_name, XML_Char const **a_atts );
     typedef void (*XML_EndElementHandler)( void *a_userData, XML_Char const *a_name);
 
@@ -156,7 +156,7 @@ GNDS_FileType GNDS_fileType( std::string const &a_fileName, GNDS_FileTypeInfo &a
     enum XML_Status status = XML_STATUS_ERROR;  // Initialize to silence compiler warning
     size_t count = 0;
     while( ( count = fread( buffer, bufferSize, 1, fileDescriptor ) ) > 0 ) {
-        status = XML_Parse( xmlParser, buffer, count, 0 );
+        status = XML_Parse( xmlParser, buffer, (int) count, 0 );
         if( status != XML_STATUS_OK ) break;
     }
 

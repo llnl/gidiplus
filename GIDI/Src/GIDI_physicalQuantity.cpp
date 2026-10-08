@@ -70,6 +70,24 @@ PhysicalQuantity &PhysicalQuantity::operator=( PhysicalQuantity const &a_rhs ) {
 }
 
 /* *********************************************************************************************************//**
+ * Move assignment operator. This method moves the members of *a_rhs* to *this*.
+ *
+ * @param a_rhs                     [in]    Instance whose members are moved to *this*.
+ ***********************************************************************************************************/
+
+PhysicalQuantity &PhysicalQuantity::operator=( PhysicalQuantity &&a_rhs ) noexcept {
+
+    if( this != &a_rhs ) {
+        Form::operator=( std::move( a_rhs ) );
+
+        m_value = a_rhs.m_value;
+        m_unit = std::move( a_rhs.m_unit );
+    }
+
+    return( *this );
+}
+
+/* *********************************************************************************************************//**
  * Fills the argument *a_writeInfo* with the XML lines that represent *this*. Recursively enters each sub-node.
  *
  * @param       a_writeInfo         [in/out]    Instance containing incremental indentation and other information and stores the appended lines.

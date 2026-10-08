@@ -42,7 +42,7 @@ int main2( int argc, char **argv ) {
     GIDI::Protare *protare;
     GIDI::Transporting::Particles particles;
     unsigned long long rngState = 1;
-    std::set<int> reactionsToExclude;
+    GIDI::ExcludeReactionsSet reactionsToExclude;
     LUPI::StatusMessageReporting smr1;
 
     std::cerr << "    " << __FILE__;

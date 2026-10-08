@@ -103,7 +103,7 @@ void subMain( int argc, char **argv ) {
 
     printTiming = argv_options.find( "-t" )->m_counter > 0;
 
-    maxDepth = argv_options.find( "--maxDepth" )->asLong( argv, maxDepth );
+    maxDepth = static_cast<int>( argv_options.find( "--maxDepth" )->asLong( argv, maxDepth ) );
 
     if( argv_options.m_arguments.size( ) < 2 ) {
         std::cerr << std::endl << "----- Need map file name and at least one pops file -----" << std::endl << std::endl;
@@ -183,7 +183,7 @@ void readProtare( std::string const &a_indent, std::string const &a_projectileID
     MCGIDI::DomainHash domainHash( 4000, 1e-8, 10 );
     GIDI::ProtareSingle *protare = nullptr;
     MCGIDI::Protare *MCProtare = nullptr;
-    std::set<int> reactionsToExclude;
+    GIDI::ExcludeReactionsSet reactionsToExclude;
     std::string throwMessage;
     std::string throwFunction( "GIDI::ProtareSingle" );
 
@@ -210,7 +210,7 @@ void readProtare( std::string const &a_indent, std::string const &a_projectileID
         long numberOfTemperatures3 = static_cast<long>( temperatures.size( ) );
         if( numberOfTemperatures2 < 0 ) numberOfTemperatures2 = numberOfTemperatures3;
         if( numberOfTemperatures2 > numberOfTemperatures3 ) numberOfTemperatures2 = numberOfTemperatures3;
-        temperatures.resize( numberOfTemperatures2 );
+        temperatures.resize( static_cast<std::size_t>( numberOfTemperatures2 ) );
 
         std::string label( temperatures[0].griddedCrossSection( ) );
         if( doMultiGroup ) label = temperatures[0].heatedMultiGroup( );

@@ -172,7 +172,7 @@ void Form::setKeyValue( std::string const &a_keyName ) const {
  * @return                          The sibling with label *a_label*.
  ***********************************************************************************************************/
 
-Form const *Form::sibling( std::string a_label ) const {
+Form const *Form::sibling( std::string const &a_label ) const {
 
     Form *_form;
 
@@ -277,6 +277,23 @@ FunctionForm::FunctionForm( FunctionForm const &a_form ) :
 }
 
 /* *********************************************************************************************************//**
+ * Move constructor.
+ *
+ * @param a_form                    [in]    FunctionForm to move from.
+ ***********************************************************************************************************/
+
+FunctionForm::FunctionForm( FunctionForm &&a_form ) noexcept :
+        Form( std::move( a_form ) ),
+        m_dimension( a_form.m_dimension ),
+        m_axes( std::move( a_form.m_axes ) ),
+        m_interpolation( a_form.m_interpolation ),
+        m_interpolationString( std::move( a_form.m_interpolationString ) ),
+        m_index( a_form.m_index ),
+        m_outerDomainValue( a_form.m_outerDomainValue ) {
+
+}
+
+/* *********************************************************************************************************//**
  ***********************************************************************************************************/
 
 FunctionForm::~FunctionForm( ) {
@@ -301,6 +318,28 @@ FunctionForm &FunctionForm::operator=( FunctionForm const &a_rhs ) {
         m_interpolationString = a_rhs.interpolationString( );
         m_index = a_rhs.index( );
         m_outerDomainValue = a_rhs.outerDomainValue( );
+    }
+
+    return( *this );
+}
+
+/* *********************************************************************************************************//**
+ * Move assignment operator. This method moves the members of *a_rhs* to *this*.
+ *
+ * @param a_rhs                     [in]    Instance whose members are moved to *this*.
+ ***********************************************************************************************************/
+
+FunctionForm &FunctionForm::operator=( FunctionForm &&a_rhs ) noexcept {
+
+    if( this != &a_rhs ) {
+        Form::operator=( std::move( a_rhs ) );
+
+        m_dimension = a_rhs.m_dimension;
+        m_axes = std::move( a_rhs.m_axes );
+        m_interpolation = a_rhs.m_interpolation;
+        m_interpolationString = std::move( a_rhs.m_interpolationString );
+        m_index = a_rhs.m_index;
+        m_outerDomainValue = a_rhs.m_outerDomainValue;
     }
 
     return( *this );
@@ -389,6 +428,17 @@ Function1dForm::Function1dForm( Function1dForm const &a_form ) :
 }
 
 /* *********************************************************************************************************//**
+ * Move constructor.
+ *
+ * @param a_form                    [in]    Function1dForm to move from.
+ ***********************************************************************************************************/
+
+Function1dForm::Function1dForm( Function1dForm &&a_form ) noexcept :
+        FunctionForm( std::move( a_form ) ) {
+
+}
+
+/* *********************************************************************************************************//**
  ***********************************************************************************************************/
 
 Function1dForm::~Function1dForm( ) {
@@ -412,6 +462,21 @@ Function1dForm &Function1dForm::operator=( Function1dForm const &a_rhs ) {
 }
 
 /* *********************************************************************************************************//**
+ * Move assignment operator. This method moves the members of *a_rhs* to *this*.
+ *
+ * @param a_rhs                     [in]    Instance whose members are moved to *this*.
+ ***********************************************************************************************************/
+
+Function1dForm &Function1dForm::operator=( Function1dForm &&a_rhs ) noexcept {
+
+    if( this != &a_rhs ) {
+        FunctionForm::operator=( std::move( a_rhs ) );
+    }
+
+    return( *this );
+}
+
+/* *********************************************************************************************************//**
  * This method executes a throw as the sub-class did not define it. Evaluates *this* at the X-values in *a_Xs*[*a_offset*:]
  * and adds the results to *a_results*[*a_offset*:].
  *
@@ -421,7 +486,7 @@ Function1dForm &Function1dForm::operator=( Function1dForm const &a_rhs ) {
  * @param a_scaleFactor     [in]    A factor applied to each evaluation before it is added to *a_results*. 
  ***********************************************************************************************************/
 
-void Function1dForm::mapToXsAndAdd( LUPI_maybeUnused int a_offset, LUPI_maybeUnused std::vector<double> const &a_Xs, LUPI_maybeUnused std::vector<double> &a_results, LUPI_maybeUnused double a_scaleFactor ) const {
+void Function1dForm::mapToXsAndAdd( LUPI_maybeUnused std::size_t a_offset, LUPI_maybeUnused std::vector<double> const &a_Xs, LUPI_maybeUnused std::vector<double> &a_results, LUPI_maybeUnused double a_scaleFactor ) const {
 
     throw Exception( "Function1dForm::mapToXsAndAdd: function " + moniker( ) + " not implemented." );
 }

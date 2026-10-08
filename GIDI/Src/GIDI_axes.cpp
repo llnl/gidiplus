@@ -70,6 +70,18 @@ Axes::Axes( Axes const  &a_axes ) :
 }
 
 /* *********************************************************************************************************//**
+ * Move constructor.
+ *
+ * @param a_axes                    [in]    Axes to move from.
+ ***********************************************************************************************************/
+
+Axes::Axes( Axes &&a_axes ) noexcept :
+        Form( std::move( a_axes ) ),
+        m_axes( std::move( a_axes.m_axes ) ) {
+
+}
+
+/* *********************************************************************************************************//**
  ***********************************************************************************************************/
 
 Axes::~Axes( ) {
@@ -98,6 +110,24 @@ Axes &Axes::operator=( Axes const &a_rhs ) {
                 m_axes.push_back( new Grid( *grid ) );
             }
         }
+    }
+
+    return( *this );
+}
+
+/* *********************************************************************************************************//**
+ * Move assignment operator. This method moves the members of *a_rhs* to *this*.
+ *
+ * @param a_rhs                     [in]    Instance whose members are moved to *this*.
+ ***********************************************************************************************************/
+
+Axes &Axes::operator=( Axes &&a_rhs ) noexcept {
+
+    if( this != &a_rhs ) {
+        Form::operator=( std::move( a_rhs ) );
+
+        for( std::size_t i1 = 0; i1 < m_axes.size( ); ++i1 ) delete m_axes[i1];
+        m_axes = std::move( a_rhs.m_axes );
     }
 
     return( *this );

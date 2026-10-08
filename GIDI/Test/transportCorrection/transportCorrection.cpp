@@ -101,19 +101,23 @@ void printVector( GIDI::Protare *protare, GIDI::Transporting::MG &settings, GIDI
 
     LUPI::StatusMessageReporting smr1;
 
-    for( int order = 0; order < protare->maximumLegendreOrder( smr1, settings, temperature, protare->projectile( ).ID( ) ); ++order ) {
-        try {
-            settings.setDelayedNeutrons( delayedNeutrons );
-            GIDI::Vector transportCorrection = protare->multiGroupTransportCorrection( smr1, settings, temperature, particles, order, transportCorrectionType, 0.0 );
-            std::string message( prefix );
+    int intMaxOrder = protare->maximumLegendreOrder( smr1, settings, temperature, protare->projectile( ).ID( ) );
+    if( intMaxOrder > -1 ) {
+        std::size_t maxOrder = static_cast<std::size_t>( intMaxOrder );
+        for( std::size_t order = 0; order < maxOrder; ++order ) {
+            try {
+                settings.setDelayedNeutrons( delayedNeutrons );
+                GIDI::Vector transportCorrection = protare->multiGroupTransportCorrection( smr1, settings, temperature, particles, order, transportCorrectionType, 0.0 );
+                std::string message( prefix );
 
-            message += LUPI::Misc::argumentsToString( ": delayedNeutrons (%s)", 
-                    ( delayedNeutrons == GIDI::Transporting::DelayedNeutrons::on ? "true"  : "false" ) );
-            message += LUPI::Misc::argumentsToString( ": order = %d::", order );
-            transportCorrection.print( message ); }
-        catch (char const *str) {
-            std::cout << str << std::endl;
-            exit( EXIT_FAILURE );
+                message += LUPI::Misc::argumentsToString( ": delayedNeutrons (%s)", 
+                        ( delayedNeutrons == GIDI::Transporting::DelayedNeutrons::on ? "true"  : "false" ) );
+                message += LUPI::Misc::argumentsToString( ": order = %d::", order );
+                transportCorrection.print( message ); }
+            catch (char const *str) {
+                std::cout << str << std::endl;
+                exit( EXIT_FAILURE );
+            }
         }
     }
 }

@@ -50,7 +50,7 @@ void main2( int argc, char **argv ) {
     GIDI::Transporting::Particles particles;
     GIDI::Groups groups( "../../../GIDI/Test/groups.xml" );
     GIDI::Fluxes fluxFile( "../../../GIDI/Test/fluxes.xml" );
-    std::set<int> reactionsToExclude;
+    GIDI::ExcludeReactionsSet reactionsToExclude;
     GIDI::Transporting::Mode transportingMode( GIDI::Transporting::Mode::MonteCarloContinuousEnergy );
     LUPI::StatusMessageReporting smr1;
 
@@ -112,7 +112,7 @@ void main2( int argc, char **argv ) {
     MCProtare->serialize( dataBuffer, LUPI::DataBuffer::Mode::Pack );
 
 // Memory phase
-    dataBuffer.m_maxPlacementSize = MCProtare->memorySize( );
+    dataBuffer.m_maxPlacementSize = static_cast<std::size_t>( MCProtare->memorySize( ) );
     dataBuffer.m_placementStart = reinterpret_cast<char *>( malloc( dataBuffer.m_maxPlacementSize ) );
     dataBuffer.m_placement = dataBuffer.m_placementStart;
 
@@ -176,7 +176,7 @@ void printDetails( MCGIDI::Protare *MCProtare, GIDI::Styles::TemperatureInfos &t
     bytes += dataBuffer.m_doubleIndex * sizeof( dataBuffer.m_doubleData[0] );
     bytes += dataBuffer.m_charIndex * sizeof( dataBuffer.m_charData[0] );
     bytes += dataBuffer.m_longIndex * sizeof( dataBuffer.m_longData[0] );
-    double bytesMillion = bytes / 1e6;
+    double bytesMillion = (double) bytes / 1e6;
     out << "Detail information: total bytes = " << bytes << " (" << bytesMillion << " million)." << std::endl;
     out << "Number of temperatures = " << temperatures.size( ) << std::endl;
 
@@ -245,7 +245,7 @@ void printReaction( MCGIDI::Reaction *reaction, LUPI::DataBuffer &dataBufferReac
     printSizes( prefix, dataBuffer, out, false );
     reaction->serialize( dataBufferReactions, LUPI::DataBuffer::Mode::Count );
 
-    for( MCGIDI_VectorSizeType productIndex = 0; productIndex < reaction->numberOfProducts( ); ++productIndex ) {
+    for( std::size_t productIndex = 0; productIndex < reaction->numberOfProducts( ); ++productIndex ) {
         MCGIDI::Product *product = const_cast<MCGIDI::Product *>( reaction->product( productIndex ) );
         LUPI::DataBuffer dataBuffer2;
 

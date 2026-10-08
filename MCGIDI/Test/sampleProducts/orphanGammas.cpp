@@ -32,7 +32,7 @@ int main( int argc, char **argv ) {
     std::vector<std::string> libraries;
     GIDI::Transporting::Particles particles;
     unsigned long long rngState = 1;
-    std::set<int> reactionsToExclude;
+    GIDI::ExcludeReactionsSet reactionsToExclude;
     LUPI::StatusMessageReporting smr1;
 
     std::cerr << "    " << __FILE__;
@@ -99,7 +99,8 @@ int main( int argc, char **argv ) {
                 for( long i1 = 0; i1 < numberOfSamples; ++i1 ) {
                     products.clear( );
 
-                    reaction->sampleProducts( MCProtare, energy, input, [&]( ) -> double { return float64RNG64( &rngState ); },
+                    input.setTemperatureAndEnergy( 0.0, energy );
+                    reaction->sampleProducts( MCProtare, input, [&]( ) -> double { return float64RNG64( &rngState ); },
                         [&]( MCGIDI::Sampling::Product &a_product ) -> void { products.push_back( a_product ); }, products );
                     for( std::size_t i2 = 0; i2 < products.size( ); ++i2 ) {
                         MCGIDI::Sampling::Product const &product = products[i2];

@@ -20,11 +20,14 @@
 #include <fstream>
 #include <exception>
 #include <utility>
+#include <stddef.h>
 
 #include <LUPI.hpp>
 #include <HAPI.hpp>
 
 namespace PoPI {
+
+class PQ_double;
 
 #define PoPI_AMU2MeV_c2 931.494028
 #define PoPI_electronMass_MeV_c2 0.5109989461
@@ -39,6 +42,12 @@ namespace PoPI {
 #define PoPI_symbolChars "symbol"
 #define PoPI_chemicalElementsChars "chemicalElements"
 #define PoPI_chemicalElementChars "chemicalElement"
+#define PoPI_atomicChars "atomic"
+#define PoPI_configurationsChars "configurations"
+#define PoPI_configurationChars "configuration"
+#define PoPI_subshellChars "subshell"
+#define PoPI_electronNumberChars "electronNumber"
+#define PoPI_bindingEnergyChars "bindingEnergy"
 #define PoPI_isotopesChars "isotopes"
 #define PoPI_isotopeChars "isotope"
 #define PoPI_gaugeBosonChars "gaugeBoson"
@@ -139,19 +148,19 @@ class Database;
 void appendXMLEnd( std::vector<std::string> &a_XMLList, std::string const &a_label );
 
 int particleZ( Base const &a_particle, bool a_isNeutronProtonANucleon = false );
-int particleZ( Database const &a_pops, int a_index, bool a_isNeutronProtonANucleon = false );
+int particleZ( Database const &a_pops, std::size_t a_index, bool a_isNeutronProtonANucleon = false );
 int particleZ( Database const &a_pops, std::string const &a_id, bool a_isNeutronProtonANucleon = false );
 
 int particleA( Base const &a_particle, bool a_isNeutronProtonANucleon = false );
-int particleA( Database const &a_pops, int a_index, bool a_isNeutronProtonANucleon = false );
+int particleA( Database const &a_pops, std::size_t a_index, bool a_isNeutronProtonANucleon = false );
 int particleA( Database const &a_pops, std::string const &a_id, bool a_isNeutronProtonANucleon = false );
 
 int particleZA( Base const &a_particle, bool a_isNeutronProtonANucleon = false );
-int particleZA( Database const &a_pops, int a_index, bool a_isNeutronProtonANucleon = false );
+int particleZA( Database const &a_pops, std::size_t a_index, bool a_isNeutronProtonANucleon = false );
 int particleZA( Database const &a_pops, std::string const &a_id, bool a_isNeutronProtonANucleon = false );
 
 int particleMetaStableIndex( Base const &a_particle );
-int particleMetaStableIndex( Database const &a_pops, int a_index );
+int particleMetaStableIndex( Database const &a_pops, std::size_t a_index );
 int particleMetaStableIndex( Database const &a_pops, std::string const &a_id );
 
 std::string specialParticleID( SpecialParticleID_mode a_mode, std::string const &a_id );
@@ -318,7 +327,7 @@ class Suite {
         void appendFromParentNode2( HAPI::Node const &a_node, T2 *a_parent );
 
         std::string::size_type size( void ) const { return( m_items.size( ) ); }        /**< Returns the number of items in the suite. */
-        T &operator[]( int a_index ) const { return( *m_items[a_index] ); }             /**< Returns the item at index *a_index*. */
+        T &operator[]( std::size_t a_index ) const { return( *m_items[a_index] ); }     /**< Returns the item at index *a_index*. */
         std::string const &moniker( void ) { return( m_moniker ); }                     /**< Returns the value of the *m_moniker* member. */
 
         void toXMLList( std::vector<std::string> &a_XMLList, std::string const &a_indent1 ) const ;
@@ -401,6 +410,8 @@ void Suite<T, T2>::toXMLList( std::vector<std::string> &a_XMLList, std::string c
 
 class PhysicalQuantity {
 
+    friend PQ_double;
+
     private:
         PQ_class m_class;                           /**< The class for the physical quanity. */
         std::string m_tag;                          /**< The name of the physical quanity. */
@@ -409,6 +420,8 @@ class PhysicalQuantity {
         std::string m_unit;                         /**< The unit of the physical quanity. */
 
     public:
+        PhysicalQuantity( PQ_class a_class, std::string const &a_tag, std::string const &a_label, 
+                std::string const &a_valueString, std::string const &a_unit );
         PhysicalQuantity( HAPI::Node const &a_node, PQ_class a_class );
         virtual ~PhysicalQuantity( );
 
@@ -435,6 +448,7 @@ class PQ_double : public PhysicalQuantity {
         void initialize( );
 
     public:
+        PQ_double( std::string const &a_label, double a_value, std::string const &a_unit );
         PQ_double( HAPI::Node const &a_node );
         PQ_double( HAPI::Node const &a_node, PQ_class a_class );
         virtual ~PQ_double( );
@@ -530,6 +544,7 @@ class PQ_suite : public std::vector<PhysicalQuantity *> {
         std::string m_label;
 
     public:
+        PQ_suite( std::string const &a_label );
         PQ_suite( HAPI::Node const &a_node );
         ~PQ_suite( );
 
@@ -638,7 +653,7 @@ class Base {
     private:
         std::string m_id;                               /**< The **PoPs** id for the particle or **PoPs** symbol for a chemicalElement or isotope. */
         Particle_class m_class;                         /**< The **Particle_class** for the particle, chemicalElement or isotope. */
-        int m_index;                                    /**< The for the particle, chemicalElement or isotope. */
+        std::size_t m_index;                            /**< The for the particle, chemicalElement or isotope. */
         int m_intid;                                    /**< The unique integer id for a particle or a meta-stable alias. For a non meta-stable alias, an isotope or chemical element, this is -1. */
 
         void setIntid( int a_intid ) { m_intid = a_intid; }                                 /**< Sets the value of the *m_intid* member to *a_intid*. */
@@ -649,8 +664,8 @@ class Base {
         virtual ~Base( );
 
         std::string const &ID( void ) const { return( m_id ); }                             /**< Returns a *const* reference to the *m_id* member of *this*. */
-        int index( void ) const { return( m_index ); }                                      /**< Returns the value of the *m_index* member of *this*. */
-        void setIndex( int a_index ) { m_index = a_index; }                                 /**< Sets the value of the *m_index* member of *this* to *a_index*. */
+        std::size_t index( void ) const { return( m_index ); }                              /**< Returns the value of the *m_index* member of *this*. */
+        void setIndex( std::size_t a_index ) { m_index = a_index; }                         /**< Sets the value of the *m_index* member of *this* to *a_index*. */
         int intid( ) const { return( m_intid ); }                                           /**< Returns the value of the *m_intid* member. */
         Particle_class Class( void ) const { return( m_class ); }                           /**< Returns the value of the *m_class* member of *this*. */
         virtual bool isParticle( ) const { return( true ); }                                /**< Returns **true** if *this* is a **Particle** and **false** it *this* is a **ChemicalElement** or **Isotope** instance. */
@@ -692,7 +707,7 @@ class IDBase : public Base {
         IDBase( HAPI::Node const &a_node, Particle_class a_class );
         virtual ~IDBase( );       // BRB This should be virtual but I cannot get it to work without crashing.
 
-        int addToDatabase( Database *a_DB );
+        std::size_t addToDatabase( Database *a_DB );
         double massValue2( Database const &a_DB, std::string const &a_unit ) const ;
 };
 
@@ -710,7 +725,7 @@ class SymbolBase : public Base {
 
         std::string const &symbol( ) const { return( ID( ) ); }                             /**< Returns the value of the symbol. */
 
-        int addToSymbols( Database *a_DB );
+        std::size_t addToSymbols( Database *a_DB );
         bool isParticle( ) const { return( false ); }
 };
 
@@ -804,6 +819,7 @@ class DecayData {
         Suite<DecayMode, DecayData> m_decayModes;
 
     public:
+        DecayData( );
         DecayData( HAPI::Node const &a_node );
         ~DecayData( );
 
@@ -851,6 +867,8 @@ class GammaDecayData {
 
 class Particle : public IDBase {
 
+    friend Lepton;
+
     private:
         std::string m_baseId;                           /**< The base part of the id (i.e., without the anti and quailifier). */
         std::string m_family;                           /**< The family of the particle. */
@@ -866,6 +884,7 @@ class Particle : public IDBase {
         void setHasNucleus( bool a_hasNucleus ) { m_hasNucleus = a_hasNucleus; }
 
     public:
+        Particle( std::string const &a_id, Particle_class a_class, std::string const &a_family );
         Particle( HAPI::Node const &a_node, Particle_class a_class, std::string const &a_family, int a_hasNucleus = 0 );
         virtual ~Particle( );
 
@@ -917,6 +936,7 @@ class Lepton : public Particle {
         std::string m_generation;                                               /**< The generation of the lepton (i.e., electronic, muonic or tauonic). */
 
     public:
+        Lepton( std::string const &a_id, std::string const &a_generation, PhysicalQuantity *a_mass );
         Lepton( HAPI::Node const &a_node, Database *a_DB, Database *a_parent );
         virtual ~Lepton( );
 
@@ -1056,12 +1076,29 @@ class Isotope : public SymbolBase {
 ============================================================
 */
 
+class AtomicConfiguration {
+
+    private:
+        std::string m_subshell;
+        double m_electronNumber;
+        double m_bindingEnergy_eV;
+
+    public:
+        AtomicConfiguration( HAPI::Node const &a_node, ChemicalElement *a_parent );
+        ~AtomicConfiguration( ) { }
+
+        std::string const &subshell( ) const { return( m_subshell ); }
+        double electronNumber( ) const { return( m_electronNumber ); }
+        double bindingEnergy_eV( ) const { return( m_bindingEnergy_eV ); }
+};
+
 class ChemicalElement : public SymbolBase {
 
     private:
         int m_Z;                                        /**< A atomic number for all isotopes in *thie* chemical element. */
         std::string m_name;                             /**< The name of the chemical element. */
         Suite<Isotope, ChemicalElement> m_isotopes;     /**< The suite of isotopes for this chemical element. */
+        Suite<AtomicConfiguration, ChemicalElement> m_atomicConfigurations; /**< Optional atomic subshell configuration data. */
 
     public:
        ChemicalElement( HAPI::Node const &a_node, Database *a_DB, Database *a_parent );
@@ -1071,6 +1108,8 @@ class ChemicalElement : public SymbolBase {
         std::string const &name( void ) const { return( m_name ); }     /**< Returns the value of the *m_name* member. */
 
         Suite<Isotope, ChemicalElement> const &isotopes( ) const { return( m_isotopes ); }  /**< Returns a *const* reference to the *m_isotopes* member. */
+        Suite<AtomicConfiguration, ChemicalElement> const &atomicConfigurations( ) const { return( m_atomicConfigurations ); }
+                                                                                            /**< Returns a *const* reference to the optional atomic configuration suite. */
 
         void calculateNuclideGammaBranchStateInfos( PoPI::Database const &a_pops, NuclideGammaBranchStateInfos &a_nuclideGammaBranchStateInfos ) const ;
         void toXMLList( std::vector<std::string> &a_XMLList, std::string const &a_indent1 ) const ;
@@ -1086,15 +1125,15 @@ class Alias : public IDBase {
 
     private:
         std::string m_pid;                      /**< The id of the particle *this* is an alias for. */
-        int m_pidIndex;                         /**< The index of the particle with id *m_pid*. */
+        std::size_t m_pidIndex;                         /**< The index of the particle with id *m_pid*. */
 
     public:
         Alias( HAPI::Node const &a_node, Database *a_DB, Particle_class a_class = Particle_class::alias );
         virtual ~Alias( );
 
         std::string const &pid( void ) const { return( m_pid ); }       /**< Returns a *const* reference to the *m_pid* member of *this*. */
-        int pidIndex( void ) const { return( m_pidIndex ); }            /**< Returns a *const* reference to the *m_pidIndex* member of *this*. */
-        void setPidIndex( int a_index ) { m_pidIndex = a_index; }       /**< Set the member *m_pidIndex* to *a_index*. */
+        std::size_t pidIndex( void ) const { return( m_pidIndex ); }            /**< Returns a *const* reference to the *m_pidIndex* member of *this*. */
+        void setPidIndex( std::size_t a_index ) { m_pidIndex = a_index; }       /**< Set the member *m_pidIndex* to *a_index*. */
 
         void toXMLList( std::vector<std::string> &a_XMLList, std::string const &a_indent1 ) const ;
 };
@@ -1131,11 +1170,11 @@ class Database {
         std::string m_name;                                             /**< The **GNDS** **name** of the first file read in. */
         std::string m_version;                                          /**< The **GNDS** **version** of the first file read in. */
         ParticleList m_list;                                            /**< The internal list of the particles. */
-        std::map<std::string, int> m_idsMap;            // Be careful with this as a map[key] will add key if it is not in the map.
-        std::map<int, int> m_intidsMap;                 // Be careful with this as a map[key] will add key if it is not in the map.
+        std::map<std::string, std::size_t> m_idsMap;    // Be careful with this as a map[key] will add key if it is not in the map.
+        std::map<int, std::size_t> m_intidsMap;         // Be careful with this as a map[key] will add key if it is not in the map.
                                                                         /**< This maps each particle id to a unique index. */
         SymbolList m_symbolList;                                        /**< The internal list of the symbols. */
-        std::map<std::string, int> m_symbolMap;         // Be careful with this as a map[key] will add key if it is not in the map.
+        std::map<std::string, std::size_t> m_symbolMap; // Be careful with this as a map[key] will add key if it is not in the map.
                                                                         /**< This maps each symbol to a unique index. */
 
         std::vector<Alias *> m_unresolvedAliases;                       /**< This is used internally to store aliases when a **PoPs** node is being parsed as the aliases onde is parsed before the particles are parsed. */
@@ -1171,44 +1210,44 @@ class Database {
         std::string::size_type size( void ) const { return( m_list.size( ) ); }             /**< Returns the number of particle in *this*. */
         ParticleList const &list( ) { return( m_list ); }                                    /**< Returns a *const* *reference* to the *m_list* member. */
         SymbolList const &symbolList( ) { return( m_symbolList ); }                          /**< Returns a *const* *reference* to the *m_symbolList* member. */
-        int operator[]( std::string const &a_id ) const ;
+        std::size_t operator[]( std::string const &a_id ) const ;
         template<typename T> T const &get( std::string const &a_id ) const ;
-        template<typename T> T const &get( int a_index ) const ;
+        template<typename T> T const &get( std::size_t a_index ) const ;
         Particle const &particle( std::string const &a_id ) const { return( get<Particle>( a_id ) ); }  /**< Returns a *const* *reference* to the particle with id *a_id*. */
-        Particle const &particle( int a_index ) const { return( get<Particle>( a_index ) ); }           /**< Returns a *const* *reference* to the particle with index *a_index*. */
+        Particle const &particle( std::size_t a_index ) const { return( get<Particle>( a_index ) ); }   /**< Returns a *const* *reference* to the particle with index *a_index*. */
         IDBase const &idBase( std::string const &a_id ) const { return( get<IDBase>( a_id ) ); }        /**< Returns a *const* *reference* to a **IDBase** instance with id *a_id*. */
-        IDBase const &idBase( int &a_index ) const { return( get<IDBase>( a_index ) ); }                /**< Returns a *const* *reference* to a **IDBase** instance with id *a_index*. */
+        IDBase const &idBase( std::size_t &a_index ) const { return( get<IDBase>( a_index ) ); }        /**< Returns a *const* *reference* to a **IDBase** instance with id *a_index*. */
         ParticleList const &particleList( ) const { return( m_list ); }                                 /**< Returns a *const* *reference* to the *m_list* variable of *this*. */
         SymbolList symbolList( ) const { return( m_symbolList ); }                                      /**< Returns a *const* *reference* to the *m_symbolList* variable of *this*. */
 
         bool exists( std::string const &a_id ) const ;
-        bool exists( int a_index ) const ;
+        bool exists( std::size_t a_index ) const ;
         bool existsIntid( int a_intid ) const ;
 
         Suite<ChemicalElement, Database> const &chemicalElements( ) const { return( m_chemicalElements ); }
                                                                                             /**< Returns a *const* *reference* to the *m_chemicalElements* variable of *this*. */
 
         bool isParticle( std::string const &a_id ) const { return( get<Base>( a_id ).isParticle( ) ); } /**< Returns **true** if *a_id* is a particle and **false** otherwise. */
-        bool isParticle( int a_index ) const { return( m_list[a_index]->isParticle( ) ); }              /**< Returns **true** if *a_index* is a particle and **false** otherwise. */
+        bool isParticle( std::size_t a_index ) const { return( m_list[a_index]->isParticle( ) ); }      /**< Returns **true** if *a_index* is a particle and **false** otherwise. */
         bool isAlias( std::string const &a_id ) const { return( get<Base>( a_id ).isAlias( ) ); }       /**< Returns **true** if *a_id* is an alias and **false** otherwise. */
-        bool isAlias( int a_index ) const { return( m_list[a_index]->isAlias( ) ); }                    /**< Returns **true** if *a_index* is an alias and **false** otherwise. */
+        bool isAlias( std::size_t a_index ) const { return( m_list[a_index]->isAlias( ) ); }            /**< Returns **true** if *a_index* is an alias and **false** otherwise. */
         bool isMetaStableAlias( std::string const &a_id ) const { return( get<Base>( a_id ).isMetaStableAlias( ) ); }
                                                                                                         /**< Returns **true** if *a_id* is a meta-stable and **false** otherwise. */
-        bool isMetaStableAlias( int a_index ) const { return( m_list[a_index]->isMetaStableAlias( ) ); }
+        bool isMetaStableAlias( std::size_t a_index ) const { return( m_list[a_index]->isMetaStableAlias( ) ); }
                                                                                                         /**< Returns **true** if *a_index* is a meta-stable and **false** otherwise. */
         std::vector<std::string> aliasReferences( std::string const &a_id );
 
         std::string final( std::string const &a_id, bool a_returnAtMetaStableAlias = false ) const ;
-        int final( int a_index, bool a_returnAtMetaStableAlias = false ) const ;
+        std::size_t final( std::size_t a_index, bool a_returnAtMetaStableAlias = false ) const ;
 
         std::string chemicalElementSymbol( std::string const &a_id ) const ;
         std::string isotopeSymbol( std::string const &a_id ) const ;
         int intid( std::string const &a_id ) const ;
-        int intid( int a_index ) const ;
-        int indexFromIntid( int a_intid ) const ;
+        int intid( std::size_t a_index ) const ;
+        std::size_t indexFromIntid( int a_intid ) const ;
 
-        int add( Base *a_item );
-        int addSymbol( SymbolBase *a_item );
+        std::size_t add( Base *a_item );
+        std::size_t addSymbol( SymbolBase *a_item );
 
         void calculateNuclideGammaBranchStateInfos( NuclideGammaBranchStateInfos &a_nuclideGammaBranchStateInfos, Database const *a_pops2,
                 std::vector<std::string> &a_extraGammaBranchStates ) const ;
@@ -1229,7 +1268,7 @@ class Database {
  * @return                                      A *const* reference to the particle at index *a_index*.
  ***********************************************************************************************************/
 
-template<typename T> T const &Database::get( int a_index ) const {
+template<typename T> T const &Database::get( std::size_t a_index ) const {
 
     Base *particle = m_list[a_index];
     if( particle == nullptr ) throw std::range_error( std::string( "particle not in database" ) );
@@ -1249,7 +1288,7 @@ template<typename T> T const &Database::get( int a_index ) const {
 
 template<typename T> T const &Database::get( std::string const &a_id ) const {
 
-    int index = (*this)[a_id];
+    auto index = (*this)[a_id];
     Base *particle = m_list[index];
     T const *object = dynamic_cast<T const *>( particle );
     if( object == nullptr ) throw std::bad_cast( );

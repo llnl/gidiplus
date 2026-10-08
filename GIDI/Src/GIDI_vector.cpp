@@ -60,6 +60,17 @@ Vector::Vector( Vector const &a_vector ) :
 }
 
 /* *********************************************************************************************************//**
+ * Move constructor.
+ *
+ * @param a_vector          [in]    Vector to move from.
+ ***********************************************************************************************************/
+
+Vector::Vector( Vector &&a_vector ) noexcept :
+        m_vector( std::move( a_vector.m_vector ) ) {
+
+}
+
+/* *********************************************************************************************************//**
  * Returns a new Vector whose elements are *this* plus *a_rhs*.
  *
  * @param a_rhs         [in]    The value to add to each element.
@@ -70,6 +81,22 @@ Vector &Vector::operator=( Vector const &a_rhs ) {
 
     if( this != &a_rhs ) {
         m_vector = a_rhs.m_vector;
+    }
+
+    return( *this );
+}
+
+/* *********************************************************************************************************//**
+ * Move assignment operator.
+ *
+ * @param a_rhs         [in]    The Vector to move from.
+ * @return                      Reference to *this*.
+ ***********************************************************************************************************/
+
+Vector &Vector::operator=( Vector &&a_rhs ) noexcept {
+
+    if( this != &a_rhs ) {
+        m_vector = std::move( a_rhs.m_vector );
     }
 
     return( *this );
@@ -376,13 +403,13 @@ void Vector::writeWithBoundaries( FILE *a_file, char const *a_format, std::vecto
  ***********************************************************************************************************/
 void Vector::writeWithBoundaries2( FILE *a_file, char const *a_format, std::vector<double> const &a_boundaries, double a_epsilon ) const {
 
-    int numberOfValues = (int) size( );
+    std::size_t numberOfValues = size( );
 
     if( a_epsilon == 0.0 ) {
-        for( int index = 0; index < numberOfValues; ++index ) fprintf( a_file, a_format, a_boundaries[index], m_vector[index] ); }
+        for( std::size_t index = 0; index < numberOfValues; ++index ) fprintf( a_file, a_format, a_boundaries[index], m_vector[index] ); }
     else {
         if( numberOfValues > 0 ) fprintf( a_file, a_format, a_boundaries[0], m_vector[0] );
-        for( int index = 1; index < numberOfValues; ++index ) {
+        for( std::size_t index = 1; index < numberOfValues; ++index ) {
             fprintf( a_file, a_format, a_boundaries[index] * ( 1.0 - a_epsilon ), m_vector[index-1] );
 
             fprintf( a_file, a_format, a_boundaries[index] * ( 1.0 + a_epsilon ), m_vector[index] );

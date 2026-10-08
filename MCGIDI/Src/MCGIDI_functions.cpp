@@ -477,12 +477,13 @@ LUPI_HOST_DEVICE XYs1d::~XYs1d( ) {
 */
 LUPI_HOST_DEVICE double XYs1d::evaluate( double a_x1 ) const {
 
-    int lower = binarySearchVector( a_x1, m_Xs );
+    int intLower = binarySearchVector( a_x1, m_Xs );
 
-    if( lower < 0 ) {
-        if( lower == -2 ) return( m_Ys[0] );
+    if( intLower < 0 ) {
+        if( intLower == -2 ) return( m_Ys[0] );
         return( m_Ys.back( ) );
     }
+    std::size_t lower = static_cast<std::size_t>( intLower );
 
     double evaluatedValue = 0.0;
     double y1 = m_Ys[lower];
@@ -641,7 +642,7 @@ LUPI_HOST_DEVICE Gridded1d::~Gridded1d( ) {
 */
 LUPI_HOST_DEVICE double Gridded1d::evaluate( double a_x1 ) const {
 
-    return( m_data[binarySearchVector( a_x1, m_grid, true )] );
+    return( m_data[(std::size_t) binarySearchVector( a_x1, m_grid, true )] );
 }
 
 /* *********************************************************************************************************//**
@@ -705,14 +706,16 @@ LUPI_HOST_DEVICE void Regions1d::append( Function1d_d2 *a_function1d ) {
 */
 LUPI_HOST_DEVICE double Regions1d::evaluate( double a_x1 ) const {
 
-    int lower = binarySearchVector( a_x1, m_Xs );
+    int intLower = binarySearchVector( a_x1, m_Xs );
 
-    if( lower < 0 ) {
-        if( lower == -1 ) {                     // a_x1 > last value of m_Xs.
+    if( intLower < 0 ) {
+        if( intLower == -1 ) {                     // a_x1 > last value of m_Xs.
             return( m_functions1d.back( )->evaluate( a_x1 ) );
         }
-        lower = 0;                              // a_x1 < last value of m_Xs.
+        intLower = 0;                              // a_x1 < last value of m_Xs.
     }
+
+    std::size_t lower = static_cast<std::size_t>( intLower );
 
     return( m_functions1d[lower]->evaluate( a_x1 ) );
 }
@@ -746,7 +749,8 @@ LUPI_HOST_DEVICE void Regions1d::serialize( LUPI::DataBuffer &a_buffer, LUPI::Da
 ======================== Branching1d =======================
 ============================================================
 */
-LUPI_HOST_DEVICE Branching1d::Branching1d( ) {
+LUPI_HOST_DEVICE Branching1d::Branching1d( ) :
+        m_initialStateIndex( -1 ) {
 
 }
 
@@ -1001,16 +1005,17 @@ LUPI_HOST_DEVICE XYs2d::~XYs2d( ) {
 */
 LUPI_HOST_DEVICE double XYs2d::evaluate( double a_x2, double a_x1 ) const {
 
-    int lower = binarySearchVector( a_x2, m_Xs );
+    int intLower = binarySearchVector( a_x2, m_Xs );
     double evaluatedValue = 0.0;
 
-    if( lower < 0 ) {
-        if( lower == -1 ) {               /* X2 > last value of Xs. */
+    if( intLower < 0 ) {
+        if( intLower == -1 ) {               /* X2 > last value of Xs. */
             evaluatedValue = m_functions1d.back( )->evaluate( a_x1 ); }
         else {                          /* X2 < first value of Xs. */
             evaluatedValue = m_functions1d[0]->evaluate( a_x1 );
         } }
     else {
+        std::size_t lower = static_cast<std::size_t>( intLower );
         double y1 = m_functions1d[lower]->evaluate( a_x1 );
 
         if( interpolation( ) == Interpolation::FLAT ) {
@@ -1351,14 +1356,16 @@ LUPI_HOST_DEVICE Xs_pdf_cdf1d::~Xs_pdf_cdf1d( ) {
 */
 LUPI_HOST_DEVICE double Xs_pdf_cdf1d::evaluate( double a_x1 ) const {
 
-    int lower = binarySearchVector( a_x1, m_Xs );
+    int intLower = binarySearchVector( a_x1, m_Xs );
 
-    if( lower < 0 ) {
-        if( lower == -2 ) return( m_pdf[0] );
+    if( intLower < 0 ) {
+        if( intLower == -2 ) return( m_pdf[0] );
         return( m_pdf.back( ) );
     }
 
+    std::size_t lower = static_cast<std::size_t>( intLower );
     double fraction = ( a_x1 - m_Xs[lower] ) / ( m_Xs[lower+1] - m_Xs[lower] );
+
     return( ( 1. - fraction ) * m_pdf[lower] + fraction * m_pdf[lower+1] );
 }
 
@@ -1629,15 +1636,17 @@ LUPI_HOST_DEVICE XYs2d::~XYs2d( ) {
 */
 LUPI_HOST_DEVICE double XYs2d::evaluate( double a_x2, double a_x1 ) const {
 
-    int lower = binarySearchVector( a_x2, m_Xs );
+    int intLower = binarySearchVector( a_x2, m_Xs );
 
-    if( lower < 0 ) {
-        if( lower == -2 ) return( m_probabilities[0]->evaluate( a_x1 ) );
+    if( intLower < 0 ) {
+        if( intLower == -2 ) return( m_probabilities[0]->evaluate( a_x1 ) );
         return( m_probabilities.back( )->evaluate( a_x1 ) );
     }
 
+    std::size_t lower = static_cast<std::size_t>( intLower );
     double fraction = ( a_x2 - m_Xs[lower] ) / ( m_Xs[lower+1] - m_Xs[lower] );
     double d_value = ( 1.0 - fraction ) * m_probabilities[lower]->evaluate( a_x1 ) + fraction * m_probabilities[lower+1]->evaluate( a_x1 );
+
     return( d_value );
 }
 
@@ -1679,14 +1688,14 @@ LUPI_HOST_DEVICE Regions2d::Regions2d( ) :
 /*
 ============================================================
 */
-LUPI_HOST Regions2d::Regions2d( GIDI::Functions::Regions2d const &a_regions2d ) :
+LUPI_HOST Regions2d::Regions2d( GIDI::Functions::Regions2d const &a_regions2d, SetupInfo &a_setupInfo ) :
         ProbabilityBase2d_d1( a_regions2d, a_regions2d.Xs( ) ) {
 
     m_type = ProbabilityBase2dType::regions;
 
     Vector<GIDI::Functions::Function2dForm *> const &function2ds = a_regions2d.function2ds( );
     m_probabilities.resize( function2ds.size( ) );
-    for( std::size_t i1 = 0; i1 < function2ds.size( ); ++i1 ) m_probabilities[i1] = parseProbability2d_d2( function2ds[i1], nullptr );
+    for( std::size_t i1 = 0; i1 < function2ds.size( ); ++i1 ) m_probabilities[i1] = parseProbability2d_d2( function2ds[i1], a_setupInfo );
 }
 
 /* *********************************************************************************************************//**
@@ -1701,14 +1710,16 @@ LUPI_HOST_DEVICE Regions2d::~Regions2d( ) {
 */
 LUPI_HOST_DEVICE double Regions2d::evaluate( double a_x2, double a_x1 ) const {
 
-    int lower = binarySearchVector( a_x2, m_Xs );
+    int intLower = binarySearchVector( a_x2, m_Xs );
 
-    if( lower < 0 ) {
-        if( lower == -1 ) {                         // a_x2 > last value of m_Xs.
+    if( intLower < 0 ) {
+        if( intLower == -1 ) {                         // a_x2 > last value of m_Xs.
             return( m_probabilities.back( )->evaluate( a_x2, a_x1 ) );
         }
-        lower = 0;                                  // a_x2 < first value of m_Xs.
+        intLower = 0;                                  // a_x2 < first value of m_Xs.
     }
+
+    std::size_t lower = static_cast<std::size_t>( intLower );
 
     return( m_probabilities[lower]->evaluate( a_x2, a_x1 ) );
 }
@@ -1820,25 +1831,25 @@ LUPI_HOST_DEVICE PrimaryGamma2d::PrimaryGamma2d( ) :
 /*
 ============================================================
 */
-LUPI_HOST PrimaryGamma2d::PrimaryGamma2d( GIDI::Functions::PrimaryGamma2d const &a_primaryGamma2d, SetupInfo *a_setupInfo ) :
+LUPI_HOST PrimaryGamma2d::PrimaryGamma2d( GIDI::Functions::PrimaryGamma2d const &a_primaryGamma2d, SetupInfo &a_setupInfo ) :
         ProbabilityBase2d_d2( a_primaryGamma2d ),
         m_primaryEnergy( a_primaryGamma2d.value( ) ),
-        m_massFactor( a_setupInfo->m_protare.targetMass( ) / ( a_setupInfo->m_protare.projectileMass( ) + a_setupInfo->m_protare.targetMass( ) ) ),
+        m_massFactor( a_setupInfo.m_protare.targetMass( ) / ( a_setupInfo.m_protare.projectileMass( ) + a_setupInfo.m_protare.targetMass( ) ) ),
         m_finalState( a_primaryGamma2d.finalState( ).c_str( ) ),
         m_initialStateIndex( -1 ) {
 
-    if( m_finalState.size( ) > 0 ) a_setupInfo->m_hasFinalStatePhotons = true;
+    if( m_finalState.size( ) > 0 ) a_setupInfo.m_hasFinalStatePhotons = true;
     m_type = ProbabilityBase2dType::primaryGamma;
 
     if( a_primaryGamma2d.finalState( ) != "" ) {
-        std::map<std::string,int>::iterator iter = a_setupInfo->m_stateNamesToIndices.find( a_primaryGamma2d.finalState( ) );
-        if( iter == a_setupInfo->m_stateNamesToIndices.end( ) ) {
+        std::map<std::string,int>::iterator iter = a_setupInfo.m_stateNamesToIndices.find( a_primaryGamma2d.finalState( ) );
+        if( iter == a_setupInfo.m_stateNamesToIndices.end( ) ) {
             std::string message( "Branching1d: final state not found: pid = '" + a_primaryGamma2d.finalState( ) + "'." );
             throw std::runtime_error( message.c_str( ) );
         }
         m_initialStateIndex = iter->second;
 
-        a_setupInfo->m_initialStateIndex = m_initialStateIndex;
+        a_setupInfo.m_initialStateIndex = m_initialStateIndex;
     }
 }
 
@@ -1883,18 +1894,27 @@ LUPI_HOST_DEVICE void PrimaryGamma2d::serialize( LUPI::DataBuffer &a_buffer, LUP
 ============================================================
 */
 LUPI_HOST_DEVICE Recoil2d::Recoil2d( ) :
-        m_xlink( ) {
+        m_xlink( ),
+        m_angular( nullptr ) {
 
     m_type = ProbabilityBase2dType::recoil;
 }
 /*
 ============================================================
 */
-LUPI_HOST Recoil2d::Recoil2d( GIDI::Functions::Recoil2d const &a_recoil2d ) :
+LUPI_HOST Recoil2d::Recoil2d( GIDI::Functions::Recoil2d const &a_recoil2d, SetupInfo &a_setupInfo ) :
         ProbabilityBase2d_d2( a_recoil2d ),
-        m_xlink( a_recoil2d.xlink( ).c_str( ) ) {
+        m_xlink( a_recoil2d.xlink( ).c_str( ) ),
+        m_angular( nullptr ) {
 
     m_type = ProbabilityBase2dType::recoil;
+
+    Distributions::Distribution *distribution = a_setupInfo.m_twobodyFirstProductDistribution;
+    if( distribution->type( ) != Distributions::Type::angularTwoBody )
+        throw std::runtime_error( "Recoil2d::Recoil2d: first product distribution is not two-body." );
+
+    Distributions::AngularTwoBody *angularTwoBody = static_cast<Distributions::AngularTwoBody *>( distribution );
+    m_angular = angularTwoBody->stealAngular( );
 }
 
 /* *********************************************************************************************************//**
@@ -1902,17 +1922,14 @@ LUPI_HOST Recoil2d::Recoil2d( GIDI::Functions::Recoil2d const &a_recoil2d ) :
 
 LUPI_HOST_DEVICE Recoil2d::~Recoil2d( ) {
 
+    delete m_angular;
 }
 /*
 ============================================================
 */
-LUPI_HOST_DEVICE double Recoil2d::evaluate( LUPI_maybeUnused double a_x2, LUPI_maybeUnused double a_x1 ) const {
+LUPI_HOST_DEVICE double Recoil2d::evaluate( LUPI_maybeUnused double a_energy, LUPI_maybeUnused double a_mu_com ) const {
 
-#if !defined(__NVCC__) && !defined(__HIP__)
-    LUPI_THROW( "Recoil2d::evaluate: not implemented." );
-#endif
-
-    return( 0.0 );
+    return( m_angular->evaluate( a_energy, -a_mu_com ) );
 }
 
 /* *********************************************************************************************************//**
@@ -1927,6 +1944,7 @@ LUPI_HOST_DEVICE void Recoil2d::serialize( LUPI::DataBuffer &a_buffer, LUPI::Dat
 
     ProbabilityBase2d::serialize( a_buffer, a_mode );
     DATA_MEMBER_STRING( m_xlink, a_buffer, a_mode );
+    m_angular = serializeProbability2d_d1( a_buffer, a_mode, m_angular );
 }
 
 /*
@@ -1947,13 +1965,13 @@ LUPI_HOST_DEVICE NBodyPhaseSpace2d::NBodyPhaseSpace2d( ) :
 /*
 ============================================================
 */
-LUPI_HOST NBodyPhaseSpace2d::NBodyPhaseSpace2d( GIDI::Functions::NBodyPhaseSpace2d const &a_NBodyPhaseSpace2d, SetupInfo *a_setupInfo ) :
+LUPI_HOST NBodyPhaseSpace2d::NBodyPhaseSpace2d( GIDI::Functions::NBodyPhaseSpace2d const &a_NBodyPhaseSpace2d, SetupInfo &a_setupInfo ) :
         ProbabilityBase2d_d2( a_NBodyPhaseSpace2d ),
         m_numberOfProducts( a_NBodyPhaseSpace2d.numberOfProducts( ) ),
         m_mass( PoPI_AMU2MeV_c2 * a_NBodyPhaseSpace2d.mass( ).value( ) ),
-        m_energy_in_COMFactor( a_setupInfo->m_protare.targetMass( ) / ( a_setupInfo->m_protare.projectileMass( ) + a_setupInfo->m_protare.targetMass( ) ) ),
-        m_massFactor( 1 - a_setupInfo->m_product1Mass / m_mass ),
-        m_Q( a_setupInfo->m_Q ),
+        m_energy_in_COMFactor( a_setupInfo.m_protare.targetMass( ) / ( a_setupInfo.m_protare.projectileMass( ) + a_setupInfo.m_protare.targetMass( ) ) ),
+        m_massFactor( 1 - a_setupInfo.m_productMass / m_mass ),
+        m_Q( a_setupInfo.m_Q ),
         m_dist( nullptr ) {
 
     m_type = ProbabilityBase2dType::NBodyPhaseSpace;
@@ -2268,7 +2286,8 @@ LUPI_HOST_DEVICE WeightedFunctionals2d::WeightedFunctionals2d( ) :
 /*
 ============================================================
 */
-LUPI_HOST WeightedFunctionals2d::WeightedFunctionals2d( GIDI::Functions::WeightedFunctionals2d const &a_weightedFunctionals2d ) :
+LUPI_HOST WeightedFunctionals2d::WeightedFunctionals2d( GIDI::Functions::WeightedFunctionals2d const &a_weightedFunctionals2d,
+                SetupInfo &a_setupInfo ) :
         ProbabilityBase2d( a_weightedFunctionals2d ) {
 
     m_type = ProbabilityBase2dType::weightedFunctionals;
@@ -2278,7 +2297,7 @@ LUPI_HOST WeightedFunctionals2d::WeightedFunctionals2d( GIDI::Functions::Weighte
     m_energy.resize( weighted_function2d.size( ) );
     for( std::size_t i1 = 0; i1 < weighted_function2d.size( ); ++i1 ) {
         m_weight[i1] = Functions::parseFunction1d_d1( weighted_function2d[i1]->weight( ) );
-        m_energy[i1] = parseProbability2d_d1( weighted_function2d[i1]->energy( ), nullptr );
+        m_energy[i1] = parseProbability2d_d1( weighted_function2d[i1]->energy( ), a_setupInfo );
     }
 }
 
@@ -2448,14 +2467,14 @@ LUPI_HOST_DEVICE XYs3d::XYs3d( ) :
 /*
 ============================================================
 */
-LUPI_HOST XYs3d::XYs3d( GIDI::Functions::XYs3d const &a_XYs3d ) :
+LUPI_HOST XYs3d::XYs3d( GIDI::Functions::XYs3d const &a_XYs3d, SetupInfo &a_setupInfo ) :
         ProbabilityBase3d( a_XYs3d, a_XYs3d.Xs( ) ) {
 
     m_type = ProbabilityBase3dType::XYs;
 
     Vector<GIDI::Functions::Function2dForm *> const &functions2d = a_XYs3d.function2ds( );
     m_probabilities.resize( functions2d.size( ) );
-    for( std::size_t i1 = 0; i1 < functions2d.size( ); ++i1 ) m_probabilities[i1] = parseProbability2d_d1( functions2d[i1], nullptr );
+    for( std::size_t i1 = 0; i1 < functions2d.size( ); ++i1 ) m_probabilities[i1] = parseProbability2d_d1( functions2d[i1], a_setupInfo );
 }
 
 /* *********************************************************************************************************//**
@@ -2470,14 +2489,15 @@ LUPI_HOST_DEVICE XYs3d::~XYs3d( ) {
 */
 LUPI_HOST_DEVICE double XYs3d::evaluate( double a_x3, double a_x2, double a_x1 ) const {
 
-    int lower = binarySearchVector( a_x3, m_Xs );
+    int intLower = binarySearchVector( a_x3, m_Xs );
     double evaluatedValue;
 
-    if( lower == -2 ) {                         // a_x3 < first value of Xs.
+    if( intLower == -2 ) {                         // a_x3 < first value of Xs.
         evaluatedValue = m_probabilities[0]->evaluate( a_x2, a_x1 ); }
-    else if( lower == -1 ) {                    // a_x3 > last value of Xs.
+    else if( intLower == -1 ) {                    // a_x3 > last value of Xs.
         evaluatedValue = m_probabilities.back( )->evaluate( a_x2, a_x1 ); }
     else {
+        std::size_t lower = static_cast<std::size_t>( intLower );
         double value1 = m_probabilities[lower]->evaluate( a_x2, a_x1 );
 
         if( interpolation( ) == Interpolation::FLAT ) {
@@ -2556,7 +2576,7 @@ LUPI_HOST ProbabilityBase1d *parseProbability1d( GIDI::Functions::Function1dForm
 /*
 ============================================================
 */
-LUPI_HOST ProbabilityBase2d *parseProbability2d( GIDI::Functions::Function2dForm const *form2d, SetupInfo *a_setupInfo ) {
+LUPI_HOST ProbabilityBase2d *parseProbability2d( GIDI::Functions::Function2dForm const *form2d, SetupInfo &a_setupInfo ) {
 
     GIDI::FormType type = form2d->type( );
 
@@ -2564,7 +2584,7 @@ LUPI_HOST ProbabilityBase2d *parseProbability2d( GIDI::Functions::Function2dForm
     case GIDI::FormType::XYs2d :
         return( new XYs2d( *static_cast<GIDI::Functions::XYs2d const *>( form2d ) ) );
     case GIDI::FormType::regions2d :
-        return( new Regions2d( *static_cast<GIDI::Functions::Regions2d const *>( form2d ) ) );
+        return( new Regions2d( *static_cast<GIDI::Functions::Regions2d const *>( form2d ), a_setupInfo ) );
     case GIDI::FormType::isotropic2d :
         return( new Isotropic2d( *static_cast<GIDI::Functions::Isotropic2d const *>( form2d ) ) );
     case GIDI::FormType::discreteGamma2d :
@@ -2572,7 +2592,7 @@ LUPI_HOST ProbabilityBase2d *parseProbability2d( GIDI::Functions::Function2dForm
     case GIDI::FormType::primaryGamma2d :
         return( new PrimaryGamma2d( *static_cast<GIDI::Functions::PrimaryGamma2d const *>( form2d ), a_setupInfo ) );
     case GIDI::FormType::recoil2d :
-        return( new Recoil2d( *static_cast<GIDI::Functions::Recoil2d const *>( form2d ) ) );
+        return( new Recoil2d( *static_cast<GIDI::Functions::Recoil2d const *>( form2d ), a_setupInfo ) );
     case GIDI::FormType::NBodyPhaseSpace2d :
         return( new NBodyPhaseSpace2d( *static_cast<GIDI::Functions::NBodyPhaseSpace2d const *>( form2d ), a_setupInfo ) );
     case GIDI::FormType::evaporation2d :
@@ -2584,7 +2604,7 @@ LUPI_HOST ProbabilityBase2d *parseProbability2d( GIDI::Functions::Function2dForm
     case GIDI::FormType::Watt2d :
         return( new Watt2d( *static_cast<GIDI::Functions::Watt2d const *>( form2d ) ) );
     case GIDI::FormType::weightedFunctionals2d :
-        return( new WeightedFunctionals2d( *static_cast<GIDI::Functions::WeightedFunctionals2d const *>( form2d ) ) );
+        return( new WeightedFunctionals2d( *static_cast<GIDI::Functions::WeightedFunctionals2d const *>( form2d ), a_setupInfo ) );
     default :
         throw std::runtime_error( "Probabilities::parseProbability2d: Unsupported Function2d" );
     }
@@ -2595,7 +2615,7 @@ LUPI_HOST ProbabilityBase2d *parseProbability2d( GIDI::Functions::Function2dForm
 /*
 ============================================================
 */
-LUPI_HOST ProbabilityBase2d_d1 *parseProbability2d_d1( GIDI::Functions::Function2dForm const *form2d, SetupInfo *a_setupInfo ) {
+LUPI_HOST ProbabilityBase2d_d1 *parseProbability2d_d1( GIDI::Functions::Function2dForm const *form2d, SetupInfo &a_setupInfo ) {
 
     GIDI::FormType type = form2d->type( );
 
@@ -2603,7 +2623,7 @@ LUPI_HOST ProbabilityBase2d_d1 *parseProbability2d_d1( GIDI::Functions::Function
     case GIDI::FormType::XYs2d :
         return( new XYs2d( *static_cast<GIDI::Functions::XYs2d const *>( form2d ) ) );
     case GIDI::FormType::regions2d :
-        return( new Regions2d( *static_cast<GIDI::Functions::Regions2d const *>( form2d ) ) );
+        return( new Regions2d( *static_cast<GIDI::Functions::Regions2d const *>( form2d ), a_setupInfo ) );
     case GIDI::FormType::isotropic2d :
         return( new Isotropic2d( *static_cast<GIDI::Functions::Isotropic2d const *>( form2d ) ) );
     case GIDI::FormType::discreteGamma2d :
@@ -2611,7 +2631,7 @@ LUPI_HOST ProbabilityBase2d_d1 *parseProbability2d_d1( GIDI::Functions::Function
     case GIDI::FormType::primaryGamma2d :
         return( new PrimaryGamma2d( *static_cast<GIDI::Functions::PrimaryGamma2d const *>( form2d ), a_setupInfo ) );
     case GIDI::FormType::recoil2d :
-        return( new Recoil2d( *static_cast<GIDI::Functions::Recoil2d const *>( form2d ) ) );
+        return( new Recoil2d( *static_cast<GIDI::Functions::Recoil2d const *>( form2d ), a_setupInfo ) );
     case GIDI::FormType::NBodyPhaseSpace2d :
         return( new NBodyPhaseSpace2d( *static_cast<GIDI::Functions::NBodyPhaseSpace2d const *>( form2d ), a_setupInfo ) );
     case GIDI::FormType::evaporation2d :
@@ -2632,7 +2652,7 @@ LUPI_HOST ProbabilityBase2d_d1 *parseProbability2d_d1( GIDI::Functions::Function
 /*
 ============================================================
 */
-LUPI_HOST ProbabilityBase2d_d2 *parseProbability2d_d2( GIDI::Functions::Function2dForm const *form2d, SetupInfo *a_setupInfo ) {
+LUPI_HOST ProbabilityBase2d_d2 *parseProbability2d_d2( GIDI::Functions::Function2dForm const *form2d, SetupInfo &a_setupInfo ) {
 
     GIDI::FormType type = form2d->type( );
 
@@ -2665,13 +2685,13 @@ LUPI_HOST ProbabilityBase2d_d2 *parseProbability2d_d2( GIDI::Functions::Function
 /*
 ============================================================
 */
-LUPI_HOST ProbabilityBase3d *parseProbability3d( GIDI::Functions::Function3dForm const *form3d ) {
+LUPI_HOST ProbabilityBase3d *parseProbability3d( GIDI::Functions::Function3dForm const *form3d, SetupInfo &a_setupInfo ) {
 
     GIDI::FormType type = form3d->type( );
 
     switch( type ) {
     case GIDI::FormType::XYs3d :
-        return( new XYs3d( *static_cast<GIDI::Functions::XYs3d const *>( form3d ) ) );
+        return( new XYs3d( *static_cast<GIDI::Functions::XYs3d const *>( form3d ), a_setupInfo ) );
     default :
         throw std::runtime_error( "Probabilities::parseProbability3d: Unsupported Function3d" );
     }
@@ -2690,15 +2710,15 @@ LUPI_HOST static ProbabilityBase1d *ptwXY_To_Xs_pdf_cdf1d( ptwXYPoints *pdfXY ) 
     std::vector<double> Xs( n1 ), pdf( n1 ), cdf( n1 );
 
     if( ( cdfX = ptwXY_runningIntegral( nullptr, pdfXY ) ) == nullptr ) throw std::runtime_error( "ptwXY_To_Xs_pdf_cdf1d: ptwXY_runningIntegral returned error." );
-    double norm = ptwX_getPointAtIndex_Unsafely( cdfX, n1 - 1 );
+    double norm = ptwX_getPointAtIndex_Unsafely( cdfX, (int64_t) n1 - 1 );
     if( norm <= 0 ) throw std::runtime_error( "ptwXY_To_Xs_pdf_cdf1d: norm <= 0." );
 
     norm = 1. / norm;
     for( std::size_t i1 = 0; i1 < n1; ++i1 ) {
-        point = ptwXY_getPointAtIndex_Unsafely( pdfXY, i1 );
+        point = ptwXY_getPointAtIndex_Unsafely( pdfXY, (int64_t) i1 );
         Xs[i1] = point->x;
         pdf[i1] = norm * point->y;
-        cdf[i1] = norm * ptwX_getPointAtIndex_Unsafely( cdfX, i1 );
+        cdf[i1] = norm * ptwX_getPointAtIndex_Unsafely( cdfX, (int64_t) i1 );
     }
     cdf[n1-1] = 1.;
 

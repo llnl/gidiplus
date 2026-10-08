@@ -21,7 +21,7 @@ int main( int argc, char **argv ) {
 
     try {
         main2( argc, argv ); }
-     catch (std::exception &exception) {
+    catch (std::exception &exception) {
         std::cerr << exception.what( ) << std::endl;
         exit( EXIT_FAILURE ); }
     catch (char const *str) {
@@ -51,8 +51,8 @@ void main2( LUPI_maybeUnused int argc, LUPI_maybeUnused char **argv ) {
     checkStaticIntid( pops, PoPI::IDs::FissionProductENDL99125, PoPI::Intids::FissionProductENDL99125 );
 
     int intidCounter = 0;
-    int size = static_cast<int>( pops.size( ) );
-    for( int i1 = 0; i1 < size; ++i1 ) {
+    auto size = pops.size( );
+    for( std::size_t i1 = 0; i1 < size; ++i1 ) {
         PoPI::Base const &base = pops.get<PoPI::Base>( i1 );
 
         if( base.isParticle( ) ) {
@@ -70,7 +70,13 @@ void main2( LUPI_maybeUnused int argc, LUPI_maybeUnused char **argv ) {
         int intid2 = base.intid( );
         if( intid2 > -1 ) {
             ++intidCounter;
-            int index = pops.indexFromIntid( intid2 );
+            std::size_t index = 0;
+            try {
+                index = pops.indexFromIntid( intid2 ); }
+            catch (std::exception &exception) {
+                std::cerr << exception.what( ) << std::endl;
+                continue;
+            }
             if( index != i1 ) {
                 std::cout << "index != i1 for id = " << base.ID( ) << ", intid = " << intid2 << ", i1 = " << i1 <<  " and index = " << index << std::endl;
             } }

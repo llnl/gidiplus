@@ -49,6 +49,7 @@ namespace LUPI {
 #define GNDS_formatVersion_2_0Chars "2.0"
 #define GNDS_formatVersion_2_0_LLNL_4Chars "2.0.LLNL_4"
 #define GNDS_formatVersion_2_1Chars "2.1"
+#define GNDS_formatVersion_2_2Chars "2.2"
 
 void deprecatedFunction( std::string const &a_functionName, std::string const &a_replacementName, std::string const &a_asOf );
 
@@ -115,7 +116,7 @@ class StatusMessageReporting {
         bool isWarning( ) { return( smr_isWarning( &m_smr ) ); }
         bool isError( ) { return( smr_isError( &m_smr ) ); }
         void clear( ) { smr_release( &m_smr ); }
-        std::string constructMessage( std::string a_prefix, int a_reports = 1, bool a_clear = false );
+        std::string constructMessage( std::string const &a_prefix, int a_reports = 1, bool a_clear = false );
         std::string constructFullMessage( std::string const &a_prefix, int a_reports = 1, bool a_clear = false );
 };
 
@@ -155,7 +156,7 @@ class ArgumentParser {
         template<typename T> T *get( std::size_t a_name );
         void help( ) const ;
         void usage( ) const ;
-        virtual void printStatus( std::string a_indent ) const ;
+        virtual void printStatus( std::string const &a_indent ) const ;
 };
 
 /* *********************************************************************************************************//**
@@ -191,7 +192,7 @@ class ArgumentBase {
         std::string m_descriptor;                           /**< The desciption printed help. */
         int m_minimumNeeded;                                /**< Minimum number of times *this* argument is required on the command line. */
         int m_maximumNeeded;                                /**< Maximum number of times *this* argument is required on the command line. */
-        int m_counts;                                       /**< The number of time this argument was entered on the command line. */
+        std::size_t m_counts;                               /**< The number of time this argument was entered on the command line. */
         std::vector<std::string> m_values;                  /**< list of values entered for this argument. Only used for types Store, Append and Positional. */
 
         void addAlias( std::string const &a_name );                         /**< Adds the alias *a_name* to *this*. */
@@ -211,15 +212,16 @@ class ArgumentBase {
         std::string const &descriptor( ) const { return( m_descriptor ); }
         int minimumNeeded( ) const { return( m_minimumNeeded ); }
         int maximumNeeded( ) const { return( m_maximumNeeded ); }
-        int counts( ) const { return( m_counts ); }
+        std::size_t counts( ) const { return( m_counts ); }
 
         virtual std::string const &value( std::size_t a_index = 0 ) const ;
         std::vector<std::string> const &values( ) const { return( m_values ); }
+        std::string valueWithDefault( std::string const &a_default ) const ;
         virtual bool isOptionalArgument( ) const { return( true ); }
         virtual bool requiresAValue( ) const { return( false ); }
         virtual int parse( ArgumentParser const &a_argumentParser, int a_index, int a_argc, char **a_argv );
         std::string usage( bool a_requiredOption ) const ;
-        void printStatus( std::string a_indent ) const ;
+        void printStatus( std::string const &a_indent ) const ;
 };
 
 /*
@@ -238,6 +240,7 @@ class OptionBoolean : public ArgumentBase {
         virtual ~OptionBoolean( ) = 0 ;
 
         bool _default( ) const { return( m_default ); }
+        bool isTrue( ) const ;
         std::string printStatus2( ) const ;
 };
 
@@ -361,8 +364,8 @@ class DeltaTime {
         double wallTime( ) const { return( m_wallTime ); }
         double CPU_timeIncremental( ) const { return( m_CPU_timeIncremental ); }
         double wallTimeIncremental( ) const { return( m_wallTimeIncremental ); }
-        std::string toString( std::string a_formatIncremental = LUPI_DeltaTime_toStringFormatIncremental,
-                std::string a_format = LUPI_DeltaTime_toStringFormatTotal, std::string a_sep = "; " );
+        std::string toString( std::string const &a_formatIncremental = LUPI_DeltaTime_toStringFormatIncremental,
+                std::string const &a_format = LUPI_DeltaTime_toStringFormatTotal, std::string const &a_sep = "; " );
 };
 
 /*
@@ -435,6 +438,7 @@ std::string joinStrings( std::string const &a_sep, std::vector<std::string> a_st
 std::string replaceString( std::string const &a_string, std::string const &a_old, std::string const &a_new, bool a_all );
 std::vector<std::string> splitXLinkString( std::string const &a_string );
 bool stringToInt( std::string const &a_string, int &a_value );
+bool stringToSize_t( std::string const &a_string, std::size_t &a_value );
 
 std::string argumentsToString( char const *a_format, ... );
 std::string doubleToString3( char const *a_format, double a_value, bool a_reduceBits = false );

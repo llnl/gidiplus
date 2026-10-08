@@ -417,6 +417,18 @@ Styles::TemperatureInfos ProtareTNSL::temperatures( ) const {
 }
 
 /* *********************************************************************************************************//**
+ * This method returns a list of pointers, with each pointer being a **Suite** to a list of **Transportable**
+ * instances.
+ *
+ * @return                  A std::vector of GIDI::Suite const pointers.
+ ***********************************************************************************************************/
+
+std::vector<GIDI::Suite const *> ProtareTNSL::listOfTransportableSuites( ) const {
+
+    return( m_protare->listOfTransportableSuites( ) );
+}
+
+/* *********************************************************************************************************//**
  * Returns the number of reactions from the non TNSL protare.
  *
  * @return              The total number of reactions.
@@ -436,10 +448,9 @@ std::size_t ProtareTNSL::numberOfReactions( ) const {
 
 Reaction *ProtareTNSL::reaction( std::size_t a_index ) {
 
-    int index = a_index - m_TNSL->numberOfReactions( );
+    if( a_index < m_TNSL->numberOfReactions( ) ) return( m_TNSL->reaction( a_index ) );
 
-    if( index < 0 ) return( m_TNSL->reaction( a_index ) );
-    return( m_protare->reaction( index ) );
+    return( m_protare->reaction( a_index - m_TNSL->numberOfReactions( ) ) );
 }
 
 /* *********************************************************************************************************//**
@@ -451,10 +462,9 @@ Reaction *ProtareTNSL::reaction( std::size_t a_index ) {
     
 Reaction const *ProtareTNSL::reaction( std::size_t a_index ) const {
 
-    int index = a_index - m_TNSL->numberOfReactions( );
+    if( a_index < m_TNSL->numberOfReactions( ) ) return( m_TNSL->reaction( a_index ) );
 
-    if( index < 0 ) return( m_TNSL->reaction( a_index ) );
-    return( m_protare->reaction( a_index ) );
+    return( m_protare->reaction( a_index - m_TNSL->numberOfReactions( ) ) );
 }
 
 /* *********************************************************************************************************//**
@@ -471,10 +481,9 @@ Reaction const *ProtareTNSL::reaction( std::size_t a_index ) const {
 Reaction const *ProtareTNSL::reaction( std::size_t a_index, Transporting::MG const &a_settings, 
                 ExcludeReactionsSet const &a_reactionsToExclude ) const {
 
-    int index = a_index - m_TNSL->numberOfReactions( );
+    if( a_index < m_TNSL->numberOfReactions( ) ) return( m_TNSL->reaction( a_index, a_settings, a_reactionsToExclude ) );
 
-    if( index < 0 ) return( m_TNSL->reaction( a_index, a_settings, a_reactionsToExclude ) );
-    return( m_protare->reaction( a_index, a_settings, a_reactionsToExclude ) );
+    return( m_protare->reaction( a_index - m_TNSL->numberOfReactions( ), a_settings, a_reactionsToExclude ) );
 }
 
 /* *********************************************************************************************************//**
@@ -517,7 +526,7 @@ Reaction const *ProtareTNSL::orphanProduct( std::size_t a_index ) const {
  *
  ***********************************************************************************************************/
     
-void ProtareTNSL::updateReactionIndices( LUPI_maybeUnused int a_offset ) const {
+void ProtareTNSL::updateReactionIndices( LUPI_maybeUnused std::size_t a_offset ) const {
 
     m_TNSL->updateReactionIndices( 0 );
     m_protare->updateReactionIndices( m_TNSL->numberOfReactions( ) );
@@ -713,7 +722,7 @@ Vector ProtareTNSL::multiGroupFissionGammaMultiplicity( LUPI::StatusMessageRepor
 
 Matrix ProtareTNSL::multiGroupProductMatrix( LUPI::StatusMessageReporting &a_smr, Transporting::MG const &a_settings, 
                 Styles::TemperatureInfo const &a_temperatureInfo, Transporting::Particles const &a_particles, 
-                std::string const &a_productID, int a_order, ExcludeReactionsSet const &a_reactionsToExclude ) const {
+                std::string const &a_productID, std::size_t a_order, ExcludeReactionsSet const &a_reactionsToExclude ) const {
 
     ExcludeReactionsSet excludeReactionsSet( a_reactionsToExclude );
     Matrix matrix = m_protare->multiGroupProductMatrix( a_smr, a_settings, a_temperatureInfo, a_particles, a_productID, a_order, excludeReactionsSet );
@@ -742,7 +751,7 @@ Matrix ProtareTNSL::multiGroupProductMatrix( LUPI::StatusMessageReporting &a_smr
  ***********************************************************************************************************/
 
 Matrix ProtareTNSL::multiGroupFissionMatrix( LUPI::StatusMessageReporting &a_smr, Transporting::MG const &a_settings, 
-                Styles::TemperatureInfo const &a_temperatureInfo, Transporting::Particles const &a_particles, int a_order,
+                Styles::TemperatureInfo const &a_temperatureInfo, Transporting::Particles const &a_particles, std::size_t a_order,
                 ExcludeReactionsSet const &a_reactionsToExclude ) const {
 
     return( m_protare->multiGroupFissionMatrix( a_smr, a_settings, a_temperatureInfo, a_particles, a_order, a_reactionsToExclude ) );
@@ -765,7 +774,7 @@ Matrix ProtareTNSL::multiGroupFissionMatrix( LUPI::StatusMessageReporting &a_smr
  ***********************************************************************************************************/
 
 Vector ProtareTNSL::multiGroupTransportCorrection( LUPI::StatusMessageReporting &a_smr, Transporting::MG const &a_settings, 
-                Styles::TemperatureInfo const &a_temperatureInfo, Transporting::Particles const &a_particles, int a_order, 
+                Styles::TemperatureInfo const &a_temperatureInfo, Transporting::Particles const &a_particles, std::size_t a_order, 
                 TransportCorrectionType a_transportCorrectionType, double a_temperature, ExcludeReactionsSet const &a_reactionsToExclude ) const {
 
     if( a_transportCorrectionType == TransportCorrectionType::None ) return( Vector( 0 ) );

@@ -16,7 +16,7 @@ class argvOption {
 
     public:
         std::string m_name;     // Must include all leading '-'s (E.g., "-v", "--target").
-        int m_counter;
+        std::size_t m_counter;
         bool m_needsValue;
         std::vector<int> m_indices;
         std::string m_descriptor;
@@ -39,16 +39,16 @@ class argvOptions {
         std::string m_descriptor;
         int m_minimumNonOptions;
         std::vector<argvOption> m_options;
-        std::vector<int> m_arguments;
+        std::vector<std::size_t> m_arguments;
 
         argvOptions( std::string const &a_codeName, std::string const &a_descriptor = "", int a_minimumNonOptions = 0 );
 
-        int size( ) { return( static_cast<int>( m_options.size( ) ) ); }
+        std::size_t size( ) { return( m_options.size( ) ); }
         void add( argvOption const &a_option ) { m_options.push_back( a_option ); }
         void parseArgv( int argc, char **argv );
         argvOption *find( std::string const &a_name );
-        long asLong( char **argv, int argumentIndex );
-        double asDouble( char **argv, int argumentIndex );
+        long asLong( char **argv, std::size_t argumentIndex );
+        double asDouble( char **argv, std::size_t argumentIndex );
         void help( );
         void print( );
 };
@@ -91,14 +91,14 @@ class ParseTestOptions {
 
 enum class Justification { left, center, right };
 
-std::string fillString( std::string const &a_string, unsigned int a_width, Justification a_justification, bool a_truncate );
-long asInt( char const *a_chars );
+std::string fillString( std::string const &a_string, std::size_t a_width, Justification a_justification, bool a_truncate );
+int asInt( char const *a_chars );
 long asLong( char const *a_chars );
-double asDouble( char const *a_chars );
+double asDouble( std::string const &a_string );
 std::string doubleToString( char const *format, double value );
-int outputChannelStringMaximumLength( GIDI::Protare *protare );
+std::size_t outputChannelStringMaximumLength( GIDI::Protare *protare );
 std::string outputChannelString( GIDI::Reaction *reaction );
-std::string outputChannelPrefix( int offset, int width, GIDI::Reaction *reaction );
+std::string outputChannelPrefix( std::size_t offset, std::size_t width, GIDI::Reaction *reaction );
 long integerFromArgv( int iarg, int argc, char **argv );
 void printVector( char const *prefix, GIDI::Vector &vector );
 void printVector( std::string &prefix, GIDI::Vector &vector );

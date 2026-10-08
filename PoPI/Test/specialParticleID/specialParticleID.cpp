@@ -52,8 +52,7 @@ void main2( LUPI_maybeUnused int argc, LUPI_maybeUnused char **argv ) {
     printf( "   ----------------------------------\n" );
     std::size_t numberOfParticles = database.size( );
     for( std::size_t index = 0; index < numberOfParticles; ++index ) {
-        int intIndex = static_cast<int>( index );
-        PoPI::Base const &base = database.get<PoPI::Base>( intIndex );
+        PoPI::Base const &base = database.get<PoPI::Base>( index );
 
         std::string familiar = PoPI::specialParticleID(PoPI::SpecialParticleID_mode::familiar, base.ID( ));
         std::string nuclide = PoPI::specialParticleID(PoPI::SpecialParticleID_mode::nuclide, base.ID( ));

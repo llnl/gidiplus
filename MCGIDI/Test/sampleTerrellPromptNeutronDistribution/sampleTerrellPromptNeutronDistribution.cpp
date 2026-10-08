@@ -53,7 +53,7 @@ void main2( int argc, char **argv ) {
     unsigned long long rngState = 1;
     double energyDomainMax = 20.0;
     std::size_t numberOfSamples = 100 * 1000;
-    std::set<int> reactionsToExclude;
+    GIDI::ExcludeReactionsSet reactionsToExclude;
     LUPI::StatusMessageReporting smr1;
     int neutronIntid = pops.intid( PoPI::IDs::neutron );
 
@@ -137,13 +137,13 @@ void main2( int argc, char **argv ) {
                         }
                     }
                     if( promptFissionNeutronCount >= numberOfPromptFissionNeutronBins ) promptFissionNeutronCount = numberOfPromptFissionNeutronBins - 1;
-                    ++promptFissionNeutronBins[promptFissionNeutronCount];
+                    ++promptFissionNeutronBins[static_cast<std::size_t>(promptFissionNeutronCount)];
                 }
 
-                double totalMultiplicity = totalFissionNeutrons / (double) numberOfSamples, delayedMultiplicity = delayedFissionNeutrons / (double) numberOfSamples;
+                double totalMultiplicity = (double) totalFissionNeutrons / (double) numberOfSamples, delayedMultiplicity = (double) delayedFissionNeutrons / (double) numberOfSamples;
                 std::cout << "    energy = " << energy << " total neutrons = " << totalFissionNeutrons << " (" << doubleToString2( "%.4f", totalMultiplicity )
                         << ") delayed neutrons = " << delayedFissionNeutrons << " (" << doubleToString2( "%.3e", delayedMultiplicity ) << ")";
-                for( int i2 = 0; i2 < numberOfPromptFissionNeutronBins; ++i2 ) std::cout << " " << promptFissionNeutronBins[i2];
+                for( std::size_t i2 = 0; i2 < numberOfPromptFissionNeutronBins; ++i2 ) std::cout << " " << promptFissionNeutronBins[i2];
                 std::cout << std::endl;
             }
         }

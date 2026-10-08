@@ -88,7 +88,7 @@ void main2( int argc, char **argv ) {
 
     printLibraries = argv_options.find( "-l" )->m_counter > 0;
     printTiming = argv_options.find( "-t" )->m_counter > 0;
-    maxDepth = argv_options.find( "--maxDepth" )->asLong( argv, maxDepth );
+    maxDepth = argv_options.find( "--maxDepth" )->asInt( argv, maxDepth );
 
     int mode = argv_options.find( "-m" )->asInt( argv, 0 );
     GIDI::Construction::ParseMode parseMode( GIDI::Construction::ParseMode::all );

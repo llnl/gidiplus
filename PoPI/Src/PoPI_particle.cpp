@@ -16,6 +16,27 @@ namespace PoPI {
  */
 
 /* *********************************************************************************************************//**
+ * @param a_id                          [in]    The **PoPs** id for the particle.
+ * @param a_class                       [in]    The class of the particle.
+ * @param a_family                      [in]    The family of the particle.
+ ***********************************************************************************************************/
+
+Particle::Particle( std::string const &a_id, Particle_class a_class, std::string const &a_family ) :
+        IDBase( a_id, a_class ),
+        m_baseId( a_id.substr( 0, a_id.find( IDs::anti ) ) ),
+        m_family( a_family ),
+        m_anti( ),
+        m_hasNucleus( 0 ),
+        m_mass( PoPI_massChars ),
+        m_spin( PoPI_spinChars ),
+        m_parity( PoPI_parityChars ),
+        m_charge( PoPI_chargeChars ),
+        m_halflife( PoPI_halflifeChars ) {
+
+    if( a_id != m_baseId ) m_anti = IDs::anti;
+}
+
+/* *********************************************************************************************************//**
  * @param a_node                        [in]    The **HAPI::Node** node to be parsed.
  * @param a_class                       [in]    The class of the particle.
  * @param a_family                      [in]    The family of the particle.

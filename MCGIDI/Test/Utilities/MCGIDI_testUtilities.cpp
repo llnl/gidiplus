@@ -160,7 +160,7 @@ void argvOptions2::parseArgv( int argc, char **argv ) {
 
         if( arg == "-h" ) help( );
         if( arg[0] == '-' ) {
-            int index = 0;
+            size_t index = 0;
 
             for( ; index < size( ); ++index ) {
                 argvOption2 &option = m_options[index];
@@ -202,14 +202,14 @@ argvOption2 *argvOptions2::find( std::string const &a_name ) {
 /*
 =========================================================
 */
-long argvOptions2::asLong( char **argv, int argumentIndex ) {
+long argvOptions2::asLong( char **argv, std::size_t argumentIndex ) {
 
     return( ::asLong2( argv[m_arguments[argumentIndex]] ) );
 }
 /*
 =========================================================
 */
-double argvOptions2::asDouble( char **argv, int argumentIndex ) {
+double argvOptions2::asDouble( char **argv, std::size_t argumentIndex ) {
 
     return( ::asDouble2( argv[m_arguments[argumentIndex]] ) );
 }

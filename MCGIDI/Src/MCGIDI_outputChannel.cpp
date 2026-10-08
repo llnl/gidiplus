@@ -48,6 +48,8 @@ LUPI_HOST OutputChannel::OutputChannel( GIDI::OutputChannel const *a_outputChann
         m_products( ),
         m_totalDelayedNeutronMultiplicity( nullptr ) {
 
+    Distributions::Distribution *twobodyFirstProductDistribution = nullptr;
+
     if( a_outputChannel != nullptr ) {
         m_channelType = a_outputChannel->twoBody( ) ? ChannelType::twoBody : ChannelType::uncorrelatedBodies;
         m_isFission = a_outputChannel->isFission( );
@@ -64,8 +66,13 @@ LUPI_HOST OutputChannel::OutputChannel( GIDI::OutputChannel const *a_outputChann
         GIDI::Suite const &products = a_outputChannel->products( );
         if( m_channelType == ChannelType::twoBody ) {
             if( !a_setupInfo.m_protare.isTNSL_ProtareSingle( ) ) {
-                GIDI::Product const *product = products.get<GIDI::Product>( 1 );
-                a_setupInfo.m_product2Mass = product->particle( ).mass( "MeV/c**2" );         // Includes nuclear excitation energy.
+                a_setupInfo.m_twoBodyOrder = TwoBodyOrder::firstParticle;
+                GIDI::Product const *product0 = products.get<GIDI::Product>( 0 );
+                a_setupInfo.m_twobodyProduct1Mass = product0->particle( ).mass( "MeV/c**2" );         // Includes nuclear excitation energy.
+                a_setupInfo.m_productMass = a_setupInfo.m_twobodyProduct1Mass;
+                GIDI::Product const *product1 = products.get<GIDI::Product>( 1 );
+                a_setupInfo.m_twobodyProduct2Mass = product1->particle( ).mass( "MeV/c**2" );         // Includes nuclear excitation energy.
+                twobodyFirstProductDistribution = Distributions::parseGIDI( product0->distribution( ), a_setupInfo, a_settings );
             }
         }
 
@@ -83,22 +90,40 @@ LUPI_HOST OutputChannel::OutputChannel( GIDI::OutputChannel const *a_outputChann
                 productsToDo.insert( i1 );
         }
         size = productsToDo.size( );
-        if( a_setupInfo.m_isPairProduction ) {
+        bool decayPositronium = a_settings.decayPositronium( );
+        if( a_setupInfo.m_isPairProduction && decayPositronium ) {
             size += 2;
             size = 2;                               // This is a kludge until the ENDL to GNDS translator is fixed.
         }
-
+        
         bool addIncoherentPhotoAtomicScatteringElectron = false;
-        if( a_setupInfo.m_isPhotoAtomicIncoherentScattering && a_particles.hasParticle( PoPI::IDs::electron ) ) {   // May need to add electron for legacy GNDS files.
-            if( !electronPresent ) {
-// FIXME: BRB 7/Nov/2024, Why is an electron added, this is incoherent atomic scattering which does not emit an electron?
-                addIncoherentPhotoAtomicScatteringElectron = true;
-                ++size;
+        bool addPairProductionElectron = false;
+        bool addPhotoelectricElectron = false;
+        bool addIncoherentDopplerPhotoAtomicScatteringElectron = false;
+
+        bool returnElectrons = a_particles.hasParticle( PoPI::IDs::electron );
+        if( returnElectrons ) {
+            // the or is because the electron isn't listed as a product in GNDS as of Jul/2025
+            if( electronPresent || a_setupInfo.m_isPhotoAtomicIncoherentScattering ) {
+                if( a_setupInfo.m_isPhotoAtomicIncoherentScattering ) {
+                    addIncoherentPhotoAtomicScatteringElectron = true;
+                    ++size;
+                } else if (a_setupInfo.m_isPhotoAtomicIncoherentDopplerScattering) {
+                    addIncoherentDopplerPhotoAtomicScatteringElectron = true;
+                    ++size;
+                } else if ( a_setupInfo.m_isPairProduction && !decayPositronium ) {
+                    addPairProductionElectron = true;
+                    size += 2;
+                } else if ( a_setupInfo.m_isPhotoelectric ) {
+                    addPhotoelectricElectron = true;
+                    ++size;
+                }
             }
         }
+
         m_products.reserve( size );
 
-        if( a_setupInfo.m_isPairProduction ) {
+        if( a_setupInfo.m_isPairProduction && decayPositronium ) {
             std::string ID( PoPI::IDs::photon );
             std::string label = ID;
 
@@ -114,25 +139,68 @@ LUPI_HOST OutputChannel::OutputChannel( GIDI::OutputChannel const *a_outputChann
             m_products.push_back( product );
         }
 
+        bool firstTwoBodyAdded = false;
         for( std::size_t i1 = 0; i1 < a_outputChannel->products( ).size( ); ++i1 ) {
             if( productsToDo.find( i1 ) == productsToDo.end( ) ) continue;
 
             GIDI::Product const *product = products.get<GIDI::Product>( i1 );
+
+            a_setupInfo.m_twobodyFirstProductDistribution = twobodyFirstProductDistribution;
 
             if( a_setupInfo.m_isPairProduction ) {
                 if( !a_settings.sampleNonTransportingParticles( ) ) continue;
                 if( a_setupInfo.m_protare.targetIntid( ) != MCGIDI_popsIntid( a_setupInfo.m_pops, product->particle( ).ID( ) ) ) continue;
             }
             a_setupInfo.m_twoBodyOrder = TwoBodyOrder::notApplicable;
-            if( m_channelType == ChannelType::twoBody ) a_setupInfo.m_twoBodyOrder = ( ( i1 == 0 ? TwoBodyOrder::firstParticle : TwoBodyOrder::secondParticle ) );
+            if( m_channelType == ChannelType::twoBody ) {
+                a_setupInfo.m_twoBodyOrder = ( ( ( i1 == 0 ) || ( !firstTwoBodyAdded ) ) ? TwoBodyOrder::firstParticle : TwoBodyOrder::secondParticle );
+                firstTwoBodyAdded = i1 == 0;
+            }
             m_products.push_back( new Product( product, a_setupInfo, a_settings, a_particles, m_isFission ) );
 
-            if( addIncoherentPhotoAtomicScatteringElectron && ( product->particle( ).ID( ) == PoPI::IDs::photon ) ) {
-                addIncoherentPhotoAtomicScatteringElectron = false;
+            // Legacy branch for inserting an incoherent photo-atomic scattering electron has been removed
+            // as redundant (see notes by northroj 17/Jul/2025).
+        }
 
-                Product *product2 = new Product( a_setupInfo.m_pops, PoPI::IDs::electron, PoPI::IDs::electron );
+        std::string electronID( PoPI::IDs::electron );
+        std::string electronLabel = electronID;
+
+        std::string positronID( PoPI::IDs::electron + PoPI::IDs::anti );
+        std::string positronLabel = positronID;
+        
+        if( a_setupInfo.m_isPhotoAtomicIncoherentScattering ) {
+            if( addIncoherentPhotoAtomicScatteringElectron ) {
+                Product *product2 = new Product( a_setupInfo.m_popsUser, electronID, electronLabel );
                 product2->setMultiplicity( new Functions::Constant1d( a_setupInfo.m_domainMin, a_setupInfo.m_domainMax, 1.0, 0.0 ) );
                 product2->distribution( new Distributions::IncoherentPhotoAtomicScatteringElectron( a_setupInfo ) );
+                m_products.push_back( product2 );
+            }
+        } else if( a_setupInfo.m_isPhotoAtomicIncoherentDopplerScattering ) {
+            if( addIncoherentDopplerPhotoAtomicScatteringElectron ) {
+                Product *product2 = new Product( a_setupInfo.m_popsUser, electronID, electronLabel );
+                product2->setMultiplicity( new Functions::Constant1d( a_setupInfo.m_domainMin, a_setupInfo.m_domainMax, 1.0, 0.0 ) );
+                product2->distribution( new Distributions::IncoherentBoundToFreePhotoAtomicScatteringElectron( a_setupInfo ) );
+                m_products.push_back( product2 );
+            }
+        } else if( a_setupInfo.m_isPairProduction ) {
+            if( addPairProductionElectron ) {
+                Product *product2 = new Product( a_setupInfo.m_popsUser, electronID, electronLabel );
+                product2->setMultiplicity( new Functions::Constant1d( a_setupInfo.m_domainMin, a_setupInfo.m_domainMax, 1.0, 0.0 ) );
+                product2->distribution( new Distributions::PairProductionElectron( a_setupInfo ) );
+                product2->setTwoBodyOrder( TwoBodyOrder::firstParticle );
+                m_products.push_back( product2 );
+
+                Product *product3 = new Product( a_setupInfo.m_popsUser, positronID, positronLabel );
+                product3->setMultiplicity( new Functions::Constant1d( a_setupInfo.m_domainMin, a_setupInfo.m_domainMax, 1.0, 0.0 ) );
+                product3->distribution( new Distributions::PairProductionElectron( a_setupInfo ) );
+                product3->setTwoBodyOrder( TwoBodyOrder::secondParticle );
+                m_products.push_back( product3 );
+            }
+        } else if( electronPresent ) { //photoelectric
+            if( addPhotoelectricElectron ) {
+                Product *product2 = new Product( a_setupInfo.m_popsUser, electronID, electronLabel );
+                product2->setMultiplicity( new Functions::Constant1d( a_setupInfo.m_domainMin, a_setupInfo.m_domainMax, 1.0, 0.0 ) );
+                product2->distribution( new Distributions::PhotoelectricElectron( a_setupInfo ) );
                 m_products.push_back( product2 );
             }
         }
@@ -154,19 +222,16 @@ LUPI_HOST OutputChannel::OutputChannel( GIDI::OutputChannel const *a_outputChann
 
                     GIDI::Functions::Function1dForm const *form1d = multiplicity.get<GIDI::Functions::Function1dForm>( 0 );
 
-                    if( form1d->type( ) == GIDI::FormType::unspecified1d ) {
+                    GIDI::Functions::XYs1d *multiplicityXYs1d = form1d->asXYs1d( true, 1e-4, 1e-6, 1e-6 );
+                    if( multiplicityXYs1d == nullptr ) {
+                        std::cerr << "OutputChannel::OutputChannel: GIDI::DelayedNeutron multiplicity failed to convert "
+                                + form1d->label( ) + " to asXYs1d." << std::endl;
                         missingData = true;
                         break;
                     }
 
-                    if( form1d->type( ) != GIDI::FormType::XYs1d ) {
-                        std::cerr << "OutputChannel::OutputChannel: GIDI::DelayedNeutron multiplicity type != GIDI::FormType::XYs1d" << std::endl;
-                        missingData = true;
-                        break;
-                    }
-
-                    GIDI::Functions::XYs1d const *multiplicityXYs1d = static_cast<GIDI::Functions::XYs1d const *>( form1d );
                     totalDelayedNeutronMultiplicity += *multiplicityXYs1d;
+                    delete multiplicityXYs1d;
 
                     m_delayedNeutrons.push_back( new DelayedNeutron( static_cast<int>( i1 ), delayedNeutron, a_setupInfo, a_settings, a_particles ) );
                 }
@@ -175,6 +240,8 @@ LUPI_HOST OutputChannel::OutputChannel( GIDI::OutputChannel const *a_outputChann
         }
 
         m_hasFinalStatePhotons = a_setupInfo.m_hasFinalStatePhotons;
+
+        deleteDistribution( twobodyFirstProductDistribution );
     }
 }
 

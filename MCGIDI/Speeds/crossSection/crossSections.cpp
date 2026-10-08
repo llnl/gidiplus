@@ -48,7 +48,7 @@ void main2( int argc, char **argv ) {
     long numberOfSamples = 1000 * 1000, sampleTemperatures = 0, sampleEnergies;
     std::vector<std::string> libraries;
     GIDI::Transporting::Particles particles;
-    std::set<int> reactionsToExclude;
+    GIDI::ExcludeReactionsSet reactionsToExclude;
     LUPI::StatusMessageReporting smr1;
 
     std::cout << __FILE__;

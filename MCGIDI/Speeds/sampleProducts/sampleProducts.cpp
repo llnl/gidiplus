@@ -46,7 +46,7 @@ void main2( int argc, char **argv ) {
     GIDI::Map::Map map( mapFilename, pops );
     std::vector<std::string> libraries;
     GIDI::Transporting::Particles particles;
-    std::set<int> reactionsToExclude;
+    GIDI::ExcludeReactionsSet reactionsToExclude;
     clock_t time0, time1;
     long numberOfSamples = 100 * 1000, sampleTemperatures = 0, sampleEnergies = 0;
     void *rngState = nullptr;

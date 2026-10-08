@@ -30,7 +30,7 @@ int main( int argc, char **argv ) {
     GIDI::Transporting::Particles particles;
     int reactionIndex = 0;
     double muMin = -1.0, muMax = 1.0;
-    std::set<int> reactionsToExclude;
+    GIDI::ExcludeReactionsSet reactionsToExclude;
     LUPI::StatusMessageReporting smr1;
 
     std::cerr << "    " << __FILE__;

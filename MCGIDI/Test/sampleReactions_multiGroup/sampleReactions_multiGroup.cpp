@@ -30,7 +30,7 @@ int main( int argc, char **argv ) {
     char *endChar;
     long numberOfSamples = -1;
     unsigned long long rngState = 1;
-    std::set<int> reactionsToExclude;
+    GIDI::ExcludeReactionsSet reactionsToExclude;
     LUPI::StatusMessageReporting smr1;
     GIDI::Construction::PhotoMode photo_mode = GIDI::Construction::PhotoMode::nuclearOnly;
     argvOption2 *option;
@@ -165,7 +165,7 @@ int main( int argc, char **argv ) {
             for( std::size_t i5 = 0; i5 < protare_single->numberOfReactions( ); ++i5 ) {
                 MCGIDI::HeatedReactionCrossSectionMultiGroup const &reaction = *heatedCrossSectionMultiGroup[i5];
 
-                if( reaction.offset( ) == (int) i3 ) std::cout << "  " << reaction.augmentedThresholdCrossSection( ) << " (" << i5 << ")";
+                if( reaction.offset( ) == i3 ) std::cout << "  " << reaction.augmentedThresholdCrossSection( ) << " (" << i5 << ")";
             }
             std::cout << std::endl;
         }
@@ -192,7 +192,7 @@ int main( int argc, char **argv ) {
     MCGIDI::Sampling::Input input( true, MCGIDI::Sampling::Upscatter::Model::none );
 
     for( double energy = energyMin; energy <= energyMax; energy *= 2.0 ) {
-        int hashIndex = multiGroupHash.index( energy );
+        std::size_t hashIndex = multiGroupHash.index( energy );
 
         std::cout << "energy = " << std::setw( 15 ) << std::setprecision( 10 ) << energy << "  group index = " << std::setw( 4 ) << hashIndex << std::endl;
         double crossSection = MCProtare->crossSection( URR_protare_infos, hashIndex, temperature, energy );
@@ -219,17 +219,20 @@ int main( int argc, char **argv ) {
         input.setTemperatureAndEnergy( temperature, energy );
         std::vector<long> counts( numberOfReactions + 2, 0 );               // 2 extra for null reaction and crossSection more than sum over reactions.
         for( long i1 = 0; i1 < numberOfSamples; ++i1 ) {
-            int reactionIndex = MCProtare->sampleReaction( input, URR_protare_infos, hashIndex, crossSectionAugmented,
+            std::size_t reactionIndex = MCProtare->sampleReaction( input, URR_protare_infos, hashIndex, crossSectionAugmented,
                     [&]() -> double { return float64RNG64( &rngState ); } );
-            if( reactionIndex > (int) numberOfReactions ) reactionIndex = (int) numberOfReactions;              // This should not happend.
-            if( reactionIndex == MCGIDI_nullReaction ) reactionIndex = (int) numberOfReactions + 1;             // Null reaction.
+            if( reactionIndex == MCGIDI_nullReaction ) {
+                reactionIndex = numberOfReactions + 1; }                                    // Null reaction.
+            else {
+                if( reactionIndex >  numberOfReactions ) reactionIndex = numberOfReactions;              // This should not happend.
+            }
             ++counts[reactionIndex];
         }
 
         std::cout << "      ";
         for( std::size_t i1 = 0; i1 < numberOfReactions + 2; ++i1 ) {
-            double ratio = counts[i1];
-            std::cout << LUPI::Misc::argumentsToString( " %9.6f", ratio / numberOfSamples );
+            double ratio = static_cast<double>( counts[i1] );
+            std::cout << LUPI::Misc::argumentsToString( " %9.6f", ratio / static_cast<double>( numberOfSamples ) );
         }
         std::cout << std::endl;
 
